@@ -1,0 +1,1538 @@
+:root {
+    color: white;
+    font-family: "Golos Text", sans-serif;
+}
+html {
+    scrollbar-color: #004db1 #00002b;
+}
+body {
+    width: 400px;
+    height: 512px;
+    min-height: 100vh;
+    margin: 0;
+    background-color: #0f0052;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    font-family: "Golos Text";
+    font-style: normal;
+    font-weight: 400;
+    display: flex;
+    flex-direction: column;
+}
+.header {
+    display: flex;
+    flex-direction: row;
+    width: 400px;
+}
+.headerbtns {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  background: #0012b4;
+  color: white;
+  height: 40px;
+  flex: 1;
+  text-align: center;
+}
+.headerbtns:hover {
+    background: rgba(255, 255, 255, 0.219)
+}
+#accountarea {
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+}
+#accountarea h1 {
+    font-size: 12px;
+    font-weight: 400;
+    margin: 0;
+}
+#accountarea p {
+    font-size: 8px;
+    color: white;
+    margin: 1px;
+}
+#footer-placeholder {
+    margin-top: auto;
+}
+.footer {
+    margin-top: auto;
+    background: #0012b4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    width: 400px;
+    color: white;
+    padding: 10px;
+    padding-top: 0px;
+    box-sizing: border-box;
+    font-weight: 400;
+    font-size: 10px;
+}
+.footer a, .footer a:link, .footer a:visited, .footer a:hover {
+    color: white;
+}
+#miscfooterlinks {
+    display: flex;
+    flex-direction: row;
+    gap: 25px;
+}
+.container {
+    padding: 16px;
+    text-align: center;
+}
+.container h1 {
+    font-size: 24px;
+    margin: 0 0 8px;
+    text-align: center;
+    color: white;
+    font-weight: 500;
+}
+.container h2 {
+    font-size: 20px;
+    margin: 0 0 8px;
+    text-align: center;
+    color: white;
+    font-weight: 400;
+}
+.container h3 {
+    font-size: 16px;
+    margin: 0 0 8px;
+    text-align: center;
+    color: white;
+    font-weight: 400;
+}
+.container h4 {
+    font-size: 14px;
+    margin: 0 0 8px;
+    text-align: center;
+    color: white;
+    font-weight: 400;
+}
+.container p {
+    color: white;
+    font-size: 12px;
+    text-align: center;
+    font-weight: 400;
+}
+
+.container p a {
+    color: white;
+    font-size: 12px;
+    text-align: center;
+    font-weight: 400;
+}
+
+.container h2 a {
+    color: white;
+    text-decoration: none;
+}
+
+.container button {
+    background: #4f46e5;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    width: 100%;
+}
+.container input[type='text'], .container input[type='number'], .container input[type='search'], .container input[type='password'] {
+    font-size: 14px;
+    border-radius: 5px;
+    box-sizing: border-box;
+    padding: 5px;
+    width: 100%;
+}
+textarea {
+    width: 100%;
+    height: 100px;
+    font-size: 14px;
+    font-family: "Golos Text", sans-serif;
+    resize: none;
+}
+button img {
+    pointer-events: none;
+}
+details {
+    font-size: 20px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+summary {
+    cursor: pointer;
+    margin-bottom: 5px;
+}
+.container button:hover {
+    background: #4338ca;
+}
+.container button:disabled {
+    opacity: 0.75;
+    cursor: not-allowed;
+}
+.wiki-container h2, .wiki-container h3, .wiki-container p {
+    text-align: left;
+}
+.wiki-container ul {
+    text-align: left;
+    color: white;
+    font-size: 12px;
+    padding-left: 15px;
+}
+.appgrid {
+    border: white;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+    align-items: center;
+}
+.appgrid ul {
+    list-style-type: none;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 0;
+}
+.appgrid ul li {
+    border: 2px solid white;
+    border-radius: 10px;
+    margin: 4px;
+    padding: 5px;
+    flex: 1 1 100px;
+    max-width: 100px;
+    height: 100px;
+}
+.appgrid ul li:hover {
+    background: rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+}
+
+.appgrid ul li a {
+    color: white;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+/*/ Popup CSS /*/
+.overlay {
+  position: fixed;
+  inset: 0; /* shorthand for top/right/bottom/left: 0 */
+  background: rgba(0, 0, 0, 0.5); /* semi-transparent black */
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 999; /* sits on top of everything */
+}
+.popup {
+  background: rgb(3, 0, 156);
+  padding: 12px;
+  border-radius: 12px;
+  width: 300px;
+  text-align: center;
+  color: white;
+  position: relative;
+}
+.popup button {
+    background: #4f46e5;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.popup h3 {
+    margin: 3;
+    font-weight: 400;
+}
+.popup p, .popup h2 {
+    margin: 3;
+}
+#popup-header h1 {
+    margin-top: -10;
+    margin-bottom: 5;
+}
+#popup-x {
+  position: absolute;
+  right: 0px;
+  top: 0px;
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+}
+#popup-choices {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+}
+#popup-choices button {
+    flex: 1;
+}
+/*/ Wallet Page CSS /*/
+#wallet-container h1, #wallet-container h3 {
+    font-size: 24px;
+    color: white;
+    font-weight: 400;
+    text-align: center;
+}
+#wallet-container h2 {
+    font-size: 16px;
+    color: white;
+    text-align: center;
+}
+#wallet-container label, #wallet-container a {
+    color: white;
+    text-decoration: none;
+}
+#wallet-container button {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+#transactionpanel, #statspanel, #dangerzone, #followingpanel, #followerspanel, #economicstats, #userclawposts {
+    font-size: 24px;
+}
+
+#transactionpanel, #statspanel {
+    position: relative;
+    box-sizing: border-box;
+}
+#stats h2 {
+    font-size: 20px;
+}
+#transactionreload, #statsreload {
+    width: 34px;
+    aspect-ratio: 1;
+    position: absolute;
+    padding: 0;
+    right: 5px;
+    top: 5px;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+p[class='success'] {
+    background-color: #00ff405b;
+    font-size: 12px;
+    color: white;
+    font-weight: 400;
+    text-align: center;
+    padding: 5px;
+    border-radius: 5px;
+    margin: 5px;
+}
+p[class='failure'] {
+    background-color: #ff00005b;
+    font-size: 12px;
+    color: white;
+    font-weight: 400;
+    text-align: center;
+    padding: 5px;
+    border-radius: 5px;
+    margin: 5px;
+}
+p[class='partialsuccess'] {
+    background-color: #fbff005b;
+    font-size: 12px;
+    color: white;
+    font-weight: 400;
+    text-align: center;
+    padding: 5px;
+    border-radius: 5px;
+    margin: 5px;
+}
+#transferwindow {
+    display: flex;
+    flex-direction: column;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    gap: 4px;
+    width: 100%;
+    box-sizing: border-box;
+}
+#transferwindow label {
+    font-size: 14px;
+}
+#transfersubwindow {
+    display: flex;
+    flex-direction: row;
+    margin-top: 5px;
+    gap: 4px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#transfersubwindow input[id='transferuser'] {
+    flex: 6;
+}
+#transfersubwindow input[id='amount'] {
+    flex: 2;
+}
+#transfersubwindow input[id='donateamount'] {
+    flex: 1;
+}
+#transfersubwindow button {
+    flex: 1;
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+
+#fineprint {
+    font-size: 10px;
+}
+#fineprint img {
+    max-width: 16px;
+    max-height: 16px;
+}
+#transactionpanel ul {
+    margin: 0px;
+    padding: 0px;
+    display: flex;
+    flex-direction: column;
+    border: 2px solid white;
+    border-radius: 8px;
+    overflow: hidden;
+    list-style-type: none;
+    margin-bottom: 15px;
+}
+.transactionentry {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    margin-bottom: 3px;
+    align-items: center;
+}
+#transactionpanel ul li p a {
+    font-size: 14px;
+}
+.transactionentry img {
+    width: 48px;
+    height: 48px;
+    border: 2px solid gray;
+    border-radius: 5px;
+}
+#transactionpanel ul li {
+    border-bottom: 2px solid white;
+    padding: 10px;
+}
+#transactionpanel ul li p{
+    font-size: 14px;
+    text-align: left;
+    margin: 0px;
+    margin-bottom: 3px;
+}
+#transactionpanel ul li:last-child {
+    border-bottom: none;
+}
+hr[class='dotted_separator'] {
+    border-style: dashed;
+}
+#calcinput {
+    display: flex;
+    flex-direction: row;
+    margin-left: 25px;
+    margin-right: 25px;
+    gap: 10px;
+    align-items: center;
+}
+#calcinput input {
+    width: 100%;
+    height: 36px;
+    font-size: 14px;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+#calcinput button {
+    height: 36px;
+    box-sizing: border-box;
+}
+.specialtransfercase {
+    font-size: 8px;
+}
+#dangerzone {
+    background: #420000;
+    margin-left: -15px;
+    margin-right: -15px;
+    margin-bottom: -15px;
+    padding-left: 15px;
+    padding-right: 15px;
+    padding-bottom: 15px;
+}
+#dangerzone button {
+    background: #ff6161;
+}
+#dangerzone label {
+    font-size: 12px;
+}
+/*/ Account list CSS /*/
+#account_list {
+    border: 2px solid white;
+    border-radius: 8px;
+    overflow: hidden;
+}
+#account_list h2 {
+    margin-top: 10px;
+    font-size: 18px;
+    color: white;
+}
+.acclistentry {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid white;
+    cursor: pointer;
+    color: white;
+}
+.acclistentry:last-child {
+    border-bottom: none;
+}
+.acclistentry:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+.acclistentry button, .ecokeyuserheader button {
+    width: 30px;
+    height: 30px;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+.acclistimage {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: gray;
+    object-fit: cover;
+}
+input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+.addaccbtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    background: #4f46e5;
+    color: white;
+    height: 30px;
+    flex: 1;
+    text-align: center;
+    margin-top: 15px;
+    margin: 10px;
+    border-radius: 5px;
+}
+.addaccbtn:hover {
+    background: #4338ca;
+}
+#switchaccbtn {
+    margin-top: 10px;
+}
+#switchaccbtn:disabled {
+    cursor: not-allowed;
+}
+#disabledcontext {
+    color: white;
+    margin-top: 8px;
+}
+#disabledcontext ul {
+    text-align: left;
+}
+#disabledcontext a, #disabledcontext a:link, #disabledcontext a:visited, #disabledcontext a:hover {
+    color: white;
+}
+#syncsection {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+#downloaduploadsync {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+}
+/*/ Lookup CSS /*/
+
+#usersearchbar, #giftsearch, #postsearchbar, #keylookup {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+
+#usersearchbar input, #giftsearch input, #postsearchbar input, #keylookup input {
+    flex: 8;
+    box-sizing: border-box;
+    border-radius: 5px;
+    font-size: 16px;
+    padding-left: 5px;
+}
+
+#usersearchbar button, #giftsearch button, #postsearchbar button, #keylookup button {
+    flex: 1;
+}
+
+#typeofsearch {
+    color: white;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+#typeofsearch input, .giftfilter input, .radiochoices input {
+    width: 12px;
+    height: 12px;
+}
+
+hr[class='beforeprofile'] {
+    margin: -15px;
+    margin-top: 15px;
+    margin-bottom: 10px;
+}
+
+/*/ Profile card /*/
+#lookupplaceholder {
+    width: 360px;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0px;
+    border: none;
+    border-radius: 8px;
+    overflow: hidden;
+    justify-self: center;
+}
+
+.userbanner {
+    width: 360px;
+    height: 120px;
+    background: #5865F2;
+    border-bottom: 2px solid white;
+}
+
+.useravatar {
+    width: 64px;
+    height: 64px;
+    margin-top: -36px;
+    justify-self: left;
+    margin-left: 12px;
+    background: #0f0052;
+    border: 2px solid white;
+    border-radius: 8px;
+}
+
+.userinfo {
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+    padding-top: 10px;
+    padding-bottom: 0px;
+    align-items: left;
+    position: relative;
+}
+
+.socialactionbar {
+    width: 250px;
+    height: 75px;
+    position: absolute;
+    margin: 0;
+    padding: 0;
+    right: 10px;
+    top: -22px;
+    font-size: 18px;
+    display: flex;
+    flex-direction: column;
+    justify-content: right;
+}
+
+.socialactionbarbuttons {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: right;
+    gap: 3px;
+}
+
+#lookupplaceholder p[class='socialstatus'] {
+    margin: 2px;
+    padding: 0;
+    justify-self: right;
+    text-align: right;
+}
+
+#followuser {
+    flex: 2;
+    max-width: 96px;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+#profilereload, #profileeditbutton, #addfriend, #profileblockbutton {
+    flex: 1;
+    max-width: 32px;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.userinfo p {
+    margin-top: 10px;
+    margin-bottom: 0px;
+    text-align: left;
+}
+
+.userinfo2 p {
+    margin: 0;
+    margin-top: 3px;
+}
+
+.userinfo2 hr {
+    margin: 0;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    width: 100%;
+}
+
+h1[id='usertitle'] {
+    text-align: left;
+    margin-bottom: 3px;
+}
+
+h3[id='pronouns'] {
+    font-size: 16px;
+    margin: 0;
+    text-align: left;
+    white-space: pre-wrap;
+    text-overflow: wrap;
+}
+
+#pronounsandbadges {
+    display: flex;
+    flex-direction: horizontal;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+#pronounsandbadges ul[id='badges'] {
+    list-style-type: none;
+    display: flex;
+    margin: 0;
+    padding: 0;
+    gap: 3px;
+    flex-direction: horizontal;
+    flex-wrap: nowrap;
+    align-items: center;
+}
+
+.userinfo2 {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    padding-top: 10px;
+    align-items: center;
+}
+
+p[class='bio'] {
+    display: block;
+    white-space: pre-wrap;
+    text-overflow: wrap;
+}
+
+ul[id='morebasicinfo'] {
+    list-style-type: none;
+    display: flex;
+    flex-direction: horizontal;
+    justify-content: center;
+    padding: 0;
+    width: 100%;
+    margin-top: 5px;
+    margin-bottom: 0px;
+}
+
+ul[id='evenmorebasicinfo'] {
+    list-style-type: none;
+    display: flex;
+    flex-direction: horizontal;
+    justify-content: center;
+    padding: 0;
+    width: 100%;
+    margin-top: 0px;
+    margin-bottom: 5px;
+}
+
+h3[class='infolabel'] {
+    margin: 0;
+    padding: 0;
+}
+
+p[class='supplementaryinfo'] {
+    margin: 3px;
+    padding: 0;
+}
+
+ul[id='morebasicinfo'] li, ul[id='evenmorebasicinfo'] li {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid white;
+    border-bottom: 1px solid white;
+    padding-top: 3px;
+    padding-bottom: 3px;
+}
+
+ul[id='morebasicinfo'] li {
+    border-top: 1px solid white;
+}
+
+ul[id='morebasicinfo'] li:last-child, ul[id='evenmorebasicinfo'] li:last-child {
+    border-right: none;
+}
+
+ul[class='followuserlist'] {
+    list-style-type: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: left;
+    gap: 10px;
+    margin-left: 0;
+    padding-left: 15px;
+}
+
+ul[class='followuserlist'] li a {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    align-items: center;
+    text-decoration: none;
+}
+ul[class='followuserlist'] li a p{
+    font-size: 18px;
+    font-weight: 500;
+    margin: 0;
+    padding: 0;
+}
+
+ul[class='followuserlist'] li a img{
+    border: 2px solid white;
+    border-radius: 5px;
+}
+
+#economicplaceholder p {
+    margin-left: 5px;
+    margin-right: 5px;
+}
+/*/ Gifts CSS /*/
+
+#giftsplaceholder ul {
+    margin: 0px;
+    padding: 0px;
+    display: flex;
+    flex-direction: column;
+    border: 2px solid white;
+    border-radius: 8px;
+    overflow: hidden;
+    list-style-type: none;
+    margin-bottom: 15px;
+}
+[id^="giftcontrolbuttons"] {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    margin-top: 10px;
+    margin-bottom: 5px;
+    align-items: center;
+}
+
+#giftsplaceholder ul li {
+    border-bottom: 2px solid white;
+    padding: 10px;
+}
+#giftsplaceholder ul li p {
+    font-size: 14px;
+    text-align: left;
+    margin: 0px;
+    margin-bottom: 3px;
+}
+#giftsplaceholder ul li:last-child {
+    border-bottom: none;
+}
+
+p[class='claim_user'] {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-top: 20px;
+    gap: 4px;
+}
+
+#giftsplaceholder p[class='giftfineprint'] {
+    font-size: 8px;
+}
+
+.giftfilter {
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 5px;
+    gap: 10px;
+}
+
+#giftsplaceholder ul li [id^='giftrevokestatus'] p {
+    text-align: center;
+    font-size: 12px;
+}
+
+.giftcreatepanel {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    margin-bottom: 5px;
+}
+
+#taxamt p {
+    margin: 5px;
+}
+
+#giftlookupheader, #giftmanagerheader {
+    margin-top: 15px;
+}
+
+#giftcreatestatusplaceholder {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+#giftcreatestatusplaceholder button {
+    width: 50%;
+}
+
+#giftlookupplaceholder {
+    padding: 0px;
+    border-radius: 8px;
+    text-align: left;
+}
+
+#giftlookupplaceholder p {
+    margin: 3px;
+    text-align: left;
+    font-size: 14px;
+}
+
+#giftlookupplaceholder p[class='failure'] {
+    text-align: center;
+    font-size: 12px;
+}
+
+#giftlookupplaceholder h2 {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+#giftlookupplaceholder p[class='giftfineprint'] {
+    font-size: 10px;
+    text-align: center;
+}
+
+.claimgiftbtn {
+    margin-top: 10px;
+}
+
+#giftclaimstatusplaceholder p {
+    font-size: 12px;
+    text-align: center;
+}
+
+/*/ Claw /*/
+#systemandsend {
+    margin: 5px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+#feedcontrols {
+    display: flex;
+    flex-direction: row;
+    justify-content: left;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 5px;
+}
+
+#feedcontrols button {
+    flex: 1
+}
+
+#feedcontrols label {
+    flex: 9;
+    display: flex;
+    flex-direction: row;
+    justify-content: left;
+    align-items: center;
+}
+
+#feedcontrols label[id='feedlabel'] {
+    flex: 9;
+}
+
+#feed ul, #userclawposts ul {
+    margin: 0px;
+    padding: 0px;
+    display: flex;
+    flex-direction: column;
+    border: 2px solid white;
+    border-radius: 8px;
+    overflow: hidden;
+    list-style-type: none;
+    margin-bottom: 15px;
+}
+
+ #userclawposts ul {
+    border: none;
+ }
+
+#feed ul li, #userclawposts ul li {
+    border-bottom: 2px solid white;
+    padding: 10px;
+    padding-bottom: 0px;
+}
+
+#feed ul li p, #userclawposts ul li p {
+    font-size: 14px;
+    text-align: left;
+    margin: 0px;
+    margin-bottom: 3px;
+}
+
+#feed ul li img[class='clawattachment'], #userclawposts ul li img[class='clawattachment'] {
+    margin-top: 3px;
+    max-width: 100%;
+    max-height: auto;
+    border-radius: 5px;
+}
+
+#feed ul li p[class='postmetadata'], #userclawposts ul li p[class='postmetadata'] {
+    font-size: 10px;
+    margin-top: 15px;
+}
+#feed ul li p[class='postcontent'], #userclawposts ul li p[class='postcontent'] {
+    margin-top: 5px;
+}
+#feed ul li:last-child, #userclawposts ul li:last-child {
+    border-bottom: none;
+}
+
+.postauthor {
+    position: relative;
+}
+
+.postauthor a {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    text-decoration: none;
+    align-items: center;
+}
+
+.postauthor a h2 {
+    margin: 0;
+    padding: 0;
+}
+
+.postauthor img[class='clawpfp'] {
+    border: 2px solid gray;
+    border-radius: 5px;
+}
+
+.postauthor button[class='deletebtn'] {
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    top: 0px;
+    right: 0px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+}
+
+.feedbackbar {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+}
+
+#userclawposts .feedbackbar {
+    gap: 3px;
+}
+
+#feed button[class='repliesbtn'], #userclawposts button[class='repliesbtn'] {
+    background: transparent;
+    font-size: 18px;
+}
+
+#feed ul[class='reply'], #userclawposts ul[class='reply'] {
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0px;
+}
+
+#feed ul[class='reply'] li, #userclawposts ul[class='reply'] li {
+    margin: 0;
+    border: none;
+    border-top: 2px dashed gray;
+    position: relative;
+}
+
+#feed ul[class='reply'] li button[class='copypostid'], #userclawposts ul[class='reply'] li button[class='copypostid'] {
+    position: absolute;
+    width: 108px;
+    height: 32px;
+    top: 0px;
+    right: 0px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+}
+
+#feed ul[class='reply'] li:last-child, #userclawposts ul[class='reply'] li:last-child {
+    border-bottom: 2px dashed gray;
+    margin-bottom: 10px;
+}
+
+.sendreply {
+    margin-top: 2px;
+}
+
+.popup ul[class='likelist'] {
+    list-style-type: none;
+    display: flex;
+    flex-direction: column;
+    align-items: left;
+    gap: 5px;
+    padding: 20px;
+    margin: 0;
+}
+
+.popup ul[class='likelist'] li {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    align-items: center;
+}
+
+.popup h1 {
+    margin: 0;
+}
+
+#post .postcharlimit {
+    margin: 0;
+    margin-top: -3px;
+    text-align: left;
+}
+
+#feed .postcharlimit {
+    margin: 0;
+    font-size: 12px;
+    margin-top: -3px;
+    text-align: left;
+}
+
+#feed .replyerrorplaceholder {
+    margin-top: 5px;
+    margin-bottom: 8px;
+}
+
+#feed .replyerrorplaceholder p {
+    font-size: 12px;
+    text-align: center;
+}
+
+/*/ I feel like I'm using the flex container too much, like my thought process is "Oh something's mis-aligned? Throw a flex container at it. Problem solved."/*/
+
+#imagebar, #feed .replyimagebar {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+#feed .replyimagebar {
+    margin-bottom: 5px;
+}
+
+.clawattachment {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+}
+
+#clearattachment, #feed .clearreplyattachment {
+    width: 32px;
+    height: 32px;
+    display: none;
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+}
+
+/*/ Account Key Manager CSS /*/
+
+#mainkeys, #sys_keys, #readonlykeys, #otherkeys {
+    display: flex;
+    flex-direction: column;
+    list-style-type: none;
+    padding: 0;
+    border: 1px solid white;
+}
+
+.keylistitem {
+    padding: 0;
+    display: flex;
+    flex-direction: row;
+    list-style-type: none;
+}
+
+.keylistname, .keylistvalue, .keylistactions {
+    padding: 3px;
+    border: 1px solid white;
+}
+
+.keylistname {
+    text-align: left;
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+}
+
+.keylistvalue {
+    flex: 3;
+    display: flex;
+    align-items: center;
+}
+
+.keylistvalue input:disabled {
+    color: black;
+    opacity: 1;
+    background: rgb(80, 80, 80)
+}
+
+.keylistvalue textarea {
+    font-size: 12px;
+}
+
+.keylistname .keyactionbar {
+    display: flex;
+    flex-direction: row;
+    gap: 2px;
+    margin-top: 2px;
+}
+
+.keyactionbar button {
+    padding: 0;
+    font-size: 10px;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.keyactionbar button img {
+    margin: 0;
+    padding: 0;
+}
+
+.keyactionbar button[class='keynamecopy'], .keyactionbar button[class='keyvaluecopy'] {
+    flex: 2;
+}
+
+.keyactionbar button[class='keysave'], .keyactionbar button[class='keydelete'], .keyactionbar button[class='keyview'] {
+    flex: 1;
+}
+
+#createkeybar {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+}
+
+#createkeybar input {
+    flex: 3;
+}
+
+#createkeybar button {
+    flex: 1;
+}
+
+#keyfineprint, #keyfineprint a {
+    font-size: 10px;
+}
+
+/*/ Key Manager (Economy) CSS /*/
+
+#createkeypanel {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+#keytypeandprice {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+}
+
+#ecokeytype {
+    flex: 3;
+    display: flex;
+    flex-direction: column;
+}
+
+#ecokeytypes {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+    justify-content: center;
+}
+
+.radiochoices {
+    display: flex;
+    align-items: center;
+}
+
+#ecokeyprice {
+    flex: 2;
+}
+
+#subfrequencysettings {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+}
+
+#subfrequencysettings select, #mainkeys select {
+    width: 100%;
+    border-radius: 5px;
+    border: 1px solid gray;
+}
+
+#mainkeys select {
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+#ecokeyperiod:disabled {
+    color: gray;
+    opacity: 0.7;
+    background: white;
+}
+
+.mykeyentry p, .ownedkeyentry p {
+    text-align: left;
+    margin: 5px;
+    font-size: 16px;
+    overflow: hidden;
+}
+
+.addusertoecokey {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 10px;
+    padding: 8px;
+}
+
+#createdkeyspanel ul, #boughtkeyspanel ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.ecokeyuser {
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    gap: 5px;
+    border-top: 1px solid white;
+}
+
+.mykeyentry .ecokeyuser:last-child {
+    border-bottom: 1px solid white;
+}
+
+.ownedkeyentry .ecokeyuser:last-child {
+    border-bottom: none;
+}
+
+.ecokeyuser p {
+    margin: 0;
+    text-align: left;
+    font-size: 14px;
+}
+
+.ecokeyusersowner summary {
+    justify-self: center;
+}
+
+.ecokeyuserheader img {
+    width: 32px;
+    height: 32px;
+    border: 1px solid gray;
+    border-radius: 5px;
+}
+
+.ecokeyuserheader {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+}
+
+#ownedkeys, #boughtkeys {
+    border: 2px solid white;
+    border-radius: 8px;
+}
+
+.mykeyentry:not(:last-child), .ownedkeyentry:not(:last-child) {
+    border-bottom: 2px solid white;
+}
+
+.editpriceandhook {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.editpriceandhook label {
+    font-size: 16px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 5px;
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+.ecokeypriceupdate {
+    flex: 0.5;
+    width: 50%;
+}
+
+.ecokeydetails {
+    padding: 5px;
+}
+
+.ecokeycontrolpanel {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+    margin: 5px;
+    margin-top: 10px;
+    margin-bottom: 0;
+}
+
+.ecokeycontrolpanel button {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.ecokeyownerlabel {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+}
+
+.ecokeyownerlabel img {
+    border: 1px solid gray;
+    border-radius: 3px;
+}
+
+.editecokeyname {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    margin-left: 5px;
+    margin-right: 5px;
+    font-size: 16px;
+}
+
+.ecokeysave, .ecokeycopy {
+    padding: 0;
+    max-width: 32px;
+    max-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ecokeywebhookdisplay {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    text-align: left;
+    font-size: 16px;
+    margin-left: 5px;
+    align-items: center;
+}
+
+.ecokeywebhookurl {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.ecokeystatus p, .ecokeyadduserstatus p {
+    text-align: center;
+    font-size: 12px;
+}
+
+.refundcheckbox {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+#ecokeylookupplaceholder {
+    border-radius: 8px;
+    padding: 10px;
+}
+
+#ecokeylookupplaceholder button {
+    margin-top: 10px;
+}
+
+#ecokeylookupinfo p {
+    text-align: left;
+    margin: 2px;
+    font-size: 14px;
+}
