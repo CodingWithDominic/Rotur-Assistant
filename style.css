@@ -293,7 +293,7 @@ summary {
     margin-top: 5px;
     margin-bottom: 5px;
 }
-#transactionpanel, #statspanel, #dangerzone, #followingpanel, #followerspanel, #economicstats, #userclawposts {
+#transactionpanel, #statspanel, #dangerzone, #followingpanel, #followerspanel, #economicstats, #userclawposts, .followingpanel {
     font-size: 24px;
 }
 
@@ -469,6 +469,9 @@ hr[class='dotted_separator'] {
 #dangerzone label {
     font-size: 12px;
 }
+#averageprofit {
+    font-size: 16px;
+}
 /*/ Account list CSS /*/
 #account_list {
     border: 2px solid white;
@@ -485,6 +488,7 @@ hr[class='dotted_separator'] {
     align-items: center;
     gap: 12px;
     padding: 10px 14px;
+    padding-right: 10px;
     border-bottom: 1px solid white;
     cursor: pointer;
     color: white;
@@ -495,7 +499,7 @@ hr[class='dotted_separator'] {
 .acclistentry:hover {
     background: rgba(255, 255, 255, 0.1);
 }
-.acclistentry button, .ecokeyuserheader button {
+.ecokeyuserheader button {
     width: 30px;
     height: 30px;
     margin-left: auto;
@@ -504,6 +508,29 @@ hr[class='dotted_separator'] {
     justify-content: center;
     cursor: pointer;
 }
+.accountpanel {
+    margin-left: auto;
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    align-items: center;
+}
+
+.accountpanel button {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+    cursor: pointer;
+}
+
+.accountpanel button img {
+    margin: 0;
+    padding: 0;
+}
+
 .acclistimage {
     width: 40px;
     height: 40px;
@@ -613,11 +640,22 @@ hr[class='beforeprofile'] {
     justify-self: center;
 }
 
+.userinfo3 ul {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.userinfo3 ul:not([id='clawpostslist']) li[class='listuser']:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
 .userbanner {
     width: 360px;
     height: 120px;
     background: #5865F2;
     border-bottom: 2px solid white;
+    overflow: hidden;
+    position: relative;
 }
 
 .useravatar {
@@ -629,9 +667,11 @@ hr[class='beforeprofile'] {
     background: #0f0052;
     border: 2px solid white;
     border-radius: 8px;
+    overflow: hidden;
+    position: relative;
 }
 
-.userinfo {
+.userinfo, .userinfoedit {
     display: flex;
     flex-direction: column;
     padding: 15px;
@@ -684,20 +724,21 @@ hr[class='beforeprofile'] {
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 0;
 }
 
-.userinfo p {
+.userinfo p, .userinfoedit p {
     margin-top: 10px;
     margin-bottom: 0px;
     text-align: left;
 }
 
-.userinfo2 p {
+.userinfo2 p, .userinfoedit2 p {
     margin: 0;
     margin-top: 3px;
 }
 
-.userinfo2 hr {
+.userinfo2 hr, .userinfoedit2 hr {
     margin: 0;
     margin-top: 8px;
     margin-bottom: 8px;
@@ -735,7 +776,7 @@ h3[id='pronouns'] {
     align-items: center;
 }
 
-.userinfo2 {
+.userinfo2, .userinfoedit2 {
     display: flex;
     flex-direction: column;
     margin: 0;
@@ -806,12 +847,14 @@ ul[class='followuserlist'] {
     display: flex;
     flex-direction: column;
     justify-content: left;
-    gap: 10px;
     margin-left: 0;
-    padding-left: 15px;
+    padding-left: 0;
 }
 
 ul[class='followuserlist'] li a {
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-left: 15px;
     display: flex;
     flex-direction: row;
     gap: 10px;
@@ -833,6 +876,15 @@ ul[class='followuserlist'] li a img{
 #economicplaceholder p {
     margin-left: 5px;
     margin-right: 5px;
+}
+
+.blockextraoptions {
+    margin-top: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    text-align: left;
+    padding-left: 15px;
 }
 /*/ Gifts CSS /*/
 
@@ -1535,4 +1587,232 @@ p[class='claim_user'] {
     text-align: left;
     margin: 2px;
     font-size: 14px;
+}
+
+/*/ Profile Editor CSS /*/
+
+#toggleprofileview {
+    position: absolute;
+    right: 42px;
+    top: -27px;
+    max-width: 32px;
+    max-height: 32px;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+#profilereloadedit {
+    position: absolute;
+    right: 5px;
+    top: -27px;
+    max-width: 32px;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+#editusername, #editpronouns {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    align-items: center;
+}
+
+#usernamebox {
+    width: 50%;
+}
+
+.userinfoedit {
+    padding-left: 10px;
+    padding-right: 10px;
+    gap: 5px;
+}
+
+.profilesavebtn {
+    flex: 1;
+    max-width: 32px;
+    max-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.userinfoedit label, .userinfoedit2 label {
+    font-size: 14px;
+}
+
+#editbio {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+}
+
+#editbio label {
+    text-align: left;
+    justify-self: left;
+}
+
+#editbio button {
+    width: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    align-self: center;
+    padding: 0;
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+.userbanneredit {
+    width: 360px;
+    height: 120px;
+}
+
+.useravataredit {
+    width: 64px;
+    height: 64px;
+    overflow: hidden;
+}
+
+#changeavatarbtn {
+    background: transparent;
+    color: transparent;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 64px;
+    height: 64px;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+}
+
+#changeavatarbtn:hover, #changebannerbtn:hover {
+    background: #00000054;
+    color: white;
+}
+
+#changebannerbtn {
+    background: transparent;
+    color: transparent;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 360px;
+    height: 120px;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+}
+
+.profilesavebtn2 {
+    flex: 1;
+    max-width: 24px;
+    max-height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.editwidgets {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: left;
+    align-items: left;
+    gap: 5px;
+}
+
+.systemsedit, .privateacc, .editdisplayname, .editemail, .editphone {
+    padding-left: 5px;
+    padding-right: 5px;
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    align-items: center;
+}
+
+#phonebox, #displaynamebox {
+    width: 50%;
+}
+
+#emailbox {
+    width: 75%;
+}
+
+p[class='profilefineprint'] {
+    margin: 0;
+    padding: 0;
+    margin-left: 5px;
+    margin-right: 5px;
+    font-size: 10px;
+    text-align: left;
+}
+
+.systemsedit .systemoptions {
+    width: 50%;
+    border-radius: 5px;
+    border: 1px solid gray;
+    padding: 4px;
+    padding-left: 0;
+}
+
+.profileeditremoveuser {
+    max-width: 32px;
+    max-height: 32px;
+    margin-left: auto;
+    margin-right: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.saveallbtncontainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+#profilesaveall {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0;
+    padding: 4px;
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+.badgelabel {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+}
+
+.profilerequestactions {
+    margin-left: auto;
+    margin-right: 10px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+}
+
+.profilerequestactions button {
+    max-width: 32px;
+    max-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
 }

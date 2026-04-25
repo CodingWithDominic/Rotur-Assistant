@@ -1,3 +1,5 @@
+const parser = new DOMParser();
+
 // Functions used in multiple places
 
 export function sanitize(input) {
@@ -11,8 +13,14 @@ export function formatDate(input) {
     return finaldate;
 }
 
+export function parseHTML(string) {
+    const prototype = parser.parseFromString(string, 'text/html')
+    const final = prototype.body.children
+    return final;
+} // To satisfy Mozilla's security requirements (it didn't like variables inside innerHTML arguments)
+
 export async function reloadHeader() {
-    document.getElementById('header-placeholder').innerHTML = `
+    document.getElementById('header-placeholder').replaceChildren(...parseHTML(`
     <div class="header">
         <a href="/index.html" class="headerbtns">Home</a>
         <a href="/pages/wallet.html" class="headerbtns">Wallet</a>
@@ -23,7 +31,7 @@ export async function reloadHeader() {
             <h1>Accounts</h1>
         </div>
     </div>
-    `;
+    `))
 
     const activeacc = await new Promise(resolve =>
             chrome.storage.local.get('activeacc', data => resolve(data.activeacc || []))
@@ -35,7 +43,6 @@ export async function reloadHeader() {
 
 document.addEventListener('click', function(e) {
     if (e.target.className == 'appgridbtn') {
-        console.log('rogue event listener found')
         window.location.href = `/pages/${e.target.id}.html`
     }
 })
