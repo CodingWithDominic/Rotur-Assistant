@@ -1,16 +1,23 @@
 :root {
     color: white;
     font-family: "Golos Text", sans-serif;
+    --bg-color: #0f0052;
+    --scrollbar-bar: #004db1;
+    --scrollbar-bg: #00002b;
+    --headerandfooter: #0012b4;
+    --button: #4f46e5;
+    --buttonhover: #4338ca;
+    --popupbg: #03009C;
 }
 html {
-    scrollbar-color: #004db1 #00002b;
+    scrollbar-color: var(--scrollbar-bar) var(--scrollbar-bg);
 }
 body {
     width: 400px;
     height: 512px;
     min-height: 100vh;
     margin: 0;
-    background-color: #0f0052;
+    background-color: var(--bg-color);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
     font-family: "Golos Text";
     font-style: normal;
@@ -18,26 +25,99 @@ body {
     display: flex;
     flex-direction: column;
 }
+
+/*/ Header and Footer /*/
+
 .header {
     display: flex;
     flex-direction: row;
     width: 400px;
 }
 .headerbtns {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
-  background: #0012b4;
-  color: white;
-  height: 40px;
-  flex: 1;
-  text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    background: var(--headerandfooter);
+    color: white;
+    height: 40px;
+    flex: 1;
+    text-align: center;
+    border: none;
+    font-family: "Golos Text", sans-serif;
+    font-size: 12px;
+    padding: 0;
+    cursor: pointer;
 }
 .headerbtns:hover {
     background: rgba(255, 255, 255, 0.219)
 }
+
+.headerflyout {
+    position: absolute;
+    width: 120px;
+    height: auto;
+    top: 40px;
+    background: var(--scrollbar-bar);
+    justify-content: center;
+    z-index: 999;
+}
+
+.headerflyout ul {
+    padding-left: 0;
+    list-style-type: none;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+}
+
+.headerflyout ul li {
+    text-align: center;
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+.headerflyout ul li:hover {
+    background: rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+}
+
+.headerflyout ul li a {
+    color: white;
+    text-decoration: none;
+}
+
+#utilityflyout {
+    left: 60px;
+}
+
+#socialflyout {
+    left: 140px;
+}
+
+#otherflyout {
+    left: 220px;
+}
+
+#accountflyout {
+    right: 0px;
+}
+
+#accountandarrow {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+}
+
+#accpanelflyout {
+    flex: 1;
+}
+
 #accountarea {
+    flex: 9;
     display: flex;
     flex-direction: column;
     cursor: pointer;
@@ -57,7 +137,7 @@ body {
 }
 .footer {
     margin-top: auto;
-    background: #0012b4;
+    background: var(--headerandfooter);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -79,6 +159,9 @@ body {
     flex-direction: row;
     gap: 25px;
 }
+
+/*/ Container /*/
+
 .container {
     padding: 16px;
     text-align: center;
@@ -131,7 +214,7 @@ body {
 }
 
 .container button {
-    background: #4f46e5;
+    background: var(--button);
     color: white;
     border: none;
     padding: 8px 16px;
@@ -156,6 +239,10 @@ textarea {
 button img {
     pointer-events: none;
 }
+p img[src^='https://avatars.rotur.dev/'] {
+    border-radius: 4px;
+    border: 1px solid gray;
+}
 details {
     font-size: 20px;
     margin-top: 5px;
@@ -165,8 +252,8 @@ summary {
     cursor: pointer;
     margin-bottom: 5px;
 }
-.container button:hover {
-    background: #4338ca;
+.container button:hover, .popup button:hover {
+    background: var(--buttonhover);
 }
 .container button:disabled {
     opacity: 0.75;
@@ -204,19 +291,18 @@ summary {
     flex: 1 1 100px;
     max-width: 100px;
     height: 100px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.appgrid ul li img {
+    pointer-events: none;
 }
 .appgrid ul li:hover {
     background: rgba(255, 255, 255, 0.1);
     cursor: pointer;
 }
 
-.appgrid ul li a {
-    color: white;
-    text-decoration: none;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
 /*/ Popup CSS /*/
 .overlay {
   position: fixed;
@@ -228,7 +314,7 @@ summary {
   z-index: 999; /* sits on top of everything */
 }
 .popup {
-  background: rgb(3, 0, 156);
+  background: var(--popupbg);
   padding: 12px;
   border-radius: 12px;
   width: 300px;
@@ -237,7 +323,7 @@ summary {
   position: relative;
 }
 .popup button {
-    background: #4f46e5;
+    background: var(--button);
     color: white;
     border: none;
     padding: 8px 16px;
@@ -293,7 +379,7 @@ summary {
     margin-top: 5px;
     margin-bottom: 5px;
 }
-#transactionpanel, #statspanel, #dangerzone, #followingpanel, #followerspanel, #economicstats, #userclawposts, .followingpanel {
+#transactionpanel, #statspanel, #dangerzone, #followingpanel, #followerspanel, #economicstats, #userclawposts, #useritems, .followingpanel {
     font-size: 24px;
 }
 
@@ -499,15 +585,7 @@ hr[class='dotted_separator'] {
 .acclistentry:hover {
     background: rgba(255, 255, 255, 0.1);
 }
-.ecokeyuserheader button {
-    width: 30px;
-    height: 30px;
-    margin-left: auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-}
+
 .accountpanel {
     margin-left: auto;
     display: flex;
@@ -548,7 +626,7 @@ input[type="radio"] {
     align-items: center;
     justify-content: center;
     text-decoration: none;
-    background: #4f46e5;
+    background: var(--button);
     color: white;
     height: 30px;
     flex: 1;
@@ -558,7 +636,7 @@ input[type="radio"] {
     border-radius: 5px;
 }
 .addaccbtn:hover {
-    background: #4338ca;
+    background: var(--buttonhover);
 }
 #switchaccbtn {
     margin-top: 10px;
@@ -588,7 +666,7 @@ input[type="radio"] {
 }
 /*/ Lookup CSS /*/
 
-#usersearchbar, #giftsearch, #postsearchbar, #keylookup {
+#usersearchbar, #giftsearch, #postsearchbar, #keylookup, #itemsearch {
     display: flex;
     flex-direction: row;
     gap: 10px;
@@ -596,7 +674,7 @@ input[type="radio"] {
     margin-bottom: 8px;
 }
 
-#usersearchbar input, #giftsearch input, #postsearchbar input, #keylookup input {
+#usersearchbar input, #giftsearch input, #postsearchbar input, #keylookup input, #itemsearch input {
     flex: 8;
     box-sizing: border-box;
     border-radius: 5px;
@@ -604,7 +682,7 @@ input[type="radio"] {
     padding-left: 5px;
 }
 
-#usersearchbar button, #giftsearch button, #postsearchbar button, #keylookup button {
+#usersearchbar button, #giftsearch button, #postsearchbar button, #keylookup button, #itemsearch button {
     flex: 1;
 }
 
@@ -640,7 +718,7 @@ hr[class='beforeprofile'] {
     justify-self: center;
 }
 
-.userinfo3 ul {
+.userinfo3 ul:not([class*='itemmetadata']) {
     margin-top: 10px;
     margin-bottom: 10px;
 }
@@ -664,7 +742,7 @@ hr[class='beforeprofile'] {
     margin-top: -36px;
     justify-self: left;
     margin-left: 12px;
-    background: #0f0052;
+    background: var(--bg-color);
     border: 2px solid white;
     border-radius: 8px;
     overflow: hidden;
@@ -693,6 +771,7 @@ hr[class='beforeprofile'] {
     display: flex;
     flex-direction: column;
     justify-content: right;
+    pointer-events: none;
 }
 
 .socialactionbarbuttons {
@@ -701,6 +780,7 @@ hr[class='beforeprofile'] {
     flex-direction: row;
     justify-content: right;
     gap: 3px;
+    pointer-events: all;
 }
 
 #lookupplaceholder p[class='socialstatus'] {
@@ -1434,6 +1514,16 @@ p[class='claim_user'] {
     border-top: 1px solid white;
 }
 
+.ecokeyuserheader button {
+    width: 30px;
+    height: 30px;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
 .mykeyentry .ecokeyuser:last-child {
     border-bottom: 1px solid white;
 }
@@ -1815,4 +1905,427 @@ p[class='profilefineprint'] {
     align-items: center;
     justify-content: center;
     cursor: pointer;
+}
+
+/*/ Rmail CSS /*/
+
+#rmailheader {
+    display: flex;
+    flex-direction: row;
+    position: relative;
+}
+
+#rmailheader button {
+    border-radius: 0;
+    background: transparent;
+    font-size: 18px;
+}
+
+#rmailsenttab ul, #rmailreceivedtab ul {
+    list-style-type: none;
+    padding-left: 0;
+    border: 2px solid white;
+    border-radius: 5px;
+    align-items: center;
+}
+
+#sentrmailslist li, #receivedrmailslist li {
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid white;
+    padding: 8px;
+}
+
+#sentrmailslist li:last-child, #receivedrmailslist li:last-child {
+    border-bottom: none;
+}
+
+#sentrmailslist li:hover, #receivedrmailslist li:hover {
+    background: rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+}
+
+.rmailauthorheader {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+    align-items: center;
+    pointer-events: none;
+}
+
+.rmailpreviewbody {
+    margin-top: 5px;
+    display: flex;
+    flex-direction: row;
+    pointer-events: none;
+}
+
+.rmailtorecipient {
+    margin-left: auto;
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    align-items: center;
+    pointer-events: none;
+}
+
+.rmailauthorheader img, .viewrmailrecipientinfo img, #rmail_author img {
+    border: 1px solid gray;
+    border-radius: 4px;
+}
+
+.rmailpreviewtimestamp {
+    margin: 0;
+    margin-left: auto;
+    pointer-events: none;
+}
+
+#rmailcontainerheader {
+    display: flex;
+}
+
+#rmailcontainerheader button {
+    width: 25%;
+}
+
+#rmail_author {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+    align-items: center;
+    margin-top: 8px;
+    margin-bottom: 5px;
+}
+
+#viewrmailtitle {
+    display: flex;
+}
+
+
+#viewrmailbody {
+    display: flex;
+    text-align: left;
+}
+
+
+#viewrmailbody p {
+    text-align: left;
+}
+
+.toandtimestamp {
+    margin-left: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.viewrmailrecipientinfo {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    align-items: center;
+    justify-content: right;
+}
+
+#compose_rmail {
+    position: absolute;
+    width: 25%;
+    padding-left: 0;
+    padding-right: 0;
+    right: 10px;
+    top: 10px;
+}
+
+#rmailcompositionbox {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    text-align: left;
+}
+
+.compositiontitle {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    align-items: center;
+}
+
+.rmailcompbodylabel {
+    text-align: left;
+}
+
+#rmail_comp_body {
+    height: 350px;
+}
+
+#rmailcompositionbox button {
+    width: 25%;
+    margin-left: auto;
+}
+
+#compose_rmail {
+    position: absolute;
+    width: 25%;
+    padding-left: 0;
+    padding-right: 0;
+    right: 10px;
+    top: 10px;
+}
+
+#rmail_goback2 {
+    width: 20%;
+    position: absolute;
+    top: 15px;
+    left: 10px;
+}
+
+.rmailpreview .rmailpreviewtimestamp {
+    margin-top: -15px;
+}
+
+.rmailactionbuttons {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    pointer-events: none;
+}
+
+#rmailactionbarbuttons {
+    margin-left: auto;
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+}
+
+.rmailactionbuttons button, #rmailactionbarbuttons button {
+    max-width: 32px;
+    max-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: all;
+}
+
+.rmailreply {
+    transform: scaleY(-1)
+}
+
+.rmailreply img, .rmaildelete img {
+    border: none;
+}
+
+/*/ Item Manager CSS /*/
+
+#itemmanagerheader {
+    display: flex;
+    flex-direction: row;
+}
+
+#itemmanagerheader button {
+    border-radius: 0;
+    background: transparent;
+    font-size: 18px;
+}
+
+ul[class='roturuseritemlist'] {
+    list-style-type: none;
+    padding-left: 0;
+    border: 2px solid white;
+    border-radius: 5px;
+}
+
+.roturitem {
+    border-bottom: 2px solid white;
+    padding: 5px;
+    position: relative;
+}
+
+.roturitem:last-child {
+    border-bottom: none;
+}
+
+.roturitem p {
+    margin: 0;
+    padding: 0;
+}
+
+.roturitem ul:not([class='transferhistory']) {
+    display: flex;
+    flex-direction: row;
+    list-style-type: none;
+    padding-left: 0;
+    margin-left: -5px;
+    margin-right: -5px;
+}
+
+.itemmetadatar1 {
+    margin-top: 5px;
+    margin-bottom: 0;
+}
+
+.itemmetadatar2 {
+    margin-top: 0;
+}
+
+.roturitem ul:not([class='transferhistory']) li {
+    flex: 1;
+    border-top: 1px solid white;
+    border-right: 1px solid white;
+    padding: 3px;
+}
+.itemmetadatar2 li {
+    border-bottom: 1px solid white;
+}
+
+.roturitem ul:not([class='transferhistory']) li:last-child {
+    border-right: none;
+}
+
+.roturitemauthor {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    align-items: center;
+}
+
+.roturitem p[class='roturitemauthor'] {
+    text-align: center;
+    justify-self: center;
+    margin-bottom: 5px;
+    margin-top: 15px;
+}
+
+.roturitem label {
+    margin-top: 5px;
+    margin-bottom: 5px;
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    align-items: center;
+}
+
+.itemtransferownership {
+    flex: 1
+}
+
+.beginitemtransfer {
+    flex: 0.25
+}
+
+.buyitem {
+    margin-top: 5px;
+}
+
+.itemtransferhistory ul {
+    list-style-type: none;
+    padding-left: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.transferhistory li {
+    border-top: 1px solid white;
+}
+
+.transferhistory li p {
+    font-size: 14px;
+    margin-top: 3px;
+    margin-bottom: 3px;
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    align-items: center;
+    justify-content: center;
+}
+
+.itemdeletebtn {
+    max-width: 32px;
+    max-height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    right: 5px;
+    top: 5px;
+}
+
+#create_item {
+    flex-direction: column;
+    gap: 5px;
+    margin-top: 10px;
+}
+
+#itempriceandsale {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+    align-items: center;
+    justify-content: space-between;
+}
+
+#itempriceandsale label {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+}
+
+#itempriceandsale .putupforsalebox {
+    flex: 1.3;
+}
+
+.createitemnamelabel {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 5px;
+}
+
+#useritems .roturuseritemlist {
+    border: none;
+}
+
+#useritems .roturuseritemlist li:first-child {
+    border-top: 1px solid white;
+}
+
+#themepicker {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+#themepicker label {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    align-items: center;
+}
+
+.themepreviews {
+    width: 32px;
+    height: 32px;
+    border: 2px solid gray;
+    border-radius: 4px;
+}
+
+#oceanbluetheme {
+    background-color: #0f0052;
+}
+
+#forestgreentheme {
+    background-color: #0a3100;
+}
+
+#blurpletheme {
+    background-color: #200044;
+}
+
+#discorddarktheme {
+    background-color: #323339;
+}
+
+#midnighttheme {
+    background-color: #000000;
 }
