@@ -44,6 +44,7 @@ export async function reloadHeader() {
         </div>
         <div id='socialflyout' class='headerflyout' style="display: none;">
             <ul>
+                <li data-ref='lookup'>Lookup</li>
                 <li data-ref='claw'>Claw</li>
                 <li data-ref='rmail'>Rmail</li>
             </ul>
@@ -51,6 +52,10 @@ export async function reloadHeader() {
         <div id='otherflyout' class='headerflyout' style="display: none;">
             <ul>
                 <li data-ref='wiki'>Wiki</li>
+                <li data-ref='themes'>Themes</li>
+                <li data-ref='services'>Rotur Services</li>
+                <li data-ref='about'>About</li>
+                <li data-ref='credits'>Credits</li>
                 <li data-ref='donate'>Donate</li>
             </ul>
         </div>
@@ -75,3 +80,20 @@ document.addEventListener('click', function(e) {
         window.location.href = `/pages/${e.target.id}.html`
     }
 })
+
+const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a', 'Enter'];
+let cursor = 0;
+
+document.addEventListener('keydown', (e) => {
+
+    if (e.key === konamiCode[cursor]) {
+        cursor++;
+
+        if (cursor === konamiCode.length) {
+            window.location.href = "pages/vip_lounge.html"
+            cursor = 0;
+        }
+    } else {
+        cursor = 0;
+    }
+});

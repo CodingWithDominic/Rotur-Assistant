@@ -18,7 +18,6 @@ body {
     min-height: 100vh;
     margin: 0;
     background-color: var(--bg-color);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
     font-family: "Golos Text";
     font-style: normal;
     font-weight: 400;
@@ -59,8 +58,11 @@ body {
     height: auto;
     top: 40px;
     background: var(--scrollbar-bar);
+    box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.3);
     justify-content: center;
-    z-index: 999;
+    z-index: 500;
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
 }
 
 .headerflyout ul {
@@ -82,6 +84,10 @@ body {
 .headerflyout ul li:hover {
     background: rgba(255, 255, 255, 0.1);
     cursor: pointer;
+}
+
+a {
+    color: white;
 }
 
 .headerflyout ul li a {
@@ -187,6 +193,12 @@ body {
     color: white;
     font-weight: 400;
 }
+.wiki-container h2 {
+    font-size: 22px;
+}
+.wiki-container h3 {
+    font-size: 20px;
+}
 .container h4 {
     font-size: 14px;
     margin: 0 0 8px;
@@ -208,7 +220,7 @@ body {
     font-weight: 400;
 }
 
-.container h2 a {
+.container h2 a:not([class='underline']) {
     color: white;
     text-decoration: none;
 }
@@ -252,7 +264,7 @@ summary {
     cursor: pointer;
     margin-bottom: 5px;
 }
-.container button:hover, .popup button:hover {
+.container button:hover:not([class='tab']), .popup button:hover {
     background: var(--buttonhover);
 }
 .container button:disabled {
@@ -305,22 +317,23 @@ summary {
 
 /*/ Popup CSS /*/
 .overlay {
-  position: fixed;
-  inset: 0; /* shorthand for top/right/bottom/left: 0 */
-  background: rgba(0, 0, 0, 0.5); /* semi-transparent black */
-  display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 999; /* sits on top of everything */
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
 }
 .popup {
-  background: var(--popupbg);
-  padding: 12px;
-  border-radius: 12px;
-  width: 300px;
-  text-align: center;
-  color: white;
-  position: relative;
+    background: var(--popupbg);
+    padding: 12px;
+    border-radius: 12px;
+    box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.3);
+    width: 300px;
+    text-align: center;
+    color: white;
+    position: relative;
 }
 .popup button {
     background: var(--button);
@@ -467,11 +480,12 @@ p[class='partialsuccess'] {
     margin-top: 0px;
     margin-bottom: 0px;
 }
-
-#fineprint {
+#claimfineprint p, #claimfineprint p a {
     font-size: 10px;
+    margin-top: 3px;
+    margin-bottom: 3px;
 }
-#fineprint img {
+#claimfineprint img {
     max-width: 16px;
     max-height: 16px;
 }
@@ -540,14 +554,17 @@ hr[class='dotted_separator'] {
 .specialtransfercase {
     font-size: 8px;
 }
+#dangertab {
+    background: #420000;
+}
 #dangerzone {
     background: #420000;
     margin-left: -15px;
     margin-right: -15px;
-    margin-bottom: -15px;
-    padding-left: 15px;
-    padding-right: 15px;
-    padding-bottom: 15px;
+    margin-bottom: 0;
+    margin-top: -5px;
+    padding: 15px;
+    padding-bottom: auto;
 }
 #dangerzone button {
     background: #ff6161;
@@ -612,16 +629,17 @@ hr[class='dotted_separator'] {
 .acclistimage {
     width: 40px;
     height: 40px;
-    border-radius: 8px;
+    border-radius: 6px;
     background: gray;
     object-fit: cover;
+    border: 2px solid gray;
 }
 input[type="radio"] {
     width: 18px;
     height: 18px;
     cursor: pointer;
 }
-.addaccbtn {
+.addaccbtn, #wikibackbtn {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -635,16 +653,15 @@ input[type="radio"] {
     margin: 10px;
     border-radius: 5px;
 }
-.addaccbtn:hover {
+.addaccbtn:hover, #wikibackbtn:hover {
     background: var(--buttonhover);
 }
-#switchaccbtn {
-    margin-top: 10px;
-}
+
 #switchaccbtn:disabled {
     cursor: not-allowed;
 }
 #disabledcontext {
+    display: none;
     color: white;
     margin-top: 8px;
 }
@@ -663,6 +680,20 @@ input[type="radio"] {
     display: flex;
     flex-direction: row;
     gap: 5px;
+}
+
+#switchaccountpanel {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    margin-top: 10px;
+}
+#switchaccbtn {
+    flex: 9;
+}
+#switchaccinfo {
+    flex: 1;
+    padding: 0;
 }
 /*/ Lookup CSS /*/
 
@@ -845,7 +876,7 @@ h3[id='pronouns'] {
     align-items: center;
     flex-wrap: wrap;
 }
-#pronounsandbadges ul[id='badges'] {
+#pronounsandbadges ul[id='badges'], ul[class='badges'] {
     list-style-type: none;
     display: flex;
     margin: 0;
@@ -966,6 +997,11 @@ ul[class='followuserlist'] li a img{
     text-align: left;
     padding-left: 15px;
 }
+
+#accrefreshtoken {
+    margin: 5px;
+}
+
 /*/ Gifts CSS /*/
 
 #giftsplaceholder ul {
@@ -1198,7 +1234,7 @@ p[class='claim_user'] {
     border-radius: 5px;
 }
 
-.postauthor button[class='deletebtn'] {
+.postauthor button[class='deletebtn'], .postauthor button[class='repostbtn'] {
     position: absolute;
     width: 32px;
     height: 32px;
@@ -1267,7 +1303,7 @@ p[class='claim_user'] {
     display: flex;
     flex-direction: column;
     align-items: left;
-    gap: 5px;
+    gap: 6px;
     padding: 20px;
     margin: 0;
 }
@@ -1277,6 +1313,15 @@ p[class='claim_user'] {
     flex-direction: row;
     gap: 8px;
     align-items: center;
+}
+
+.popup ul[class='likelist'] li img {
+    border: 1px solid gray;
+    border-radius: 4px;
+}
+
+.popup ul[class='likelist'] li p {
+    margin: 0;
 }
 
 .popup h1 {
@@ -1864,7 +1909,7 @@ p[class='profilefineprint'] {
     cursor: pointer;
 }
 
-.saveallbtncontainer {
+.saveallbtncontainer, #dangerousoptionscontainer {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -2301,6 +2346,7 @@ ul[class='roturuseritemlist'] {
     flex-direction: row;
     gap: 4px;
     align-items: center;
+    font-size: 16px;
 }
 
 .themepreviews {
@@ -2318,6 +2364,10 @@ ul[class='roturuseritemlist'] {
     background-color: #0a3100;
 }
 
+#orangetheme {
+    background-color: #6d4100;
+}
+
 #blurpletheme {
     background-color: #200044;
 }
@@ -2328,4 +2378,100 @@ ul[class='roturuseritemlist'] {
 
 #midnighttheme {
     background-color: #000000;
+}
+
+/*/ Wiki CSS /*/
+
+.wiki-container {
+    position: relative;
+}
+
+#subscribersplaceholder ul, .creditslist {
+    padding-left: 0;
+    list-style-type: none;
+}
+
+#subscribersplaceholder ul li, .creditslist li {
+    margin: 5px;
+}
+
+#subscribersplaceholder ul li a, .creditslist li a {
+    font-size: 16px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    text-decoration: none;
+}
+
+#subscribersplaceholder ul li a img, .creditslist li a img {
+    border: 1px solid gray;
+    border-radius: 4px;
+}
+
+.wiki-container p[class='fineprint'], .wiki-container p[class='fineprint'] a {
+    font-size: 10px;
+}
+
+#wikibackbtn {
+    width: 32px;
+    position: absolute;
+    top: -10px;
+    left: -10px;
+}
+
+.systembadgelist {
+    padding-left: 0;
+}
+
+.systembadgelist li {
+    margin: 2px;
+    display: flex;
+    flex-direction: row;
+    gap: 2px;
+    align-items: center;
+}
+
+h2[class^='badgeintitle'] {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+h2[class='badgeintitle2'] {
+    gap: 5px;
+}
+
+.creditslist {
+    padding-left: 10px;
+}
+
+.systemswitch {
+    flex: 0.6;
+    padding-left: 0;
+    padding-right: 0;
+    white-space: nowrap;
+}
+
+/*/ Tab Utils /*/
+
+.tabheader {
+    display: flex;
+    flex-direction: row;
+    position: relative;
+}
+
+.tabheader button {
+    border-radius: 0;
+    background: transparent;
+    font-size: 14px;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.tabheader button:first-child {
+    border-bottom: 2px solid white;
+}
+
+.keystabheader {
+    margin-bottom: 10px;
 }
