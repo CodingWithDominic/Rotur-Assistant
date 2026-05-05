@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="stylesheet" href="../style.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+    </head>
+    <body>
+        <div id="header-placeholder"></div>
+        <script src="../header.js"></script>
+        <div class="container">
+            <h1>Lookup a Rotur User below</h1>
+            <h3>Search by:</h3>
+            <form id="typeofsearch">
+                <label>
+                    <input type="radio" name="searchtype" value="auto" data-placeholdervalue="Username, UUID, or Discord ID" checked>
+                    Auto
+                </label>
+                <label>
+                    <input type="radio" name="searchtype" value="name" data-placeholdervalue="Username">
+                    Username
+                </label>
+                <label>
+                    <input type="radio" name="searchtype" value="id" data-placeholdervalue="Rotur UUID">
+                    Rotur UUID
+                </label>
+                <label>
+                    <input type="radio" name="searchtype" value="discord_id" data-placeholdervalue="Discord ID">
+                    Discord ID
+                </label>
+            </form>
+            <form id="usersearchbar">
+                <input type='search' id='usersearchbarinput' placeholder="Username, UUID, or Discord ID">
+                <button id="usersearch" title="Search User" type="submit"><img src='../images/app_icons/lookup.png' width="16" height="16"></button>
+            </form>
+            <div id="lookuperror"></div>
+            <div id="lookupplaceholder"></div>
+            <script type="module" src="../scripts/lookup.js"></script>
+        </div>
+        <div class="overlay" id="overlay">
+            <div class="popup">
+                <div id="popup-header">
+                    <h1>Private Profile</h1>
+                    <button id="popup-x" class="closebtn">✕</button>
+                </div>
+                <h2>This user's private setting is set to "true". View profile anyways?</h2>
+                <div id="popup-choices">
+                    <button id="cancel" class="closebtn">No</button>
+                    <button id="viewanyway">Yes</button>
+                </div>
+            </div>
+        </div>
+        <div id="footer-placeholder"></div>
+        <script src="../footer.js"></script>
+    </body>
+</html>

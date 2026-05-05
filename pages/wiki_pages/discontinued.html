@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="stylesheet" href="../../style.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+    </head>
+    <body>
+        <div id="header-placeholder"></div>
+        <script src="../../header.js"></script>
+        <div class="container">
+            <div class="wiki-container">
+                <a id="wikibackbtn" href="../wiki.html">&larr;</a>
+                <h1>Discontinued or Removed features</h1>
+                <p>Features that were discontinued or removed from Origin or Rotur.</p>
+                <h2>OASM</h2>
+                <p>This used to be originOS's equivalent of an Assembly-style language. However, as OSL got more and more optimized, to the point where the speed of OSL superceded that of OASM, OASM was phased out, and eventually removed.</p>
+                <h2>Summit</h2>
+                <p>Replaced by phosphorus, though as of now, development of phosphorus seems to be moving slowly.</p>
+                <h2>Aura</h2>
+                <p>Tracked by an account's sys.aura key, this would track how long a user has spent logged into origin. This was removed when Rattus decided to leave origin running for several days, racking up tens of thousands of aura points before Mistium intervened and manually reset it. Mistium then added a cap for it at 5,000, which when exceeded, would automatically reset the aura back to 0. Shortly after, aura was removed altogether.</p>
+                <h2>Rotur Marriage</h2>
+                <p>This was once added because Mistium wanted to "rotur-marry" <a href="../lookup.html?user=iris">iris</a>, a very close friend of hers. Since marrying someone on rotur provided no real benefit between the two users, and people mainly married their alts using it, it was removed. The sys.marriage key can still be found on accounts today that were married prior to removal.</p>
+                <h2>Counting Credits</h2>
+                <p>Back on Discord, users used to be rewarded credits for counting. Per 100 numbers, 5 credits, split based on who contributed the most, were given out to the participants. This was eventually removed to combat credit inflation.</p>
+                <h2>Credit leaderboard</h2>
+                <p>This was removed since Mistium got tired of users actively avoiding spending their credits, in order to maintain their place on the leaderboard. It was replaced by a leaderboard of who earned the most over the past week, but then it was removed altogether. Despite this, people, sometimes including Mistium herself, still flex their wealth every once in a while.</p>
+                <h2>Dead keys</h2>
+                <p>Since sys. keys are not modifiable by users, any sys. keys that were associated with now discontinued features effectively become dead weight. Those keys include:</p>
+                <ul>
+                    <li>sys.aura</li>
+                    <li>sys.credits*</li>
+                    <li>sys.marriage</li>
+                    <li>sys.used_systems</li>
+                    <li>sys.last_inactive</li>
+                    <li>last_login**</li>
+                </ul>
+                <p class="fineprint">*Moved to sys.currency<br>**Moved to sys.last_login. Also, this is also the only non-sys. dead key that is still not modifiable to this day.</p>
+            </div>
+        </div>
+        <div id="footer-placeholder"></div>
+        <script src="../../footer.js"></script>
+    </body>
+</html>

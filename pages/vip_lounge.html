@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="stylesheet" href="../style.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+    </head>
+    <body>
+        <div id="header-placeholder"></div>
+        <script src="../header.js"></script>
+        <div class="container">
+            <h1>Secret Zone</h1>
+            <p>Congrats! You have entered the secret zone. Here's what's to come for Rotur Assistant:</p>
+            <h2>Notification support</h2>
+            <p>While Rotur Assistant was wrapping up development, Mistium added a centralized notifications API to Rotur, mainly as a way to centralize OriginChats's notification system, since OriginChats's old notification system wasn't 100% reliable, due to the decentralization of servers.</p>
+            <h2>User Notes</h2>
+            <p>I may add support for user notes on peoples' profiles. Though to get around requiring a Rotur subscription, Rotur Assistant will use its own notes system, synced through an extension's sync storage. There's a chance this may not happen, since Chrome limits each item of synced storage to 8 KB, with the total limit being 100 KB.</p>
+            <h2>Support for apps.rotur.dev</h2>
+            <p>Basically Rotur Assistant's version of Appsie, since the APIs are exposed. Rotur Assistant will call it "App Manager" though.</p>
+            <h2>Reordering of accounts in the account manager</h2>
+            <p>While I can easily do this by adding up and down buttons, it would be more convenient if I went with a drag-to-reorder system, similar to how YouTube handles its playlists.</p>
+            <h2>Group Management</h2>
+            <p>This depends on how complete the APIs are, but I may add support for managing Rotur Groups. I skipped this feature since I deemed Rotur Groups to have been abandoned when I first tried it out.</p>
+            <h2>OriginChats client</h2>
+            <p>I may add a simple OriginChats client to Rotur Assistant too, though it won't be as feature-packed than what you would see on the official client or Milo's client.</p>
+            <h2>"Contact" button on lookup profiles</h2>
+            <p>A button next to the other social bar buttons that asks how you would like to contact them: Rmail or OriginChats.<br>- Rmail: Goes straight to its compose page with the user prefilled in the recipient space<br>- OriginChats: Goes straight to their respective DM channel, or prompts the creation of one if one doesn't exist yet.</p>
+            <h2>Statuses on Lookup</h2>
+            <p>Alongside Notifications, a centralized status endpoint was added. While Rotur Assistant won't use it to tell everyone you use Rotur Assistant (some people would like to be under-the-radar), Rotur Assistant may add something to lookup where if a user has a status, it will show that status. A way to edit it will also be provided in the profile editor too.</p>
+            <h2>More Themes</h2>
+            <p>I'm always open to the idea of more themes. Just DM me on Discord @dominic_the_gamer or OriginChats @Dominic if you have any themes (or even general ideas) you want to see added to Rotur Assistant.</p>
+            <h2>ICN Renderer</h2>
+            <p>Idk how hard it will be to create an ICN renderer without the help of Scratch's WebGL environment, but it has been done before (example: nulqwy's ICN.rs project). This sounds like a fun challenge I may tackle some time.</p>
+            <h2>Talon support</h2>
+            <p><a href="https://github.com/fries-git/Talon" target="_blank" rel="noopener noreferrer">Talon</a> is an unofficial spinoff of Claw that aims to seperate Claw from being baked into Rotur itself. Rotur Assistant may incorporate this in its claw client by letting you switch between Claw's feed and Talon's feed.</p>
+            <h2>Avatar overlay support</h2>
+            <p>While developing Rotur Assistant, Mistium added discord-style avatar overlays. As of now, support for them is quite limited, and there also is no way to change avatar overlays (unless you have Mistium change your sys.overlay key for you). In the event an endpoint is added to change your overlay, Rotur Assistant will try to adopt it. If it requires a paid tier (which based on what I saw in the source code, could be likely), then Rotur Assistant will either add loose (untested) support for it, or just not add support for it at all.</p>
+        </div>
+        <div id="footer-placeholder"></div>
+        <script src="../footer.js"></script>
+    </body>
+</html>

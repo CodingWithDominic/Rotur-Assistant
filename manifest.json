@@ -3,18 +3,25 @@
     "name": "Rotur Assistant",
     "version": "1.0",
     "description": "Manage and keep up with most of your Rotur things in one place. Anywhere on the web, anytime.",
+    "browser_specific_settings": {
+        "gecko": {
+        "id": "roturassistant@rotur.dev",
+        "strict_min_version": "142.0",
+        "data_collection_permissions": {
+            "required": ["authenticationInfo", "personalCommunications"],
+            "optional": []
+            }
+        }
+    },
     "permissions": [
         "cookies",
         "storage",
-        "activeTab",
-        "scripting"
+        "activeTab"
     ],
-    "host_permissions": [
-        "<all_urls>"
-    ],
+    "host_permissions": ["https://*.mistium.com/*", "https://*.rotur.dev/*", "https://graphite.flufi.uk/*", "https://adthoughtsglobal.github.io/*", "https://runnova.github.io/*", "https://warpdrive.team/*", "https://antiviiris.github.io/originChats/*"],
     "content_scripts": [
     {
-        "matches": ["https://*.mistium.com/*", "https://*.rotur.dev/*", "https://graphite.flufi.uk/*", "https://adthoughtsglobal.github.io/*", "https://runnova.github.io/*", "https://warpdrive.team/*"],
+        "matches": ["https://*.mistium.com/*", "https://*.rotur.dev/*", "https://graphite.flufi.uk/*", "https://adthoughtsglobal.github.io/*", "https://runnova.github.io/*", "https://warpdrive.team/*", "https://antiviiris.github.io/originChats/*"],
         "js": ["scripts/switchacc.js"]
     }
     ],
@@ -25,6 +32,7 @@
         "32": "images/icon32.png",
         "48": "images/icon48.png",
         "64": "images/icon64.png",
+        "96": "images/icon96.png",
         "128": "images/icon128.png"
         }
     },
@@ -33,6 +41,7 @@
         "32": "images/icon32.png",
         "48": "images/icon48.png",
         "64": "images/icon64.png",
+        "96": "images/icon96.png",
         "128": "images/icon128.png"
     }
 }

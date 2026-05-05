@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="../style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="header-placeholder"></div>
+    <script src="../header.js"></script>
+    <div class="container">
+        <h1>Donation Page</h1>
+        <h3>Make a donation to the developer of Rotur Assistant, <a href="lookup.html?user=Dominic">Dominic</a>.</h3>
+        <div id="transferwindow">
+            <div id="transfersubwindow">
+                <input type="number" step=0.01 id="donateamount" placeholder="Amount (RC)">
+                <button id="sendcredits" title="Donate">→</button>
+            </div>
+            <input type="text" id="transfernote" placeholder="Note (Optional)">
+            <div id="transferstatusplaceholder"></div>
+        </div>
+    <p>Rotur assistant is provided free of any form of charge or strings attached. Rotur Assistant allows you to more easily navigate and interact with most parts of the Rotur API. It also allows for easy account management and switching across multiple accounts. Rotur Assistant even tries to take advantage of parts of the Rotur API that are completely unused otherwise, not even used by originOS or any Rotur service (Example: /gifts/mine)</p>
+    </div>
+    <div class="overlay" id="overlay">
+        <div class="popup">
+            <div id="popup-header">
+                <h1>Confirm Donation</h1>
+                <button id="popup-x" class="closebtn">✕</button>
+            </div>
+            <h2>Transferring (credit) credits to: Dominic</h2>
+            <p>Your Balance: (old) -> (new)</p>
+            <p>Dominic's Balance: (old) -> (new)</p>
+            <div id="popup-choices">
+                <button id="cancel" class="closebtn">Cancel</button>
+                <button id="finaldonation">Send</button>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="../scripts/donate.js"></script>
+    <div id="footer-placeholder"></div>
+    <script src="../footer.js"></script>
+</body>
+</html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Rotur Iframe Auth Example</title>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+    <style>
+        #auth-container {
+            width: 400px;
+            height: 600px;
+            border: 1px solid #ccc;
+            margin: auto;
+        }
+        #auth-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .hidden {
+            display: none;
+        }
+        body {
+            width: 400px;
+            height: 600px;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #0f0052;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            font-family: "Golos Text";
+            font-style: normal;
+            font-weight: 400;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            font-family: "Golos Text", sans-serif;
+            display: flex;
+            flex-direction: row;
+            width: 400px;
+            font-weight: 400;
+        }
+
+        .headerbtns {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            background: #0012b4;
+            color: white;
+            height: 40px;
+            flex: 1;
+            text-align: center;
+            border: none;
+            font-family: "Golos Text", sans-serif;
+            font-size: 12px;
+            padding: 0;
+            cursor: pointer;
+        }
+        .headerbtns:hover {
+            background: rgba(255, 255, 255, 0.219)
+        }
+
+        .headerflyout {
+            position: absolute;
+            width: 120px;
+            height: auto;
+            top: 40px;
+            box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.3);
+            background: #004db1;
+            justify-content: center;
+            border-bottom-left-radius: 4px;
+            border-bottom-right-radius: 4px;
+        }
+
+        .headerflyout ul {
+            padding-left: 0;
+            list-style-type: none;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .headerflyout ul li {
+            text-align: center;
+            padding-top: 5px;
+            padding-bottom: 5px;
+            color: white;
+            font-size: 12px;
+        }
+
+        .headerflyout ul li:hover {
+            background: rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+        }
+
+        #utilityflyout {
+            left: 60px;
+        }
+
+        #socialflyout {
+            left: 140px;
+        }
+
+        #otherflyout {
+            left: 220px;
+        }
+        #accountflyout {
+            right: 0px;
+        }
+
+        #accountandarrow {
+            flex: 1;
+            width: 100%;
+            display: flex;
+            flex-direction: row;
+        }
+
+        #accpanelflyout {
+            flex: 1;
+        }
+
+        #accountarea {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+        }
+        #accountarea h1 {
+            font-size: 12px;
+            font-weight: 400;
+            margin: 0;
+        }
+        #accountarea p {
+            font-size: 8px;
+            color: white;
+            margin: 1px;
+        }
+        #footer-placeholder {
+            margin-top: auto;
+        }
+        .footer {
+            font-family: "Golos Text", sans-serif;
+            margin-top: auto;
+            background: #0012b4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            width: 400px;
+            color: white;
+            padding: 10px;
+            padding-top: 0px;
+            box-sizing: border-box;
+            font-weight: 400;
+            font-size: 10px;
+        }
+        .footer a, .footer a:link, .footer a:visited, .footer a:hover {
+            color: white;
+        }
+        #miscfooterlinks {
+            display: flex;
+            flex-direction: row;
+            gap: 25px;
+        }
+        .container {
+            padding: 16px;
+            text-align: center;
+        }
+        #systemselector {
+            padding: 2px;
+            padding-left: 5px;
+        }
+        #systemselector label {
+            color: white;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div id="header-placeholder"></div>
+    <script src="../header.js"></script>
+    <div id="systemselector">
+        <label>
+            System if creating account: <select id="authselectscreen">
+                <option value="Rotur Assistant">Rotur Assistant</option>
+            </select>
+        </label>
+    </div>
+    <script type="module" src="../scripts/auth-systems.js"></script>
+    <div id="auth-container">
+        <iframe id="auth-iframe" src="https://rotur.dev/auth?system=Nex" style="display: none;"></iframe>
+        <div id="loading">Loading authentication...</div>
+        <div id="success" class="hidden">
+            <h3>Authentication Successful!</h3>
+            <p>Token: <span id="token-display"></span></p>
+        </div>
+    </div>
+    <script type="module" src="../scripts/auth.js"></script>
+    <div id="footer-placeholder"></div>
+    <script src="../footer.js"></script>
+</body>
+</html>

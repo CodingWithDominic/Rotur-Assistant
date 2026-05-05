@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="stylesheet" href="../style.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+    </head>
+    <body>
+        <div id="header-placeholder"></div>
+        <script src="../header.js"></script>
+        <div class="container">
+            <h1>Item Manager</h1>
+            <div id="itemmanagerheader">
+                <button class="itemmantab" id="items_mine" style="border-bottom: 2px solid white;" data-tabidx="0">Mine</button>
+                <button class="itemmantab" id="items_selling" data-tabidx="1">Selling</button>
+                <button class="itemmantab" id="items_create" data-tabidx="2">Create</button>
+                <button class="itemmantab" id="items_lookup" data-tabidx="3">Lookup</button>
+            </div>
+            <div id="myitems" class="itemmanpage"></div>
+            <div id="item_marketplace" class="itemmanpage" style="display: none;">
+                <label id="itemsortlabel">
+                    Sort by: 
+                    <select id="itemsortselect">
+                        <option value="newest" selected>Newest to Oldest</option>
+                        <option value="oldest">Oldest to Newest</option>
+                        <option value="low">Price: Lowest to Highest</option>
+                        <option value="high">Price: Highest to Lowest</option>
+                    </select>
+                </label>
+                <div id="itemmarketplaceplaceholder"></div>
+            </div>
+            <form id="create_item" class="itemmanpage" style="display: none;">
+                <label class="createitemnamelabel">
+                    Name: 
+                    <input type="text" id="createitemname" placeholder="Item Name">
+                </label>
+                <label for="createitemdesc" style="text-align: left;">Description:</label>
+                <textarea id="createitemdesc" placeholder="Item Description"></textarea>
+                <div id="itempriceandsale">
+                    <label>
+                        Price:
+                        <input type="number" id="createitemprice" placeholder="Price">
+                    </label>
+                    <label class="putupforsalebox">
+                        <input type="checkbox" id="sellitemimmediately">
+                        Put up for sale upon creation
+                    </label>
+                </div>
+                <label for="itemjsonmetadata" style="text-align: left;">JSON Metadata (Not visible once created):</label>
+                <textarea id="itemjsonmetadata" placeholder="(Optional) Item JSON Metadata"></textarea>
+                <button id="finalcreateitem">Create Item</button>
+            </form>
+            <div id="lookup_item" class="itemmanpage" style="display: none;">
+                <form id="itemsearch">
+                    <input type="search" id="itemsearchbar" placeholder="Item Name">
+                    <button id="itemsearchbtn" type="submit"><img src='../images/app_icons/lookup.png' width="16" height="16"></button>
+                </form>
+                <div id="itemlookupstatusplaceholder"></div>
+                <div id="itemlookupplaceholder"></div>
+            </div>
+        </div>
+        <div class="overlay" id="overlay">
+            <div class="popup"></div>
+        </div>
+        <script type="module" src="../scripts/items.js"></script>
+        <div id="footer-placeholder"></div>
+        <script src="../footer.js"></script>
+    </body>
+</html>

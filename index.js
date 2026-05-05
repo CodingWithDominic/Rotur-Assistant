@@ -3,7 +3,7 @@ const parser = new DOMParser();
 // Functions used in multiple places
 
 export function sanitize(input) {
-    return input.replace('&', '&amp;').replace('/','&sol;').replace('<', '&lt;').replace('>', '&gt;').replace('(', '&lpar;').replace(')', '&rpar;') // Prevents HTML formatting from showing up in unwanted places and also decreases the chance of XSS
+    return input.replace('&', '&amp;').replace('/','&sol;').replace('<', '&lt;').replace('>', '&gt;').replace('(', '&lpar;').replace(')', '&rpar;').replace("=", "&equals;").replace(`'`, `&#39;`).replace(`"`, `&quot;`) // Prevents HTML formatting from showing up in unwanted places and also decreases the chance of XSS (or SQL injection)
 }
 
 export function formatDate(input) {
@@ -26,11 +26,8 @@ export async function reloadHeader() {
         <button class="headerbtns" data-headermenu='utilityflyout'>Utility</button>
         <button class="headerbtns" data-headermenu='socialflyout'>Social</button>
         <button class="headerbtns" data-headermenu='otherflyout'>Other</button>
-        <div id=accountandarrow>
-            <div id=accountarea class=headerbtns>
-                <h1>Accounts</h1>
-            </div>
-            <button id='accpanelflyout' class="headerbtns" data-headermenu='accountflyout'>▼</button>
+        <div id=accountarea class=headerbtns>
+            <h1>Accounts</h1>
         </div>
         <div id='utilityflyout' class='headerflyout' style="display: none;">
             <ul>
@@ -61,7 +58,7 @@ export async function reloadHeader() {
         </div>
         <div id='accountflyout' class='headerflyout' style="display: none;">
             <ul id='accountflyoutlist'>
-            <li>Test</li>
+            <li>Getting Accounts...</li>
             </ul>
         </div>
     </div>
@@ -72,7 +69,33 @@ export async function reloadHeader() {
         ) ?? [];
         const p = document.createElement('p')
         p.textContent = activeacc.name ? `Active: ${activeacc.name}` : 'Not signed in'
+        if (activeacc.name?.length > 14) {
+            p.title = activeacc.name // In case the username is too long to show properly
+        }
         document.getElementById('accountarea').appendChild(p)
+        
+    const list = document.getElementById('accountflyoutlist')
+    const accounts = await new Promise(resolve =>
+        chrome.storage.local.get('userdata', data => resolve(data.userdata || []))
+        ) ?? [];
+    list.replaceChildren()
+
+    if (accounts.length == 0) {
+        const li = document.createElement('li')
+        li.dataset.ref = 'accounts'
+        li.textContent = 'Not signed in'
+        list.appendChild(li)
+    } else {
+        accounts.forEach(acc => {
+            const li = document.createElement('li')
+            li.dataset.accref = acc.name
+            li.textContent = acc.name
+            if (acc.name.length > 16) {
+                li.title = acc.name // In case the username is too long to show properly
+            }
+            list.appendChild(li)
+        })
+    }
 }
 
 document.addEventListener('click', function(e) {
@@ -90,7 +113,9 @@ document.addEventListener('keydown', (e) => {
         cursor++;
 
         if (cursor === konamiCode.length) {
-            window.location.href = "pages/vip_lounge.html"
+            if (window.location.href.includes('index.html')) {
+                window.location.href = "/pages/vip_lounge.html"
+            }
             cursor = 0;
         }
     } else {

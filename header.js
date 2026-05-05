@@ -6,7 +6,8 @@ const themedata = {
     orange: ["#6d4100", "#7c280f", "#cf3000", "#741b00", "#FF4C4B", "#df2727", "#df795a"],
     blurple: ["#200044", "#35008b", "#28004e", "#4500b4", "#4918cf", "#4a00d4", "#2f009c"],
     discord: ["#323339", "#7D7E87", "#323339", "#2C2D32", "#5865F2", "#4452BB", "#393A41"],
-    midnight: ["#000000", "#4d4d4d", "#242425", "#2e2e2e", "#5a5a5a", "#494949", "#3b3b3b"]
+    midnight: ["#000000", "#4d4d4d", "#242425", "#2e2e2e", "#5a5a5a", "#494949", "#3b3b3b"],
+    blackout: ["#000000", "#000000", "#000000", "#000000", "#000000", "#000000", "#000000"]
 }
 const themevarnames = ["--bg-color", "--scrollbar-bar", "--scrollbar-bg", "--headerandfooter", "--button", "--buttonhover", "--popupbg"]
 
@@ -16,11 +17,8 @@ document.getElementById('header-placeholder').innerHTML = `
         <button class="headerbtns" data-headermenu='utilityflyout'>Utility</button>
         <button class="headerbtns" data-headermenu='socialflyout'>Social</button>
         <button class="headerbtns" data-headermenu='otherflyout'>Other</button>
-        <div id=accountandarrow>
-            <div id=accountarea class=headerbtns>
-                <h1>Accounts</h1>
-            </div>
-            <button id='accpanelflyout' class="headerbtns" data-headermenu='accountflyout'>▼</button>
+        <div id=accountarea class=headerbtns>
+            <h1>Accounts</h1>
         </div>
         <div id='utilityflyout' class='headerflyout' style="display: none;">
             <ul>
@@ -63,6 +61,9 @@ async function checkSignin() {
         const p = document.createElement('p')
         p.id = "headeractiveacc"
         p.textContent = activeacc.name ? `Active: ${activeacc.name}` : 'Not signed in'
+        if (activeacc.name?.length > 14) {
+            p.title = activeacc.name // In case the username is too long to show properly
+        }
         document.getElementById('accountarea').appendChild(p)
 }
 
@@ -71,12 +72,11 @@ async function appendaccounts() {
     const accounts = await new Promise(resolve =>
         chrome.storage.local.get('userdata', data => resolve(data.userdata || []))
         ) ?? [];
-    console.log(accounts)
     list.replaceChildren()
 
     if (accounts.length == 0) {
         const li = document.createElement('li')
-        li.dataset.ref = '/pages/accounts.html'
+        li.dataset.ref = 'accounts'
         li.textContent = 'Not signed in'
         list.appendChild(li)
     } else {
@@ -84,6 +84,9 @@ async function appendaccounts() {
             const li = document.createElement('li')
             li.dataset.accref = acc.name
             li.textContent = acc.name
+            if (acc.name.length > 16) {
+                li.title = acc.name // In case the username is too long to show properly
+            }
             list.appendChild(li)
         })
     }
@@ -126,8 +129,13 @@ document.addEventListener('click', async function(e) {
     }
 })
 
-document.getElementById('accountarea').addEventListener("click", function() {
+document.getElementById('accountarea').addEventListener("click", function(e) {
     window.location.href = '/pages/accounts.html'
+});
+
+document.getElementById('accountarea').addEventListener("contextmenu", (event) => {
+    event.preventDefault()
+    openflyout('accountflyout')
 });
 
 async function updateTheme() {

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="stylesheet" href="../style.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+    </head>
+    <body>
+        <div id="header-placeholder"></div>
+        <script src="../header.js"></script>
+        <div class="container">
+            <div id="lookupplaceholder"></div>
+            <script type="module" src="../scripts/profile.js"></script>
+        </div>
+        <div class="overlay" id="overlay">
+            <div class="popup">
+                <div id="popup-header">
+                    <h1>Private Profile</h1>
+                    <button id="popup-x" class="closebtn">✕</button>
+                </div>
+                <h2>This user's private setting is set to "true". View anyways?</h2>
+                <div id="popup-choices">
+                    <button id="cancel" class="closebtn">No</button>
+                    <button id="viewanyway">Yes</button>
+                </div>
+            </div>
+        </div>
+        <div id="footer-placeholder"></div>
+        <script src="../footer.js"></script>
+    </body>
+</html>

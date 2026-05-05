@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="stylesheet" href="../style.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+    </head>
+    <body>
+        <div id="header-placeholder"></div>
+        <script src="../header.js"></script>
+        <div class="container">
+            <h1>Claw</h1>
+            <div id="postwindow">
+                <form id="post">
+                    <textarea id="postcontent" placeholder="Share something to claw..."></textarea>
+                    <p class="postcharlimit" id="limit-post">0/300</p>
+                    <label id="profileonlyoption">
+                        <input type="checkbox" id="profileonly">
+                        Profile Only
+                    </label>
+                    <div id="imagebar">
+                        <label class="clawattachment">
+                            Image: 
+                            <input type="file" id="clawimage" accept="image/*">
+                        </label>
+                        <button id="clearattachment" title="Clear Attachment" type="button">✕</button>
+                    </div>
+                    <div id="systemandsend">
+                        <label for="system">System: </label>
+                            <select name="system" id="system">
+                                <option value="Rotur Assistant">Rotur Assistant</option>
+                            </select>
+                        <button type="submit" id="sendpost">Send</button>
+                    </div>
+                </form>
+                <div id="posterrorplaceholder"></div>
+            </div>
+            <hr>
+            <div id="feedcontrols">
+                <button id="reloadfeed" title="Refresh Feed">⟳</button>
+                <label>
+                    <input type="checkbox" id="realtime">
+                    Update in real time
+                </label>
+                <label id="feedlabel">
+                    View:&emsp;
+                    <select name="feedfilter" id="feedfilter">
+                        <option value="feed">Recent Posts</option>
+                        <option value="top_posts">Top Posts</option>
+                        <option value="following_feed">Following</option>
+                    </select>
+                </label>
+            </div>
+            <form id="postsearchbar">
+                <input type='search' id='postsearchbarinput' placeholder="Search Posts...">
+                <button id="postsearch" type="submit" title="Search Posts"><img src='../images/app_icons/lookup.png' width="16" height="16"></button>
+                <button id="clearsearch" type="button" title="Clear Search">✕</button>
+            </form>
+            <div id="feed">
+                <ul id="clawfeed"></ul>
+            </div>
+        </div>
+        <div class="overlay" id="overlay">
+            <div class="popup"></div>
+        </div>
+        <script type="module" src="../scripts/claw.js"></script>
+        <div id="footer-placeholder"></div>
+        <script src="../footer.js"></script>
+    </body>
+</html>

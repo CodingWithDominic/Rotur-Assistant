@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="stylesheet" href="../style.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+    </head>
+    <body>
+        <div id="header-placeholder"></div>
+        <script src="../header.js"></script>
+        <div class="container">
+            <div id="wallet-container">
+                <h1>Your Wallet</h1>
+                <div id="balancedisplay">
+                    <h2>Active Account Balance: ...</h2>
+                    <h2 id="totalsumofaccs">Total Balance (Sum of all accounts): ...</h2>
+                </div>
+                <button id="dailyclaim">Claim Daily Credit</button>
+                <div id="claimstatusplaceholder"></div>
+                <div id="claimfineprint"></div>
+                <div class="tabheader">
+                    <button id='transfertab' class="tab">Transfer</button>
+                    <button id='historytab' class="tab">History</button>
+                    <button id='statstab' class="tab">Stats</button>
+                </div>
+                <div id="transferwindow">
+                    <label>Make transfer</label>
+                    <div id="transfersubwindow">
+                        <input type="text" id="transferuser" placeholder="Username">
+                        <input type="number" step=0.01 id="amount" placeholder="Amount">
+                        <button id="sendcredits" title="Send">→</button>
+                    </div>
+                    <input type="text" id="transfernote" placeholder="Note (Optional)">
+                    <div id="transferstatusplaceholder"></div>
+                </div>
+                <div id="transactionpanel" style="display: none;">
+                    <button id="transactionreload" title="Refresh Transaction History">⟳</button>
+                    <p id="averageprofit">Average profit margin: </p>
+                    <ul id="transactionlist"></ul>
+                </div>
+                <div id="statspanel" style="display: none;">
+                    <button id="statsreload" title="Refresh Statistics">⟳</button>
+                    <div id="statslist"></div>
+                </div>
+                <script type="module" src="../scripts/wallet.js"></script>
+            </div>
+        </div>
+        <div class="overlay" id="overlay">
+            <div class="popup">
+                <div id="popup-header">
+                    <h1>Confirm Transfer</h1>
+                    <button id="popup-x" class="closebtn">✕</button>
+                </div>
+                <h2>Transferring (credit) credits to: (user)</h2>
+                <p>Your Balance: (old) -> (new)</p>
+                <p>(User)'s Balance: (old) -> (new)</p>
+                <div id="popup-choices">
+                    <button id="cancel" class="closebtn">Cancel</button>
+                    <button id="finaltransfer">Send</button>
+                </div>
+            </div>
+        </div>
+        <div id="footer-placeholder"></div>
+        <script src="../footer.js"></script>
+    </body>
+</html>

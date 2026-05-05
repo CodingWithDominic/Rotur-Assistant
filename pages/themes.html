@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="stylesheet" href="../style.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+    </head>
+    <body>
+        <div id="header-placeholder"></div>
+        <script src="../header.js"></script>
+        <div class="container">
+            <h1>Themes</h1>
+            <h3>Select which theme you want to display across Rotur Assistant.</h3>
+            <form id="themepicker">
+                <label>
+                    <input type="radio" name='themeselect' value="oceanblue">
+                    <div id="oceanbluetheme" class="themepreviews"></div>
+                    Ocean Blue
+                </label>
+                <label>
+                    <input type="radio" name='themeselect' value="forestgreen">
+                    <div id="forestgreentheme" class="themepreviews"></div>
+                    Forest Green
+                </label>
+                <label>
+                    <input type="radio" name='themeselect' value="orange">
+                    <div id="orangetheme" class="themepreviews"></div>
+                    Mesa Orange
+                </label>
+                <label>
+                    <input type="radio" name='themeselect' value="blurple">
+                    <div id="blurpletheme" class="themepreviews"></div>
+                    Blurple
+                </label>
+                <label>
+                    <input type="radio" name='themeselect' value="discord">
+                    <div id="discorddarktheme" class="themepreviews"></div>
+                    Discord Dark
+                </label>
+                <label>
+                    <input type="radio" name='themeselect' value="midnight">
+                    <div id="midnighttheme" class="themepreviews"></div>
+                    Midnight
+                </label>
+                <label>
+                    <input type="radio" name='themeselect' value="blackout">
+                    <div id="blackouttheme" class="themepreviews"></div>
+                    Blackout
+                </label>
+            </form>
+        </div>
+        <script type="module" src="../scripts/themes.js"></script>
+        <div id="footer-placeholder"></div>
+        <script src="../footer.js"></script>
+    </body>
+</html>

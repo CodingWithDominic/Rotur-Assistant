@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="stylesheet" href="../../style.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+    </head>
+    <body>
+        <div id="header-placeholder"></div>
+        <script src="../../header.js"></script>
+        <div class="container">
+            <div class="wiki-container">
+                <h1>Subscriptions</h1>
+                <a id="wikibackbtn" href="../wiki.html">&larr;</a>
+                <h2>Overview</h2>
+                    <p>Rotur subscriptions are a way to support the Rotur project. In exchange, you receive a handful of benefits. An almost-complete list of benefits, as well as how to obtain a Rotur Subscription, can be found on <a href="https://ko-fi.com/mistium/" target="_blank" rel="noopener noreferrer">https://ko-fi.com/mistium/</a>.</p>
+                <h2>Free</h2>
+                    <p>This is the subscription 98% of all Rotur accounts have. This is the default subscription for Rotur accounts when creating a Rotur account.</p>
+                <h2>Lite</h2>
+                    <p>A small step-up from the free tier. Unlike other non-free tiers, this one costs 15 Rotur credits / month, and benefits include:</p>
+                    <ul>
+                        <li>Bio Templating</li>
+                        <li>Increased account storage from 5 MB to 10 MB</li>
+                        <li>Primitive access to roturBOT's AI on Discord or originChats (higher tiers have access to a better, more smarter model)</li>
+                        <li>Access to Bio Templating</li>
+                        <li>Appear in the settings page of originOS (and at the bottom of this page under "List of current subscribers")</li>
+                    </ul>
+                <h2>Plus</h2>
+                    <p>The first of the three paid tiers. The price is £1 / month, and benefits include:</p>
+                    <ul>
+                        <li>Access to all of the above in Lite, with some improvements</li>
+                        <li>15 MB of account storage space</li>
+                        <li>Access to the smarter roturBOT AI on Discord and originChats (access to more personalities too)</li>
+                        <li>Supporter role on Discord (permanent, even after your subscription expires)</li>
+                        <li>Profile Notes on Rotur</li>
+                        <li>Custom URLs on roturGate (Though as of now, roturGate is inaccessible due to its auth page looping indefinitely)</li>
+                        <li>Access to <a href="https://docs.rotur.dev/assorted-apis/share.rotur.dev" target="_blank" rel="noopener noreferrer">https://share.rotur.dev</a></li>
+                    </ul>
+                <h2>Drive</h2>
+                    <p>The second of the three paid tiers. This is the point where the benefits start to become more worthwhile. The price is £3 / month, and benefits include:</p>
+                    <ul>
+                        <li>Access to all of the above in Plus, with some improvements</li>
+                        <li>Max economy key increase from 5 to 20 (not to be confused with account keys)</li>
+                        <li>150 MB of account storage space</li>
+                        <li>Access to more roturBOT personalities</li>
+                        <li>Animated profile pictures</li>
+                        <li>2× the daily credits you would normally receive</li>
+                        <li>More transaction history (20 -> 100)</li>
+                        <li>New bio templating option: Time</li>
+                        <li>Longer Bios (200 -> 500)</li>
+                        <li>Higher rmail Limit (100 -> 1,000)</li>
+                        <li>Increased roturPhotos storage (10 MB -> 100 MB)</li>
+                    </ul>
+                <h2>Pro</h2>
+                    <p>Things continue to get more interesting and worthwhile. The price is £5 / month, and benefits include:</p>
+                    <ul>
+                        <li>Access to all of the above in Drive, with some improvements</li>
+                        <li>1 GB of account storage space</li>
+                        <li>Access to all roturBOT personalities</li>
+                        <li>Animated banners & Free banner changes</li>
+                        <li>3× the daily credits you would normally receive</li>
+                        <li>More transaction history (20 -> 500)</li>
+                        <li>Max economy key increase from 5 to 50</li>
+                        <li>New bio templating option: External URLs</li>
+                        <li>Longer Bios (200 -> 1000)</li>
+                        <li>Higher rmail Limit (100 -> 100,000)</li>
+                        <li>Increased roturPhotos storage (10 MB -> 1 GB)</li>
+                        <li>Access to a Rotur email address: username@rmail.rotur.dev</li>
+                        <li>Rotur Pro badge (<img src="../../images/badges/pro.png" width="14" height="14">)</li>
+                    </ul>
+                <h2>Max</h2>
+                <p>The point where Rotur really starts becoming comparable to that of Google Drive. However, this subscription is exclusive to Mistium, meaning it is currently unobtainable. While there's no official list of benefits, Rotur Assistant's estimated list of benefits include:</p>
+                <ul>
+                    <li>Access to all of the above in Pro, with some improvements</li>
+                    <li>10 GB of account storage space</li>
+                    <li>Increased roturPhotos storage (10 MB -> 10 GB)</li>
+                    <li>Max economy key increase from 5 to 500</li>
+                </ul>
+                <h2>List of Current Subscribers</h2>
+                <div id="subscribersplaceholder">
+                    <h3>Max</h3>
+                    <ul id="tier_max"></ul>
+                    <h3>Pro</h3>
+                    <ul id="tier_pro"></ul>
+                    <h3>Drive</h3>
+                    <ul id="tier_drive"></ul>
+                    <h3>Plus</h3>
+                    <ul id="tier_plus"></ul>
+                    <h3>Lite</h3>
+                    <ul id="tier_lite"></ul>
+                </div>
+                <h2>Trivia</h2>
+                <p>There have been a few cases where people received paid subs for free - either due to compensation for a bug or it was given in exchange for Rotur credits rather than real money. Such cases are:</p>
+                <ul>
+                    <li><a href="../lookup.html?user=Dominic">Dominic</a> and <a href="../lookup.html?user=Milodev123">Milo</a>: Received an additional 15 days of Pro as compensation since their subs expired prematurely a couple of times during their initial 30-day period.</li>
+                    <li><a href="../lookup.html?user=RattusDong">RattusDong</a>: Received a month of Pro for free since Rattus bought many white monsters for Mistium</li>
+                    <li><a href="../lookup.html?user=Kolton">Kolton</a> and <a href="../lookup.html?user=Allucat1000">Allucat1000</a>: Received a month of Drive for free after they both tried subscribing to Lite, with the purchase registering, but the subs not being granted.</li>
+                    <li><a href="../lookup.html?user=Valbbi">ViMi / Velvet (This person has many aliases, but as of now, they're referred to as "Valbbi")</a>: Received a month of Plus for 'free' after giving all their credits (167.5) to Mistium.</li>
+                    <li><a href="../lookup.html?user=Mist">Mistium</a> once offered a Pro subscription for 50 credits. However, no-one accepted the offer.</li>
+                </ul>
+            </div>
+        </div>
+        <script src="../../scripts/wiki_subscriptions.js"></script>
+        <div id="footer-placeholder"></div>
+        <script src="../../footer.js"></script>
+    </body>
+</html>

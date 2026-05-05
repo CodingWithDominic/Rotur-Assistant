@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="stylesheet" href="../style.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+    </head>
+    <body>
+        <div id="header-placeholder"></div>
+        <script src="../header.js"></script>
+        <div class="container">
+            <h1>Key Manager (Economy)</h1>
+            <p id="keyfineprint">This page is for managing keys that are purchaseable (either one-time or recursively). For the page that manages keys associated with your account, see <a href="../pages/keymanager_acc.html">Key Manager (Account)</a></p>
+            <hr>
+            <div class="tabheader keystabheader">
+                <button id='createdtab' class="tab">Mine</button>
+                <button id='boughttab' class="tab">Bought</button>
+                <button id='createtab' class="tab">Create</button>
+                <button id='lookuptab' class="tab">Lookup</button>
+            </div>
+            <div id="createdkeyspanel">
+                <ul id="ownedkeys"></ul>
+            </div>
+            <div id="boughtkeyspanel" style="display: none;">
+                <ul id="boughtkeys"></ul>
+            </div>
+            <div id="createkeypanel" style="display: none;">
+                <input type="text" id="ecokeyname" placeholder="Key Name">
+                <div id="keytypeandprice">
+                    <form id="ecokeytype">
+                        <label>Key Type:</label>
+                        <div id="ecokeytypes">
+                            <label class="radiochoices"><input id="onetimeoption" name="subtype" type="radio" value="onetime" checked> One-time</label>
+                            <label class="radiochoices"><input id="suboption" name="subtype" type="radio" value="subscription"> Subscription</label>
+                        </div>
+                    </form>
+                    <input type="number" id="ecokeyprice" placeholder="Price" step="0.01">
+                </div>
+                <div id="subfrequency">
+                    <h3>Bill every:</h3>
+                    <form id="subfrequencysettings">
+                        <input id="ecokeyperiod" type="number" step="1" value="1" placeholder="Bill Period" disabled>
+                        <select id="ecokeyfrequency" disabled>
+                            <option value="day">Day(s)</option>
+                            <option value="week">Week(s)</option>
+                            <option value="month" selected="selected">Month(s)</option>
+                            <option value="year">Year(s)</option>
+                        </select>
+                    </form>
+                </div>
+                <button id="ecokeycreate">Create Key</button>
+                <div id="createkeystatusplaceholdereco"></div>
+            </div>
+            <section id="lookupkeysection" style="display: none;">
+                <form id="keylookup">
+                    <input type="search" id="keysearchbar" placeholder="Key ID">
+                    <button id="keysearchbtn" type="submit"><img src='../images/app_icons/lookup.png' width="16" height="16"></button>
+                </form>
+                <div id="ecokeylookupplaceholder"></div>
+                <div id="ecokeylookupstatusplaceholder"></div>
+            </section>
+        </div>
+        <div class="overlay" id="overlay">
+            <div class="popup"></div>
+        </div>
+        <script type="module" src="../scripts/keys_eco.js"></script>
+        <div id="footer-placeholder"></div>
+        <script src="../footer.js"></script>
+    </body>
+</html>

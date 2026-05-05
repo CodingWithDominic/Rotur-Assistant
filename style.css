@@ -14,7 +14,7 @@ html {
 }
 body {
     width: 400px;
-    height: 512px;
+    height: 600px;
     min-height: 100vh;
     margin: 0;
     background-color: var(--bg-color);
@@ -58,7 +58,7 @@ body {
     height: auto;
     top: 40px;
     background: var(--scrollbar-bar);
-    box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.3);
+    box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.3);
     justify-content: center;
     z-index: 500;
     border-bottom-left-radius: 4px;
@@ -79,6 +79,7 @@ body {
     text-align: center;
     padding-top: 5px;
     padding-bottom: 5px;
+    font-size: 12px;
 }
 
 .headerflyout ul li:hover {
@@ -114,6 +115,7 @@ a {
 #accountandarrow {
     flex: 1;
     width: 100%;
+    min-width: 0; 
     display: flex;
     flex-direction: row;
 }
@@ -123,10 +125,12 @@ a {
 }
 
 #accountarea {
-    flex: 9;
+    flex: 1;
     display: flex;
     flex-direction: column;
     cursor: pointer;
+    min-width: 0; 
+    overflow: hidden;
 }
 #accountarea h1 {
     font-size: 12px;
@@ -267,6 +271,9 @@ summary {
 .container button:hover:not([class='tab']), .popup button:hover {
     background: var(--buttonhover);
 }
+.container label, .container li {
+    font-size: 12px;
+}
 .container button:disabled {
     opacity: 0.75;
     cursor: not-allowed;
@@ -287,6 +294,7 @@ summary {
     flex-direction: column;
     margin-bottom: 20px;
     align-items: center;
+    margin-bottom: 0;
 }
 .appgrid ul {
     list-style-type: none;
@@ -294,8 +302,11 @@ summary {
     flex-wrap: wrap;
     justify-content: center;
     padding: 0;
+    margin-top: 0;
+    margin-bottom: 0;
 }
 .appgrid ul li {
+    font-size: 12px;
     border: 2px solid white;
     border-radius: 10px;
     margin: 4px;
@@ -314,6 +325,16 @@ summary {
     background: rgba(255, 255, 255, 0.1);
     cursor: pointer;
 }
+#roturassistanttitle {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-self: center;
+    justify-content: center;
+    text-align: center;
+    gap: 5px;
+}
 
 /*/ Popup CSS /*/
 .overlay {
@@ -329,7 +350,7 @@ summary {
     background: var(--popupbg);
     padding: 12px;
     border-radius: 12px;
-    box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.3);
+    box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.3);
     width: 300px;
     text-align: center;
     color: white;
@@ -408,12 +429,18 @@ summary {
     aspect-ratio: 1;
     position: absolute;
     padding: 0;
-    right: 5px;
-    top: 5px;
     font-size: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
+}
+#transactionreload {
+    right: 0px;
+    top: -15px;
+}
+#statsreload {
+    right: 0px;
+    top: 0px;
 }
 p[class='success'] {
     background-color: #00ff405b;
@@ -589,12 +616,16 @@ hr[class='dotted_separator'] {
 .acclistentry {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 10px 14px;
+    gap: 8px;
+    padding: 10px 10px;
     padding-right: 10px;
     border-bottom: 1px solid white;
     cursor: pointer;
     color: white;
+}
+.acclistentry span {
+    font-size: 14px;
+    margin-right: -12px;
 }
 .acclistentry:last-child {
     border-bottom: none;
@@ -640,6 +671,7 @@ input[type="radio"] {
     cursor: pointer;
 }
 .addaccbtn, #wikibackbtn {
+    font-size: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -774,9 +806,7 @@ hr[class='beforeprofile'] {
     justify-self: left;
     margin-left: 12px;
     background: var(--bg-color);
-    border: 2px solid white;
     border-radius: 8px;
-    overflow: hidden;
     position: relative;
 }
 
@@ -836,6 +866,17 @@ hr[class='beforeprofile'] {
     align-items: center;
     justify-content: center;
     padding: 0;
+}
+
+#profilereload, #profilereloadedit, #reloadfeed {
+    font-size: 18px;
+}
+
+#reloadfeed {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    max-height: 32px;
 }
 
 .userinfo p, .userinfoedit p {
@@ -1381,6 +1422,17 @@ p[class='claim_user'] {
     justify-content: center;
 }
 
+#profileonlyoption {
+    display: flex;
+    align-items: center;
+    justify-content: right;
+    gap: 3px;
+    flex-direction: row;
+    margin-left: auto;
+    justify-self: right;
+    margin-top: -15px;
+}
+
 /*/ Account Key Manager CSS /*/
 
 #mainkeys, #sys_keys, #readonlykeys, #otherkeys {
@@ -1729,7 +1781,7 @@ p[class='claim_user'] {
 #toggleprofileview {
     position: absolute;
     right: 42px;
-    top: -27px;
+    top: -23px;
     max-width: 32px;
     max-height: 32px;
     aspect-ratio: 1;
@@ -1742,7 +1794,7 @@ p[class='claim_user'] {
 #profilereloadedit {
     position: absolute;
     right: 5px;
-    top: -27px;
+    top: -23px;
     max-width: 32px;
     aspect-ratio: 1;
     display: flex;
@@ -1809,7 +1861,12 @@ p[class='claim_user'] {
     height: 120px;
 }
 
-.useravataredit {
+.useravatarview, .useravataredit {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    border: 2px solid white;
+    border-radius: 8px;
     width: 64px;
     height: 64px;
     overflow: hidden;
@@ -1824,8 +1881,19 @@ p[class='claim_user'] {
     width: 64px;
     height: 64px;
     position: absolute;
-    top: 0px;
-    left: 0px;
+    top: 2px;
+    left: 2px;
+    border-radius: 8px;
+}
+
+.useravataroverlay {
+    width: 80px;
+    height: 80px;
+    position: absolute;
+    top: -6px;
+    left: -6px;
+    background: transparent;
+    pointer-events: none;
 }
 
 #changeavatarbtn:hover, #changebannerbtn:hover {
@@ -2050,6 +2118,7 @@ p[class='profilefineprint'] {
 #viewrmailbody {
     display: flex;
     text-align: left;
+    font-size: 12px;
 }
 
 
@@ -2182,6 +2251,8 @@ ul[class='roturuseritemlist'] {
     border-bottom: 2px solid white;
     padding: 5px;
     position: relative;
+    text-overflow: ellipsis;
+    overflow: hidden;
 }
 
 .roturitem:last-child {
@@ -2335,6 +2406,20 @@ ul[class='roturuseritemlist'] {
     border-top: 1px solid white;
 }
 
+#item_marketplace {
+    margin-top: 5px;
+}
+
+#item_marketplace label {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 4px;
+    text-align: left;
+}
+
+/* Themes */
+
 #themepicker {
     display: flex;
     flex-direction: column;
@@ -2378,6 +2463,11 @@ ul[class='roturuseritemlist'] {
 
 #midnighttheme {
     background-color: #000000;
+}
+
+#blackouttheme {
+    background-color: #000000;
+    border-color: #000000;
 }
 
 /*/ Wiki CSS /*/

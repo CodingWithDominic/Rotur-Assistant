@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="stylesheet" href="../style.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+    </head>
+    <body>
+        <div id="header-placeholder"></div>
+        <script src="../header.js"></script>
+        <div class="container">
+            <h1>Key Manager (Account)</h1>
+            <p id="keyfineprint">This page is for managing account keys. For the page that manages keys associated with purchases / subscriptions, see <a href="../pages/keymanager_eco.html">Key Manager (Economy)</a></p>
+            <hr>
+            <div class="tabheader keystabheader">
+                <button id='maintab' class="tab">Main</button>
+                <button id='systab' class="tab">System</button>
+                <button id='readonlytab' class="tab">Read-Only</button>
+                <button id='othertab' class="tab">Other</button>
+                <button id='createtab' class="tab">Create</button>
+            </div>
+            <section id="keys_main">
+                <h2>Main Keys</h2>
+                <p>These keys make up the backbone of your Rotur account. While these are modifiable without the help of Mistium or your system's owner, they may have a limit on how they are modified (such as their length, what characters are allowed in the key, or even specific values)</p>
+                <ul id="mainkeys" class="keycontainer"></ul>
+                <div id="mainerrorplaceholder"></div>
+            </section>
+            <section id="keys_sys" style="display: none;">
+                <h2>System Keys</h2>
+                <p>These keys can't be modified. If you want to modify one of them, try contacting Mistium or the owner of the system your account is currently under, though some sys keys and read-only keys can only be modified by Mistium. Some sys keys may be associated with deprecated, discontinued, or removed features. If you don't want them to continue to take up account space, ask Mistium or your system's owner to delete the key for you.</p>
+                <ul id="sys_keys" class="keycontainer"></ul>
+                <div id="syserrorplaceholder"></div>
+            </section>
+            <section id="keys_readonly" style="display: none;">
+                <h2>Read-Only Keys</h2>
+                <p>These keys, despite not beginning with "sys.", are still read-only. If you want to modify one of them, try contacting Mistium or your system owner.</p>
+                <ul id="readonlykeys" class="keycontainer"></ul>
+                <div id="readonlyerrorplaceholder"></div>
+            </section>
+            <section id="keys_other" style="display: none;">
+                <h2>Other Keys</h2>
+                <p>These keys don't serve as crucial roles to your Rotur account as most of the keys in other tabs. These keys should be modifiable without the help of Mistium or your system's owner, though if a Rotur-affiliated program you use (such as origin) relies on one of those keys for a function, then that function within that program may not work properly anymore.</p>
+                <ul id="otherkeys" class="keycontainer"></ul>
+                <div id="othererrorplaceholder"></div>
+            </section>
+            <section id="keys_create" style="display: none;">
+            <h2>Create Key</h2>
+            <div id="createkeybar">
+                <input type="text" id="createkeyname" placeholder="Key Name">
+                <input type="text" id="createkeyvalue" placeholder="Key Value">
+                <button id="createkeybtn">Create</button>
+            </div>
+            <div id="createkeystatusplaceholder"></div>
+            </section>
+        </div>
+        <div class="overlay" id="overlay">
+            <div class="popup"></div>
+        </div>
+        <script type="module" src="../scripts/keys_acc.js"></script>
+        <div id="footer-placeholder"></div>
+        <script src="../footer.js"></script>
+    </body>
+</html>

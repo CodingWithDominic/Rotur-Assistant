@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="stylesheet" href="../style.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+    </head>
+    <body>
+        <div id="header-placeholder"></div>
+        <script src="../header.js"></script>
+        <div class="container">
+            <h1>Select Active Account</h1>
+            <div id="account_list"></div>
+            <div id="switchaccountpanel">
+                <button id="switchaccbtn">Switch to selected account on service</button>
+                <button id="switchaccinfo">?</button>
+            </div>
+            <div id="disabledcontext"></div>
+            <hr>
+            <h2>Sync Data</h2>
+            <p>This will sync any Rotur Account data you have, including the tokens of all the Rotur accounts you have added above, to your Google Account. While this will save time having to re-add all your accounts on another instance of Rotur Assistant in another window or on another device, this will effectively put the security of all your Rotur Accounts at the mercy of the security of your Google Account.</p>
+            <div id="syncsection">
+                <div id="downloaduploadsync">
+                    <button id="uploadsync">Upload data to Sync</button>
+                    <button id="downloadsync">Retrieve data from Sync</button>
+                </div>
+                <button id="clearsync">Clear Sync Data</button>
+            </div>
+            <p style="display: none;">Due to Google limitations on sync storage size, uploading to sync is unavailable if you have more than 20 accounts added.</p>
+            <div id="syncstatusplaceholder"></div>
+            <script type="module" src="../scripts/accounts.js"></script>
+        </div>
+        <div class="overlay" id="overlay">
+            <div class="popup"></div>
+        </div>
+        <div id="footer-placeholder"></div>
+        <script src="../footer.js"></script>        
+    </body>
+</html>

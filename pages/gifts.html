@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="stylesheet" href="../style.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+    </head>
+    <body>
+        <div id="header-placeholder"></div>
+        <script src="../header.js"></script>
+        <div class="container">
+            <h1>Gift Manager</h1>
+            <p>Create, lookup, or manage gifts</p>
+            <h2>Create gift</h2>
+            <div class="giftcreatepanel">
+                <input type="number" placeholder="Amount" id="giftamount">
+                <button id="creategift">Create Gift</button>
+            </div>
+            <input type="text" id="giftnote" placeholder="Note (Optional)">
+            <div id="taxamt"></div>
+            <div id="giftcreatestatusplaceholder"></div>
+            <div id="giftcreatestatusplaceholder2"></div>
+            <h2 id="giftlookupheader">Lookup Gift</h2>
+            <form id="giftsearch">
+                <input type="search" id="giftsearchbar" placeholder="Gift Code or URL">
+                <button id="giftsearchbtn" type="submit" title="Search Gift"><img src='../images/app_icons/lookup.png' width="16" height="16"></button>
+            </form>
+            <div id="giftlookupplaceholder"></div>
+            <h2 id="giftmanagerheader">Manage Existing Gifts</h2>
+            <h3>Filter by</h3>
+            <form class="giftfilter">
+                <label>
+                    <input type="radio" id="all" name="giftfilter" checked>
+                    All
+                </label>
+                <label>
+                    <input type="radio" id="claimed" name="giftfilter">
+                    Claimed
+                </label>
+                <label>
+                    <input type="radio" id="unclaimed" name="giftfilter">
+                    Unclaimed
+                </label>
+            </form>
+            <div id="giftsplaceholder"></div>
+        </div>
+        <div class="overlay" id="overlay">
+            <div class="popup">
+                <div id="popup-header">
+                    <h1>Confirm Gift</h1>
+                    <button id="popup-x" class="closebtn">✕</button>
+                </div>
+                <h2>Confirming creation of gift with:</h2>
+                <p id="giftpopupamt">Amount: 0</p>
+                <p id="giftpopuptax">Tax: 0</p>
+                <p id="giftpopuptotal">Total Payment: 0</p>
+                <p id="giftpopupnote">Note: ...</p>
+                <div id="popup-choices">
+                    <button id="cancel" class="closebtn">Cancel</button>
+                    <button id="finalcreate">Confirm & Create</button>
+                </div>
+            </div>
+        </div>
+        <script type="module" src="../scripts/gifts.js"></script>
+        <div id="footer-placeholder"></div>
+        <script src="../footer.js"></script>
+    </body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="stylesheet" href="../style.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+    </head>
+    <body>
+        <div id="header-placeholder"></div>
+        <script src="../header.js"></script>
+        <div class="container" style="position: relative;">
+            <h1>Rmail</h1>
+            <button id="compose_rmail">+ Compose</button>
+            <div id="rmailheader">
+                <button class="rmailtab" id="rmail_sent" style="border-bottom: 2px solid white;">Sent</button>
+                <button class="rmailtab" id="rmail_received">Received</button>
+            </div>
+            <div id="rmailsenttab" style="display: block;">
+                <ul id="sentrmailslist"></ul>
+            </div>
+            <div id="rmailreceivedtab" style="display: none;">
+                <ul id="receivedrmailslist"></ul>
+            </div>
+        </div>
+        <div class="container" style="display: none;">
+            <div id="rmailcontainerheader">
+                <button id="rmail_goback">&larr; Back</button>
+                <div id="rmailactionbarbuttons">
+                    <button class='rmailreply' title="Reply to Rmail" id='viewrmailreply' data-payloadidx='1' data-rmailtitle="place" data-rmailauthor="holder">&larrhk;</button>
+                    <button class='rmaildelete' title="Delete Rmail from feed" id='viewrmaildelete' data-payloadidx='1'><img src='../images/misc_icons/delete.png' width=24 height=24></button>
+                </div>
+            </div>
+            <hr>
+            <div id="rmail_author">
+                <img id='viewrmailauthorpfp' src="https://avatars.rotur.dev/.banned_user" width="40" height="40" alt="placeholder">
+                <h3 id="viewrmailauthortext">Author</h3>
+                <div class="toandtimestamp">
+                    <div class="viewrmailrecipientinfo">
+                        <p>To: </p>
+                        <img id="viewrmailrecipientpfp" src='https://avatars.rotur.dev/.banned_user' width=24 height=24 alt='placeholder'>
+                        <p id="viewrmailrecipient">Lorem Ipsum</p>
+                    </div>
+                    <p class="rmailpreviewtimestamp" id="viewrmailtimestamp">1/1/2026</p>
+                </div>
+            </div>
+            <hr class="dotted_separator">
+            <div id="viewrmailtitle">
+                <h2 id="viewrmailtitletext">Rmail Title</h2>
+            </div>
+            <div id="viewrmailbody">
+                <p id="viewrmailbodytext">The FitnessGram™ Pacer Test is a multistage aerobic capacity test that progressively gets more difficult as it continues. The 20 meter pacer test will begin in 30 seconds. Line up at the start. The running speed starts slowly, but gets faster each minute after you hear this signal. [beep] A single lap should be completed each time you hear this sound. [ding] Remember to run in a straight line, and run as long as possible. The second time you fail to complete a lap before the sound, your test is over. The test will begin on the word start. On your mark, get ready, start.</p>
+            </div>
+        </div>
+        <div class="container" style="display: none; position: relative;">
+            <h1>Compose Rmail</h1>
+            <button id="rmail_goback2">&larr; Back</button>
+            <form id="rmailcompositionbox">
+                <label class="compositiontitle">
+                    To: 
+                    <input type="text" placeholder="Recipient" id="rmail_comp_receipient">
+                </label>
+                <label class="compositiontitle">
+                    Title: 
+                    <input type="text" placeholder="Title" id="rmail_comp_title">
+                </label>
+                <label for="rmail_comp_body" class="rmailcompbodylabel">Body: </label>
+                <textarea id="rmail_comp_body" placeholder="Content"></textarea>
+                <button id="send_rmail">Send &rarr;</button>
+            </form>
+        </div>
+        <div class="overlay" id="overlay">
+            <div class="popup">
+                <div id="popup-header">
+                    <h1>Private Profile</h1>
+                    <button id="popup-x" class="closebtn">✕</button>
+                </div>
+                <h2>This user's private setting is set to "true". View profile anyways?</h2>
+                <div id="popup-choices">
+                    <button id="cancel" class="closebtn">No</button>
+                    <button id="viewanyway">Yes</button>
+                </div>
+            </div>
+        </div>
+        <script type="module" src="../scripts/rmail.js"></script>
+        <div id="footer-placeholder"></div>
+        <script src="../footer.js"></script>
+    </body>
+</html>
