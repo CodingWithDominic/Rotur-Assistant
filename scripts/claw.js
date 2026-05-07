@@ -121,6 +121,23 @@ async function getSystems() {
     }
 }
 
+async function readImageFromClipboard() {
+    try {
+        const clipboardItems = await navigator.clipboard.read();
+        for (const item of clipboardItems) {
+        const imageType = item.types.find(type => type.startsWith('image/'));
+        if (imageType) {
+            const blob = await item.getType(imageType);
+            const imgUrl = URL.createObjectURL(blob);
+            return imgUrl;
+        }
+        }
+    } catch (err) {
+        console.error('Failed to read clipboard:', err);
+        return null;
+    }
+}
+
 getSystems()
 
 function createReplyElement(reply) {
@@ -400,6 +417,32 @@ document.addEventListener('click', async function(e) {
     if (e.target.className == 'deletebtn') {
         openPopup(e.target.dataset.postid)
         return;
+    }
+    if (e.target.id == 'clawimage' && e.shiftKey) {
+        e.preventDefault()
+        const target = e.target
+        try {
+            const clipboardItems = await navigator.clipboard.read();
+            for (const clipboardItem of clipboardItems) {
+                const imageType = clipboardItem.types.find(type => type.startsWith('image/'));
+                if (imageType) {
+                    const blob = await clipboardItem.getType(imageType);
+                    
+                    const file = new File([blob], "image.png", { type: blob.type });
+                    
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    target.files = dataTransfer.files;
+                    document.getElementById('clearattachment').style.display = 'flex';
+
+                } else {
+                    openErrorPopup('No image was detected on your clipboard.')
+                }
+            }
+        } catch (err) {
+            console.log(err)
+            openErrorPopup('No image was detected on your clipboard.')
+        }
     }
     if (e.target.className == 'repostbtn') {
         openRepostPopup(e.target.dataset.postid)

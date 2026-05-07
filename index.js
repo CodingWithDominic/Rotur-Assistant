@@ -3,8 +3,20 @@ const parser = new DOMParser();
 // Functions used in multiple places
 
 export function sanitize(input) {
-    return input.replace('&', '&amp;').replace('/','&sol;').replace('<', '&lt;').replace('>', '&gt;').replace('(', '&lpar;').replace(')', '&rpar;').replace("=", "&equals;").replace(`'`, `&#39;`).replace(`"`, `&quot;`) // Prevents HTML formatting from showing up in unwanted places and also decreases the chance of XSS (or SQL injection)
-}
+    return input.replace(/[<>&'"/()=]/g, char => {
+        switch (char) {
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '&': return '&amp;';
+            case '\'': return '&apos;';
+            case '"': return '&quot;';
+            case '/': return '&sol;';
+            case '(': return '&lpar;';
+            case ')': return '&rpar;';
+            case '=': return '&equals;';
+        }
+    });
+}; // Prevents HTML formatting from showing up in unwanted places and also decreases the chance of XSS (or SQL injection, though idk if that's a possible issue since this extension does not rely on an SQL database of its own)
 
 export function formatDate(input) {
     let date = new Date(input)

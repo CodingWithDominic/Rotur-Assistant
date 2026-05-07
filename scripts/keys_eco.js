@@ -15,9 +15,7 @@ if (!activeacc.uuid) {
         <hr>
         <h3>You are not signed in! Please head over to the account manager to add an account first.</h3>`
     ))
-    throw new Error('User is not signed in.')
 }
-
 if (flagged.includes(activeacc.uuid)) {
     document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
         <h1>Key Manager (Economy)</h1>
@@ -25,7 +23,6 @@ if (flagged.includes(activeacc.uuid)) {
         <hr>
         <h3>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h3>
     `))
-    throw new Error('Authentication error detected.')
 }
 
 function openConfirmDeletePopup(keyid) {
@@ -251,7 +248,9 @@ async function refreshUsers(keyid) {
     userlistcount.innerText = `Users (${Object.keys(key.users).length})`
 }
 
-RenderKeys()
+if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
+    RenderKeys()
+}
 
 document.getElementById('ecokeytypes').addEventListener('change', async function(e) {
     if (e.target.value == 'onetime') {

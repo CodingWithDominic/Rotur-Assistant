@@ -427,6 +427,23 @@ function closePopup() {
     document.getElementById('overlay').style.display = 'none';
 }
 
+async function readImageFromClipboard() {
+    try {
+        const clipboardItems = await navigator.clipboard.read();
+        for (const item of clipboardItems) {
+            const imageType = item.types.find(type => type.startsWith('image/'));
+            if (imageType) {
+                const blob = await item.getType(imageType);
+                const imgUrl = URL.createObjectURL(blob);
+                return imgUrl;
+            }
+        }
+    } catch (err) {
+        console.error('Failed to read clipboard:', err);
+        return null;
+    }
+}
+
 function renderFollowingFollowers(list, x, action) {
     let return_html = ``
     for (let i=0;i<list.length;i++) {
@@ -1156,10 +1173,28 @@ document.addEventListener('click', async function(e) {
     }
     // Avatar and Banner handling
     if (e.target.id == 'changeavatarbtn') {
-        document.getElementById('changeavatarfilebtn').click()
+        if (e.shiftKey) {
+            image_cache = await readImageFromClipboard()
+            if (image_cache) {
+                openPFPPopup()
+            } else {
+                openErrorPopup('No image was detected on your clipboard.')
+            }
+        } else {
+            document.getElementById('changeavatarfilebtn').click()
+        }
     }
     if (e.target.id == 'changebannerbtn') {
-        document.getElementById('changebannerfilebtn').click()
+        if (e.shiftKey) {
+            image_cache = await readImageFromClipboard()
+            if (image_cache) {
+                openBannerPopup()
+            } else {
+                openErrorPopup('No image was detected on your clipboard.')
+            }
+        } else {
+            document.getElementById('changebannerfilebtn').click()
+        }
     }
     if (e.target.className == 'finalpfpchange') {
         closePopup()

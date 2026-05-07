@@ -19,14 +19,12 @@ if (!activeacc.uuid) {
         `<h1>Item Manager</h1>
         <h3>You are not signed in! Please sign in using the account manager to access this page.</h3>`
     ))
-    throw new Error('User is not signed in.')
 }
 if (flagged.includes(activeacc.uuid)) {
     document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
         <h1>Item Manager</h1>
         <h3>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h3>
     `))
-    throw new Error('Authentication error detected.')
 }
 
 // Functions (reserved)
@@ -250,9 +248,10 @@ async function getSellingItems(filter) {
 }
 
 // Setup
-
-getItems(activeacc.name)
-getSellingItems(last_sort)
+if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
+    getItems(activeacc.name)
+    getSellingItems(last_sort)
+}
 
 // Document listeners
 

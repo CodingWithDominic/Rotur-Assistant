@@ -176,7 +176,7 @@ async function walletpage() {
         for (let i=0; i<accounts.length; i++) {
             accdata = await fetch(`https://api.rotur.dev/profile?name=${accounts[i].name}&include_posts=no&auth=${activeacc.token}`).then(res => res.json())
             balance += accdata.currency
-            delay(100) // Decrease the chance of getting rate-limited
+            delay((i % 5 == 4) ? 2000 : 100) // Decrease the chance of getting rate-limited
         }
         if (String(balance).length > 10) {
             balance = balance.toFixed(2)

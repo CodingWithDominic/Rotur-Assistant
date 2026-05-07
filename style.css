@@ -271,7 +271,7 @@ summary {
 .container button:hover:not([class='tab']), .popup button:hover {
     background: var(--buttonhover);
 }
-.container label, .container li {
+.container label, .container li, .popup label, .popup p {
     font-size: 12px;
 }
 .container button:disabled {

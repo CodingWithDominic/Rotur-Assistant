@@ -17,7 +17,7 @@ document.getElementById('header-placeholder').innerHTML = `
         <button class="headerbtns" data-headermenu='utilityflyout'>Utility</button>
         <button class="headerbtns" data-headermenu='socialflyout'>Social</button>
         <button class="headerbtns" data-headermenu='otherflyout'>Other</button>
-        <div id=accountarea class=headerbtns>
+        <div id=accountarea class=headerbtns title="Right-click to quickly switch accounts">
             <h1>Accounts</h1>
         </div>
         <div id='utilityflyout' class='headerflyout' style="display: none;">
