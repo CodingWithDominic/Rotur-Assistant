@@ -121,23 +121,6 @@ async function getSystems() {
     }
 }
 
-async function readImageFromClipboard() {
-    try {
-        const clipboardItems = await navigator.clipboard.read();
-        for (const item of clipboardItems) {
-        const imageType = item.types.find(type => type.startsWith('image/'));
-        if (imageType) {
-            const blob = await item.getType(imageType);
-            const imgUrl = URL.createObjectURL(blob);
-            return imgUrl;
-        }
-        }
-    } catch (err) {
-        console.error('Failed to read clipboard:', err);
-        return null;
-    }
-}
-
 getSystems()
 
 function createReplyElement(reply) {

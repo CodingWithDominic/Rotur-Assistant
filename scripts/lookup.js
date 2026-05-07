@@ -506,7 +506,7 @@ ${userdata.badges[i].description}`}" width="16" height="16"></li>`
 
     document.getElementById('lookupplaceholder').style = 'border: 2px solid white;'
     document.getElementById('lookupplaceholder').replaceChildren(...parseHTML(`
-    <img class='userbanner' src="https://avatars.rotur.dev/.banners/${name}" alt="${name}'s Banner">
+    <img class='userbanner' src="${userdata['sys.banned'] ? `https://raw.githubusercontent.com/CodingWithDominic/Rotur-Assistant/refs/heads/main/images/banned_banner.png` : `https://avatars.rotur.dev/.banners/${name}`}" alt="${name}'s Banner">
     <div class="useravatar">
         <img class='useravatarview' src="https://avatars.rotur.dev/${name}" alt="${name}'s Avatar">
         <img class='useravataroverlay' src="https://avatars.rotur.dev/.overlay/${name}" alt="${name}'s Avatar Decoration">
