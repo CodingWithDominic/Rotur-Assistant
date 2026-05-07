@@ -529,17 +529,17 @@ ${userdata.badges[i].description}`}" width="16" height="16"></li>`
 
         <h1 id="usertitle">${name}</h1>
         <div id="pronounsandbadges">
-            ${userdata.pronouns ? `<h3 id="pronouns">${sanitize(userdata.pronouns)}</h3>` : ``}
+            ${userdata.pronouns ? `<h3 id="pronouns" title="${name}'s Pronouns">${sanitize(userdata.pronouns)}</h3>` : ``}
             ${badge_html}
         </div>
-        <p class='bio'>${sanitize(userdata.bio)}</p>
+        <p class='bio' title="${name}'s Bio">${sanitize(userdata.bio)}</p>
     </div>
-    <div class="userinfo2">
+    <div class="userinfo2" ${userdata['sys.banned'] ? `style='margin-bottom: -7px;'` : ``}>
         <p class="joindate">Member since: ${joindate}</p>
         <ul id="morebasicinfo">
             <li>
                 <h3 class="infolabel">Balance</h3>
-                <p class='supplementaryinfo'>${balance}</p>
+                <p class='supplementaryinfo'>${userdata['sys.banned'] ? `---` : balance}</p>
             </li>
             <li>
                 <h3 class="infolabel">System</h3>
@@ -547,13 +547,13 @@ ${userdata.badges[i].description}`}" width="16" height="16"></li>`
             </li>
             <li>
                 <h3 class="infolabel">Subscription</h3>
-                <p class='supplementaryinfo'>${userdata.subscription || "N/A"}</p>
+                <p class='supplementaryinfo'>${userdata.subscription || "Expired"}</p>
             </li>
         </ul>
         <ul id="evenmorebasicinfo">
             <li>
                 <h3 class="infolabel">Account Index</h3>
-                <p class='supplementaryinfo'>${userdata.index}</p>
+                <p class='supplementaryinfo'>${userdata['sys.banned'] ? `&infin;` : userdata.index}</p>
             </li>
             <li>
                 <h3 class="infolabel">Private</h3>
@@ -564,36 +564,39 @@ ${userdata.badges[i].description}`}" width="16" height="16"></li>`
                 <p class='supplementaryinfo'>${standingData.error ? "Banned" : standingData.standing.replace(/^./, char => char.toUpperCase())}</p>
             </li>
         </ul>
-        <h3 class="infolabel">Rotur UUID</h3>
-        <p class='supplementaryinfo'>${id}</p>
-        <hr class="dotted_separator">
+        ${userdata.id ? `<h3 class="infolabel">Rotur UUID</h3>
+            <p class='supplementaryinfo'>${id}</p>
+            <hr class="dotted_separator">
+            ` : ``}
     </div>
-    <div class="userinfo3">
-        <details id="followingpanel">
-            <summary>Following (${following.length})</summary>
-            <ul class='followuserlist' id="followinglist">${renderFollowingFollowers(following) || `<li><h2>This user has not followed anyone yet.</h2></li>`}</ul>
-        </details>
-        <hr class="dotted_separator">
-        <details id="followerspanel">
-            <summary>Followers (${followers.length})</summary>
-            <ul class='followuserlist' id="followerslist">${renderFollowingFollowers(followers) || `<li><h2>This user has no followers yet.</h2></li>`}</ul>
-        </details>
-        <hr class="dotted_separator">
-        <details id="userclawposts">
-            <summary id='clawpostssummary'>Claw Posts (${clawposts.length})</summary>
-            ${userdata.posts ? `<ul id="clawpostslist">${renderClawFeed(userdata.posts)}</ul>` : `<h2>This user has not made any claw posts yet.</h2>`}
-        </details>
-        <hr class="dotted_separator">
-        <details id="useritems">
-            <summary id='useritemssummary'>Items (${useritems.length})</summary>
-            ${useritems.length ? `<ul class="roturuseritemlist">${getItems(useritems)}</ul>` : `<h2>This user does not own any items yet.</h2>`}
-        </details>
-        <hr class="dotted_separator">
-        <details id="economicstats">
-            <summary>Economic Info</summary>
-            <div id="economicplaceholder">${economy_html}</div>
-        </details>
-    </div>
+    ${userdata['sys.banned'] ? `` : `
+        <div class="userinfo3">
+            <details id="followingpanel">
+                <summary>Following (${following.length})</summary>
+                <ul class='followuserlist' id="followinglist">${renderFollowingFollowers(following) || `<li><h2>This user has not followed anyone yet.</h2></li>`}</ul>
+            </details>
+            <hr class="dotted_separator">
+            <details id="followerspanel">
+                <summary>Followers (${followers.length})</summary>
+                <ul class='followuserlist' id="followerslist">${renderFollowingFollowers(followers) || `<li><h2>This user has no followers yet.</h2></li>`}</ul>
+            </details>
+            <hr class="dotted_separator">
+            <details id="userclawposts">
+                <summary id='clawpostssummary'>Claw Posts (${clawposts.length})</summary>
+                ${userdata.posts ? `<ul id="clawpostslist">${renderClawFeed(userdata.posts)}</ul>` : `<h2>This user has not made any claw posts yet.</h2>`}
+            </details>
+            <hr class="dotted_separator">
+            <details id="useritems">
+                <summary id='useritemssummary'>Items (${useritems.length})</summary>
+                ${useritems.length ? `<ul class="roturuseritemlist">${getItems(useritems)}</ul>` : `<h2>This user does not own any items yet.</h2>`}
+            </details>
+            <hr class="dotted_separator">
+            <details id="economicstats">
+                <summary>Economic Info</summary>
+                <div id="economicplaceholder">${economy_html}</div>
+            </details>
+        </div>
+    `}
     `))
 }
 

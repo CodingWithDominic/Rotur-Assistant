@@ -464,21 +464,6 @@ function renderFollowingFollowers(list, x, action) {
     return return_html;
 }
 
-async function refreshuserlists() {
-    const userdata = await fetch(`https://api.rotur.dev/get_user?auth=${activeobject.token}`).then(res => res.json())
-    const followingdata = await fetch(`https://api.rotur.dev/following?username=${activeobject.name}`).then(res => res.json())
-    const following = followingdata.following
-    userdata_cache = userdata;
-    document.getElementById('friendslist').replaceChildren(...parseHTML(renderFollowingFollowers(userdata['sys.friends'], true, 'unfriend')))
-    document.getElementById('friendssummary').innerText = `Friends (${userdata['sys.friends'].length})`
-    document.getElementById('requestslist').replaceChildren(...parseHTML(renderFollowingFollowers(userdata['sys.requests'], true, 'acceptdeclinereq')))
-    document.getElementById('requestssummary').innerText = `Friend Requests (${userdata['sys.requests'].length})`
-    document.getElementById('followinglist').replaceChildren(...parseHTML(renderFollowingFollowers(following, true, 'unfollow')))
-    document.getElementById('followingsummary').innerText = `Following (${following.length})`
-    document.getElementById('blockedlist').replaceChildren(...parseHTML(renderFollowingFollowers(userdata['sys.blocked'], true, 'unblock')))
-    document.getElementById('blockedsummary').innerText = `Blocked (${userdata['sys.blocked'].length})`
-}
-
 async function renderProfile(userdata, altdata, token) {
     const clawposts = altdata.posts ?? []
     const name = userdata.username
@@ -529,13 +514,13 @@ ${userdata['sys.badges'][i].description}`}" width="16" height="16"></li>`
     document.getElementById('lookupplaceholder').replaceChildren(...parseHTML(`
     <div class='userbanner'>
         <img class='userbanneredit' id='userbannerimg' src="https://avatars.rotur.dev/.banners/${name}" alt="${name}'s Banner">
-        <button id='changebannerbtn'>Change... (${["Pro", "Max"].includes(altdata.subscription) ? "Free!" : "-10 RC"})</button>
+        <button id='changebannerbtn' title="Shift-click to paste image instead">Change... (${["Pro", "Max"].includes(altdata.subscription) ? "Free!" : "-10 RC"})</button>
     </div>
     <input type="file" id="changebannerfilebtn" accept="image/*" style="display: none;">
     <div class='useravatar'>
         <img class='useravataredit' id='useravatarimg' src="https://avatars.rotur.dev/${name}" alt="${name}'s Avatar">
         <img class='useravataroverlay' src="https://avatars.rotur.dev/.overlay/${name}" alt="${name}'s Avatar Decoration">
-        <button id='changeavatarbtn'>Change...</button>
+        <button id='changeavatarbtn' title="Shift-click to paste image instead">Change...</button>
     </div>
     <input type="file" id="changeavatarfilebtn" accept="image/*" style="display: none;">
     <div class="userinfoedit">

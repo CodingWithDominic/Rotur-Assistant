@@ -281,64 +281,62 @@ function updateReplyCharLimit(postid, num) {
 }
 
 async function post(message, system) {
-   let potentialattachment = ''
-   const postbutton = document.getElementById('sendpost')
-   document.getElementById('clearattachment').disabled = true
-   postbutton.disabled = true
-   postbutton.textContent = 'Sending...'
-
-   const attachment = document.getElementById('clawimage').files[0]
-
-    if (attachment) {
-        const reader = new FileReader();
-
-        reader.onloadend = () => {
-            potentialattachment = reader.result
-        };
-
-        reader.readAsDataURL(attachment);
-        const response = await fetch('https://roturcdn.milosantos.com/api/image/upload?public=true', {
-            method: 'POST',
-            body: attachment
-        }).then(res => res.json());
-
-        potentialattachment = `https://roturcdn.milosantos.com/${response.id}`;
-        if (potentialattachment.includes('undefined')) {
-            document.getElementById('posterrorplaceholder').replaceChildren(...parseHTML(`<p class="failure">Attachment failed to upload</p>`))
-            postbutton.disabled = false
-            postbutton.textContent = 'Send'
-            setTimeout(function() {
-                document.getElementById('posterrorplaceholder').replaceChildren()
-            }, 10000)
-            return;
-        }
-    }
-
-
-    let postsuccess = ''
-    document.getElementById('posterrorplaceholder').replaceChildren()
     if (message == '') {
         document.getElementById('posterrorplaceholder').replaceChildren(...parseHTML(`<p class="failure">You can't post a blank post</p>`))
     } else {
-        postsuccess = await fetch(`https://api.rotur.dev/post${system != `Unknown` ? `?os=${system == "Random" ? (system_cache[Math.floor(Math.random() * system_cache.length)] ?? "Nex") : system}` : ``}${system == "Unknown" ? `?` : `&`}auth=${activeacc.token}&content=${message}${potentialattachment ? `&attachment=${encodeURIComponent(potentialattachment)}` : ``}${document.getElementById('profileonly').checked ? `&profile_only=1` : ``}`)
-        if (postsuccess.error) {
-            document.getElementById('posterrorplaceholder').replaceChildren(...parseHTML(`<p class="failure">${postsuccess.error}</p>`))
-        } else {
-            document.getElementById('postcontent').value = ''
-            document.getElementById('clawimage').value = ''
-            document.getElementById('clearattachment').disabled = false
-            document.getElementById('clearattachment').style.display = 'none'
-            updateCharLimit(0)
-            if (document.getElementById('profileonly').checked) {
-                document.getElementById('profileonly').checked = false
-                openSuccessPopup('Successfully posted to your profile!')
-            } else {
-                renderClawFeed()
+        let potentialattachment = ''
+        const postbutton = document.getElementById('sendpost')
+        document.getElementById('clearattachment').disabled = true
+        postbutton.disabled = true
+        postbutton.textContent = 'Sending...'
+
+        const attachment = document.getElementById('clawimage').files[0]
+
+        if (attachment) {
+            const reader = new FileReader();
+
+            reader.onloadend = () => {
+                potentialattachment = reader.result
+            };
+
+            reader.readAsDataURL(attachment);
+            const response = await fetch('https://roturcdn.milosantos.com/api/image/upload?public=true', {
+                method: 'POST',
+                body: attachment
+            }).then(res => res.json());
+
+            potentialattachment = `https://roturcdn.milosantos.com/${response.id}`;
+            if (potentialattachment.includes('undefined')) {
+                document.getElementById('posterrorplaceholder').replaceChildren(...parseHTML(`<p class="failure">Attachment failed to upload</p>`))
+                postbutton.disabled = false
+                postbutton.textContent = 'Send'
+                setTimeout(function() {
+                    document.getElementById('posterrorplaceholder').replaceChildren()
+                }, 10000)
+                return;
             }
         }
+        let postsuccess = ''
+        document.getElementById('posterrorplaceholder').replaceChildren()
+            postsuccess = await fetch(`https://api.rotur.dev/post${system != `Unknown` ? `?os=${system == "Random" ? (system_cache[Math.floor(Math.random() * system_cache.length)] ?? "Nex") : system}` : ``}${system == "Unknown" ? `?` : `&`}auth=${activeacc.token}&content=${message}${potentialattachment ? `&attachment=${encodeURIComponent(potentialattachment)}` : ``}${document.getElementById('profileonly').checked ? `&profile_only=1` : ``}`)
+            if (postsuccess.error) {
+                document.getElementById('posterrorplaceholder').replaceChildren(...parseHTML(`<p class="failure">${postsuccess.error}</p>`))
+            } else {
+                document.getElementById('postcontent').value = ''
+                document.getElementById('clawimage').value = ''
+                document.getElementById('clearattachment').disabled = false
+                document.getElementById('clearattachment').style.display = 'none'
+                updateCharLimit(0)
+                if (document.getElementById('profileonly').checked) {
+                    document.getElementById('profileonly').checked = false
+                    openSuccessPopup('Successfully posted to your profile!')
+                } else {
+                    renderClawFeed()
+                }
+            }
     }
-   postbutton.disabled = false
-   postbutton.textContent = 'Send'
+    postbutton.disabled = false
+    postbutton.textContent = 'Send'
     setTimeout(function() {
         document.getElementById('posterrorplaceholder').replaceChildren()
     }, 10000)
