@@ -513,7 +513,7 @@ ${userdata['sys.badges'][i].description}`}" width="16" height="16"></li>`
     document.getElementById('lookupplaceholder').style = 'border: 2px solid white;'
     document.getElementById('lookupplaceholder').replaceChildren(...parseHTML(`
     <div class='userbanner'>
-        <img class='userbanneredit' id='userbannerimg' src="https://avatars.rotur.dev/.banners/${name}" alt="${name}'s Banner">
+        <img class='userbanneredit' id='userbannerimg' src="${userdata['sys.banned' ? "https://raw.githubusercontent.com/CodingWithDominic/Rotur-Assistant/refs/heads/main/images/banned_banner.png" : `https://avatars.rotur.dev/.banners/${name}`]}" alt="${name}'s Banner">
         <button id='changebannerbtn' title="Shift-click to paste image instead">Change... (${["Pro", "Max"].includes(altdata.subscription) ? "Free!" : "-10 RC"})</button>
     </div>
     <input type="file" id="changebannerfilebtn" accept="image/*" style="display: none;">
