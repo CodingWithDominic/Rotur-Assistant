@@ -17,4 +17,4 @@ Features:
 ### Miscellaneous links
 - RoturGit counterpart of this repo: https://git.rotur.dev/Dominic/Rotur-Assistant
 - Rotur Assistant (Chrome / Chromium): https://chromewebstore.google.com/detail/rotur-assistant/hpjnmifgongkndfhfobdeppffcgjhleh
-- Rotur Assistant (Firefox): Coming Soon (Awaiting Approval)
+- Rotur Assistant (Firefox): https://addons.mozilla.org/addon/rotur-assistant/
