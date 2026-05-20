@@ -13,7 +13,7 @@ window.addEventListener('message', function(event) {
         // Hide the iframe and show success message
 
         async function handleData() {
-            const userjson = await fetch(`https://social.rotur.dev/get_user?auth=${token}`).then(res => res.json()).catch(err => console.error("Unable to fetch data"));
+            const userjson = await fetch(`https://api.rotur.dev/get_user?auth=${token}`).then(res => res.json()).catch(err => console.error("Unable to fetch data"));
             if (!userjson) return;
 
             const name = userjson.username;
@@ -23,6 +23,10 @@ window.addEventListener('message', function(event) {
             userobject.name = name
             userobject.token = token
             userobject.uuid = userjson['sys.id']
+            if (!userobject.uuid) {
+                const userdata2 = await fetch(`https://api.rotur.dev/profile?name=${name}`).then(res => res.json()); // Failsafe in case E-mail or TOS is not accepted.
+                userobject.uuid = userdata2.id
+            }
 
             let activeacc = await new Promise(resolve =>
                 chrome.storage.local.get('activeacc', data => resolve(data.activeacc || []))
@@ -39,9 +43,6 @@ window.addEventListener('message', function(event) {
             const exist_index = existing_users.findIndex(user => user.uuid === userobject.uuid);
 
             if ((existing_users.length > 0) && (exist_index > -1)) {
-                if (existing_users[exist_index].uuid == userobject.uuid) {
-                    console.log('This user is already authenticated');
-                }
                 if (existing_users[exist_index].name != name) {
                     existing_users[exist_index].name = name
                 }
@@ -60,11 +61,9 @@ window.addEventListener('message', function(event) {
             }
 
             chrome.storage.local.set({ userdata: existing_users });
-
-            if (Object.keys(activeacc).length == 0) {
-                activeacc = existing_users[existing_users.length - 1]
-                chrome.storage.local.set({ activeacc: activeacc });
-            }
+            activeacc = existing_users[existing_users.length - 1]
+            chrome.storage.local.set({ activeacc: activeacc });
+            chrome.storage.session.remove('sum_cache')
             
             window.location.replace('../pages/accounts.html')
         }

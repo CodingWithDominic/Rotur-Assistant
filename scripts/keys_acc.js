@@ -1,34 +1,7 @@
-import { sanitize, formatDate, parseHTML } from "../index.js"
+import { sanitize, formatDate, parseHTML, openSuccessPopup } from "../index.js"
 
 let systemcache = ''
-
-function openErrorPopup(error) {
-    document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
-        <div id="popup-header">
-            <h1>Error</h1>
-            <button id="popup-x" class="closebtn">✕</button>
-        </div>
-        <p id="deleteconfirmdialogue">${error}</p>
-        <div id="popup-choices">
-            <button id="cancel" class="closebtn">OK</button>
-        </div>
-    `))
-}
-
-function openSuccessPopup(msg) {
-    document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
-        <div id="popup-header">
-            <h1>Success</h1>
-            <button id="popup-x" class="closebtn">✕</button>
-        </div>
-        <p id="deleteconfirmdialogue">${msg}</p>
-        <div id="popup-choices">
-            <button id="cancel" class="closebtn">OK</button>
-        </div>
-    `))
-}
+let tosrecentlyaccepted = false
 
 function openPopup(keyname) {
     document.getElementById('overlay').style.display = 'flex';
@@ -62,6 +35,10 @@ function openSystemPopup(system_name, owner) {
 
 function closePopup() {
     document.getElementById('overlay').style.display = 'none';
+    if (tosrecentlyaccepted) {
+        tosrecentlyaccepted = false
+        window.location.reload()
+    }
 }
 
 const read_only_keys = ["discord_id", "key", "created", "max_size", "last_login"] // Non-sys keys that are still read-only
@@ -96,6 +73,49 @@ async function getSystems(system) {
     return systemoptions;
 }
 
+function checkBlanks() {
+    if (document.getElementById('mainkeys').childElementCount == 0) {
+        document.getElementById('mainkeys').style.border = 'none'
+        const hr = document.createElement('hr')
+        const h2 = document.createElement('h2')
+        h2.innerText = 'No keys exist in this section yet.'
+        document.getElementById('mainkeys').appendChild(hr)
+        document.getElementById('mainkeys').appendChild(h2)
+    } else {
+        document.getElementById('mainkeys').style.border = '1px solid white'
+    }
+    if (document.getElementById('sys_keys').childElementCount == 0) {
+        document.getElementById('sys_keys').style.border = 'none'
+        const hr = document.createElement('hr')
+        const h2 = document.createElement('h2')
+        h2.innerText = 'No keys exist in this section yet.'
+        document.getElementById('sys_keys').appendChild(hr)
+        document.getElementById('sys_keys').appendChild(h2)
+    } else {
+        document.getElementById('sys_keys').style.border = '1px solid white'
+    }
+    if (document.getElementById('readonlykeys').childElementCount == 0) {
+        document.getElementById('readonlykeys').style.border = 'none'
+        const hr = document.createElement('hr')
+        const h2 = document.createElement('h2')
+        h2.innerText = 'No keys exist in this section yet.'
+        document.getElementById('readonlykeys').appendChild(hr)
+        document.getElementById('readonlykeys').appendChild(h2)
+    } else {
+        document.getElementById('readonlykeys').style.border = '1px solid white'
+    }
+    if (document.getElementById('otherkeys').childElementCount == 0) {
+        document.getElementById('otherkeys').style.border = 'none'
+        const hr = document.createElement('hr')
+        const h2 = document.createElement('h2')
+        h2.innerText = 'No keys exist in this section yet.'
+        document.getElementById('otherkeys').appendChild(hr)
+        document.getElementById('otherkeys').appendChild(h2)
+    } else {
+        document.getElementById('otherkeys').style.border = '1px solid white'
+    }
+}
+
 async function renderKeys() {
    if (!activeacc.uuid) {
         document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
@@ -125,7 +145,6 @@ async function renderKeys() {
         `))
         return 0;
     })
-
     if ((accdata.error && (accdata.error == 'Invalid authentication credentials') && !accdata.username) || (accdata['sys.banned'])) { // Extra check in place in case someone decides to set a key named "error" to "Invalid authentication credentials"
         flagged.push(activeacc.uuid)
         chrome.storage.local.set({flagged: flagged})
@@ -137,14 +156,43 @@ async function renderKeys() {
         `))
         return;
     }
+    if ((accdata['sys.email_verified'] === false)) {
+        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+            <h1>Key Manager (Account)</h1>
+            <p>This page is for managing account keys. For the page that manages keys associated with purchases / subscriptions, see <a href="../pages/keymanager_eco.html">Key Manager (Purchases)</a></p>
+            <hr>
+            <div id='toscontainer'>
+                <h4>Your E-mail is not verified. Until you verify your E-mail address, some actions may be limited. To verify your e-mail, head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> and reauthenticate.</h4>
+            </div>
+        `))        
+    }
+    if (!accdata['sys.tos_accepted']) {
+        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+            <h1>Key Manager (Account)</h1>
+            <p>This page is for managing account keys. For the page that manages keys associated with purchases / subscriptions, see <a href="../pages/keymanager_eco.html">Key Manager (Purchases)</a></p>
+            <hr>
+            <div id='toscontainer'>
+                <h4>The Rotur TOS was updated since your last visit. As a result, accounts can't access or perform certain actions until they accept the TOS again. Accept the new terms?</h4>
+                <button id='accepttos'>Accept Terms</button>
+                ${accounts.length > 1 ? `
+                <label id='tosbulkaccept'>
+                    <input type='checkbox' id='bulkacceptoption'>
+                    Accept TOS on all added accounts
+                </label>` : ``}
+                <div id='tosiframeplaceholder'></div>
+                <a href='https://rotur.dev/terms-of-service' target='_blank' rel='noopener noreferrer'>Rotur Terms of Service</a>
+            </div>
+        `))
+        return;
+    }
 
     key_names = Object.keys(accdata)
+    const systemdata = await getSystems(accdata.system)
 
-    document.getElementById('readonlykeys').replaceChildren()
     document.getElementById('mainkeys').replaceChildren()
+    document.getElementById('readonlykeys').replaceChildren()
     document.getElementById('sys_keys').replaceChildren()
     document.getElementById('otherkeys').replaceChildren()
-
     for (let i=0; i<key_names.length; i++) {
         let keyname = key_names[i]
         let keyvalue = accdata[keyname]
@@ -154,7 +202,7 @@ async function renderKeys() {
         }
         let key_element = document.createElement('li')
         key_element.className = 'keyelement'
-        key_element.id = keyname
+        key_element.id = `roturkey_${keyname.replace(' ', '~')}`
         key_element.replaceChildren(...parseHTML(`
         <ul class='keylistitem'>
             <li class='keylistname'>
@@ -170,7 +218,7 @@ async function renderKeys() {
             <li class='keylistvalue'>
             ${keyname == "system" ? `
                 <select name="system" id='modifier-${keyname}' class='keymodifierbox'>
-                    ${await getSystems(accdata.system)}
+                    ${systemdata}
                 </select>` : `
             ${keyname == "bio" ? `
                 <textarea id='modifier-${keyname}' class='keymodifierbox' placeholder='Edit Key Value...'>${sanitize(String(keyvalue))}</textarea>               
@@ -189,43 +237,78 @@ async function renderKeys() {
             document.getElementById('otherkeys').appendChild(key_element)
         }
     }
-    if (!document.getElementById('mainkeys').hasChildNodes) {
-        document.getElementById('mainkeys').style.border = 'none'
-        const hr = document.createElement('hr')
-        const h2 = document.createElement('h2')
-        h2.innerText = 'No keys exist in this section yet.'
-        document.getElementById('mainkeys').appendChild(hr)
-        document.getElementById('mainkeys').appendChild(h2)
-    }
-    if (!document.getElementById('sys_keys').hasChildNodes) {
-        document.getElementById('sys_keys').style.border = 'none'
-        const hr = document.createElement('hr')
-        const h2 = document.createElement('h2')
-        h2.innerText = 'No keys exist in this section yet.'
-        document.getElementById('sys_keys').appendChild(hr)
-        document.getElementById('sys_keys').appendChild(h2)
-    }
-    if (!document.getElementById('readonlykeys').hasChildNodes) {
-        document.getElementById('readonlykeys').style.border = 'none'
-        const hr = document.createElement('hr')
-        const h2 = document.createElement('h2')
-        h2.innerText = 'No keys exist in this section yet.'
-        document.getElementById('readonlykeys').appendChild(hr)
-        document.getElementById('readonlykeys').appendChild(h2)
-    }
-    if (!document.getElementById('otherkeys').hasChildNodes) {
-        document.getElementById('otherkeys').style.border = 'none'
-        const hr = document.createElement('hr')
-        const h2 = document.createElement('h2')
-        h2.innerText = 'No keys exist in this section yet.'
-        document.getElementById('otherkeys').appendChild(hr)
-        document.getElementById('otherkeys').appendChild(h2)
-    }
+    checkBlanks()
+
 }
 
 renderKeys();
 
 document.addEventListener('click', async function(e) {
+    if (e.target.id == 'accepttos') {
+        const target = e.target
+        target.disabled = true
+        await chrome.storage.session.setAccessLevel({ 
+            accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' 
+        });
+        if (document.getElementById('bulkacceptoption')?.checked) {
+            target.textContent = "Accepting... (This may take a while)"
+            await chrome.storage.session.set({acceptinprogress: true})
+        
+            for (let i=0; i<accounts.length; i++) {
+                if (flagged.includes(accounts[i].uuid)) {
+                    continue;
+                }
+                if (document.getElementById('tosiframe')) {
+                    document.getElementById('tosiframe').src = `https://rotur.dev/terms-of-service?token=${accounts[i].token}`
+                } else {
+                    document.getElementById('tosiframeplaceholder').replaceChildren(...parseHTML(`
+                        <iframe id='tosiframe' src="https://rotur.dev/terms-of-service?token=${accounts[i].token}"></iframe>
+                    `))
+                }
+                document.getElementById('tosiframe').style.display = 'none'
+                const accept_process = new Promise((resolve) => {
+                    chrome.runtime.onMessage.addListener(function listener(message) {
+                        if (message.status == 'accepted') {
+                            resolve(message)
+                            chrome.runtime.onMessage.removeListener(listener)
+                        }
+                    })
+                })
+                await accept_process
+            }
+            chrome.storage.session.remove('acceptinprogress')
+            document.getElementById('tosiframeplaceholder').replaceChildren()
+            openSuccessPopup(`TOS successfully accepted on all accounts! The page will reload shortly.`)
+            tosrecentlyaccepted = true
+            target.remove()
+            document.getElementById('tosbulkaccept')?.remove()
+            setTimeout(function() {
+                this.location.reload()
+            }, 5000)
+        } else {
+            target.textContent = "Accepting..."
+            await chrome.storage.session.set({acceptinprogress: true})
+            document.getElementById('tosiframeplaceholder').replaceChildren(...parseHTML(`
+                <iframe id='tosiframe' src="https://rotur.dev/terms-of-service?token=${activeacc.token}"></iframe>
+            `))
+            document.getElementById('tosiframe').style.display = 'none'
+            chrome.runtime.onMessage.addListener(function listener(message) {
+                if (message.status == 'accepted') {
+                    chrome.storage.session.remove('acceptinprogress')
+                    document.getElementById('tosiframeplaceholder').replaceChildren()
+                    openSuccessPopup(`TOS successfully accepted! The page will reload shortly.`)
+                    tosrecentlyaccepted = true
+                    target.remove()
+                    document.getElementById('tosbulkaccept')?.remove()
+                    setTimeout(function() {
+                        this.location.reload()
+                    }, 5000)
+                    chrome.runtime.onMessage.removeListener(listener)
+                }
+            })
+        }
+        return;
+    }
     if (e.target.className == 'tab') {
         Array.from(document.getElementsByClassName('tab')).forEach(tab => {
             tab.style = 'border-bottom: none;'
@@ -252,17 +335,26 @@ document.addEventListener('click', async function(e) {
     if (e.target.id == 'createkeybtn') {
         const error_element = document.getElementById('createkeystatusplaceholder')
         const keyname = document.getElementById('createkeyname').value
-        const keyvalue = document.getElementById('createkeyvalue').value
+        const keyvalue = (() => {
+            const val = document.getElementById('createkeyvalue').value
+            try {
+                return main_keys.includes(keyname) ? val : JSON.parse(val)
+            } catch {
+                return val
+            }
+        })();
         if (keyname == '') {
             error_element.replaceChildren(...parseHTML(`<p class='failure'>You can't create a key with a blank name.</p>`))
         } else if (key_names.includes(keyname)) {
             error_element.replaceChildren(...parseHTML(`<p class='failure'>This key already exists. Try modifying it instead if you can.</p>`))
-        } else if (read_only_keys.includes(keyname)) {
+        } else if (read_only_keys.includes(keyname.toLowerCase())) {
             error_element.replaceChildren(...parseHTML(`<p class='failure'>This is a reserved key.</p>`))
-        } else if (keyname.startsWith('sys.')) {
+        } else if (keyname.toLowerCase().startsWith('sys.')) {
             error_element.replaceChildren(...parseHTML(`<p class='failure'>Key name can't begin with "sys."</p>`))
-        } else if (keyname == "banner" || keyname == "banners") {
+        } else if (keyname.toLowerCase() == "banner" || keyname.toLowerCase() == "banners") {
             error_element.replaceChildren(...parseHTML(`<p class='failure'>Setting this key would normally cost you 10 credits. Try changing your banner through the account manager's profile editor instead.</p>`))
+        } else if (keyname.toLowerCase() == "password") {
+            error_element.replaceChildren(...parseHTML(`<p class='failure'>To prevent issues with future logins, try changing your password through the profile editor instead.</p>`))
         } else {
             const keycreate = await fetch(`https://api.rotur.dev/users`,
                 {method: 'PATCH', body: JSON.stringify({auth: activeacc.token, key: keyname, value: keyvalue})}).then(res => res.json())
@@ -272,7 +364,7 @@ document.addEventListener('click', async function(e) {
             } else {
                 document.getElementById('createkeyname').value = ''
                 document.getElementById('createkeyvalue').value = ''
-                error_element.replaceChildren(...parseHTML(`<p class='success'>Key ${sanitize(keyname)} with value ${sanitize(keyvalue)} was created successfully!</p>`))
+                error_element.replaceChildren(...parseHTML(`<p class='success'>Key ${sanitize(keyname)} with value ${sanitize(String((typeof keyvalue == "object") ? JSON.stringify(keyvalue) : keyvalue))} was created successfully!</p>`))
                 renderKeys()
                 return;
             }
@@ -283,7 +375,14 @@ document.addEventListener('click', async function(e) {
 
     if (["keynamecopy", "keyvaluecopy", "keysave", "keydelete", "finaldelete", "finalsystemconfirm"].includes(e.target.className)) {
         const keyname = e.target.dataset.keyname
-        const keyvalue = document.getElementById(`modifier-${keyname}`).value
+        const keyvalue = (() => {
+            const val = document.getElementById(`modifier-${keyname}`).value
+            try {
+                return main_keys.includes(keyname) ? val : JSON.parse(val)
+            } catch {
+                return val
+            }
+        })();
         let error_element = ''
         if (main_keys.includes(keyname)) {
             error_element = document.getElementById('mainerrorplaceholder')
@@ -307,7 +406,7 @@ document.addEventListener('click', async function(e) {
         }
         if (e.target.className == 'keyvaluecopy') {
             try {
-                await navigator.clipboard.writeText(keyvalue);
+                await navigator.clipboard.writeText((typeof keyvalue == "object") ? JSON.stringify(keyvalue, null, '\t') : keyvalue);
                 error_element.replaceChildren(...parseHTML(`<p class='success'>Copied key value to clipboard!</p>`))
             } catch (err) {
                 console.error('Failed to copy: ', err);
@@ -324,6 +423,8 @@ document.addEventListener('click', async function(e) {
                 openSystemPopup(keyvalue, systemcache[keyvalue].owner.name)
             } else if (keyname == 'banner' || keyname == 'banners') {
                 error_element.replaceChildren(...parseHTML(`<p class='failure'>Setting this key would normally cost you 10 credits. Try changing your banner through the account manager's profile editor instead.</p>`))
+            } else if (keyname == 'password') {
+                error_element.replaceChildren(...parseHTML(`<p class='failure'>To prevent issues with future logins, try changing your password through the profile editor instead.</p>`))
             } else {
                 const keyupdate = await fetch(`https://api.rotur.dev/users`,
                     {method: 'PATCH', body: JSON.stringify({auth: activeacc.token, key: keyname, value: keyvalue})}).then(res => res.json())
@@ -361,14 +462,15 @@ document.addEventListener('click', async function(e) {
     
         if (e.target.className == 'finaldelete') {
             const deleted_key = e.target.dataset.keyname
-            const keydelete = await fetch(`https://api.rotur.dev/me/delete`,
+            const keydelete = await fetch(`https://api.rotur.dev/me/delete?auth=${activeacc.token}`,
                 {method: 'DELETE', body: JSON.stringify({auth: activeacc.token, key: deleted_key})})
             closePopup()
             if (keydelete.error) {
                 error_element.replaceChildren(...parseHTML(`<p class='failure'>${keydelete.error}</p>`))
             } else {
                 error_element.replaceChildren(...parseHTML(`<p class='success'>Key ${deleted_key} deleted successfully!</p>`))
-                renderKeys()
+                document.getElementById(`roturkey_${deleted_key.replace(' ', '~')}`)?.remove()
+                checkBlanks()
             }
             setTimeout(function() { error_element.replaceChildren() }, 10000)
             return;

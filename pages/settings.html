@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="stylesheet" href="../style.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+    </head>
+    <body>
+        <div id="header-placeholder"></div>
+        <script src="../header.js"></script>
+        <div class="container">
+            <h1>Settings</h1>
+            <p>Customize your Rotur Assistant experience</p>
+            <div class="tabheader">
+                <button id='settingsgentab' class="tab">General</button>
+                <button id='settingsthemetab' class="tab">Themes</button>
+                <button id='settingsnotestab' class="tab">Manage Notes</button>
+            </div>
+            <div id="gensettings">
+                <h2>General Settings</h2>
+                <div class="gensettingssect">
+                    <label>
+                        <input type="checkbox" id="renderoverlays">
+                        Don't render avatar overlays
+                    </label>
+                    <label title="This may require a page reload on sites that use avatar overlays if you have any site that supports overlays open">
+                        <input type="checkbox" id="renderoverlaysglobal">
+                        Also block overlay rendering outside of Rotur Assistant
+                    </label>
+                    <label>
+                        <input type="checkbox" id="anchorheader">
+                        Anchor header to top
+                    </label>
+                    <label>
+                        <input type="checkbox" id="anchorfooter">
+                        Anchor footer to bottom
+                    </label>
+                    <label>
+                        <input type="checkbox" id="24h">
+                        Use 24-hour time
+                    </label>
+                </div>
+            </div>
+            <div id="themessect" style="display: none;">
+                <h2>Themes</h2>
+                <h3>Select which theme you want to display across Rotur Assistant.</h3>
+                <form id="themepicker">
+                    <label>
+                        <input type="radio" name='themeselect' value="oceanblue">
+                        <div id="oceanbluetheme" class="themepreviews"></div>
+                        Ocean Blue
+                    </label>
+                    <label>
+                        <input type="radio" name='themeselect' value="forestgreen">
+                        <div id="forestgreentheme" class="themepreviews"></div>
+                        Forest Green
+                    </label>
+                    <label>
+                        <input type="radio" name='themeselect' value="orange">
+                        <div id="orangetheme" class="themepreviews"></div>
+                        Mesa Orange
+                    </label>
+                    <label>
+                        <input type="radio" name='themeselect' value="blurple">
+                        <div id="blurpletheme" class="themepreviews"></div>
+                        Blurple
+                    </label>
+                    <label>
+                        <input type="radio" name='themeselect' value="discord">
+                        <div id="discorddarktheme" class="themepreviews"></div>
+                        Discord Dark
+                    </label>
+                    <label>
+                        <input type="radio" name='themeselect' value="midnight">
+                        <div id="midnighttheme" class="themepreviews"></div>
+                        Midnight
+                    </label>
+                    <label>
+                        <input type="radio" name='themeselect' value="blackout">
+                        <div id="blackouttheme" class="themepreviews"></div>
+                        Blackout
+                    </label>
+                </form>
+            </div>
+            <div id="notemanager" style="display: none;">
+                <h2>Manage User Notes</h2>
+                <p>Manage user notes here. Only you can see user notes. To get around needing a Rotur subscription, Rotur Assistant uses its own notes system, stored in the extension's sync storage.</p>
+                <hr>
+                <ul id="usernotelist">
+                    <li><h3>Loading Notes...</h3></li>
+                </ul>
+                <hr>
+                <div id="createnotesect">
+                    <h3>Create Note</h3>
+                    <input type="text" id="createusernoteuser" placeholder="Username">
+                    <textarea id="createusernotenote" placeholder="Note (Only visible to you)"></textarea>
+                    <p id="createnotecharlimit">0/300</p>
+                    <button id="createnotebtn">+ Create Note</button>
+                    <div id="createnotestatusplaceholder"></div>
+                </div>
+            </div>
+        </div>
+        <div id="overlay" class="overlay">
+            <div class="popup"></div>
+        </div>
+        <script type="module" src="../scripts/settings.js"></script>
+        <div id="footer-placeholder"></div>
+        <script src="../footer.js"></script>
+    </body>
+</html>

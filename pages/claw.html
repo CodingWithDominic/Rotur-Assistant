@@ -11,7 +11,7 @@
         <div id="header-placeholder"></div>
         <script src="../header.js"></script>
         <div class="container">
-            <h1>Claw</h1>
+            <div id="clawtalon"><h1>Claw</h1></div>
             <div id="postwindow">
                 <form id="post">
                     <textarea id="postcontent" placeholder="Share something to claw..."></textarea>
@@ -59,7 +59,9 @@
                 <button id="clearsearch" type="button" title="Clear Search">✕</button>
             </form>
             <div id="feed">
-                <ul id="clawfeed"></ul>
+                <ul id="clawfeed">
+                    <li class="loadingfeed"><h2>Loading...</h2></li>
+                </ul>
             </div>
         </div>
         <div class="overlay" id="overlay">

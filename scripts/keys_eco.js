@@ -8,6 +8,9 @@ const flagged = await new Promise(resolve =>
     chrome.storage.local.get('flagged', data => resolve(data.flagged || []))
 ) ?? [];
 
+const controller = new AbortController()
+const requestlimit = setTimeout(() => controller.abort(), 3000);
+
 if (!activeacc.uuid) {
     document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(
         `<h1>Key Manager (Economy)</h1>
@@ -134,23 +137,24 @@ function renderUsers(userdata, type, creator, id, price) {
 }
 
 async function RenderKeys() {
-	const keys = await fetch(`https://api.rotur.dev/keys/mine?auth=${activeacc.token}`).then(res => res.json()).catch(err => {
-        document.getElementById('container').replaceChildren(...parseHTML(`
+	const keys = await fetch(`https://api.rotur.dev/keys/mine?auth=${activeacc.token}`, {signal: controller.signal}).then(res => res.json()).catch(err => {
+        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
             <h1>Key Manager (Economy)</h1>
             <p id="keyfineprint">This page is for managing keys that are purchaseable (either one-time or recursively). For the page that manages keys associated with your account, see <a href="../pages/keymanager_acc.html">Key Manager (Account)</a></p>
             <hr>
-            <h2>A communication error has occurred. If you're sure it's not your connection, then Rotur may be down right now.</h2>
+            <h3>A communication error has occurred. If you're sure it's not your connection, then this part of Rotur may be down right now.</h3>
         `))
         return;
     })
+    clearTimeout(requestlimit)
     if (keys.error) {
         flagged.push(activeacc.uuid)
         chrome.storage.local.set({flagged: flagged})
-        document.getElementById('container').replaceChildren(...parseHTML(`
+        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
             <h1>Key Manager (Economy)</h1>
             <p id="keyfineprint">This page is for managing keys that are purchaseable (either one-time or recursively). For the page that manages keys associated with your account, see <a href="../pages/keymanager_acc.html">Key Manager (Account)</a></p>
             <hr>
-            <h2>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h2>
+            <h3>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h3>
         `))
         return;
     }
@@ -165,8 +169,7 @@ async function RenderKeys() {
         if (key.creator == activeacc.name) {
             my_keys.push(key)
             my_keys_html += `<li class="mykeyentry" id="key-${key.key}">
-            <details>
-                <summary class='ecokeynameheader'>${sanitize(key.name)}</summary>
+                <h2 class='ecokeynameheader'>${sanitize(key.name)}</h2>
                 <div class='ecokeydetails'>
                     <label class='editecokeyname'>Name: <input type='text' placeholder='Key Name' class='ecokeynameupdate' value="${sanitize(key.name ?? "Unknown Key")}"> <button class="ecokeysave" title="Save Name" id="savename-${key.key}" data-keyid='${key.key}'><image src='../images/misc_icons/save.png' width=24 height=24 alt='Save'></button></label>
                     <p>ID: ${key.key}</p>
@@ -192,13 +195,11 @@ async function RenderKeys() {
                     </div>
                     <div class='ecokeyadduserstatus'></div>
                 </details>
-            </details>
             </li>`
         } else {
             owned_keys.push(key)
             owned_keys_html += `<li class="ownedkeyentry" id="key-${key.key}">
-            <details>
-                <summary class='ecokeynameheader'>${sanitize(key.name)}</summary>
+                <h2 class='ecokeynameheader'>${sanitize(key.name)}</h2>
                 <div class='ecokeydetails'>
                     <p class="ecokeyownerlabel">Owner: <img src="https://avatars.rotur.dev/${key.creator}" alt="${key.creator}" width=24 height=24> ${key.creator}</p>
                     <p>ID: ${key.key}</p>
@@ -222,7 +223,6 @@ async function RenderKeys() {
                     <summary class='ecokeyuserlistcount'>Users (${Object.keys(key.users).length})</summary>
                     <ul class=ecokeyuserlist>${renderUsers(key.users, key.type, key.creator, key.key)}</ul>
                 </details>
-            </details>
             </li>`
         }
     })
@@ -231,10 +231,14 @@ async function RenderKeys() {
     if (my_keys.length == 0) {
         document.getElementById('ownedkeys').replaceChildren(...parseHTML(`<li><h2>You haven't created any keys yet!</h2></li>`))
         document.getElementById('ownedkeys').style = "border: none;"
+    } else {
+        document.getElementById('ownedkeys').style = "border: 2px solid white;"
     }
     if (owned_keys.length == 0) {
         document.getElementById('boughtkeys').replaceChildren(...parseHTML(`<li><h2>You haven't purchased any keys yet!</h2></li>`))
         document.getElementById('boughtkeys').style = "border: none;"
+    } else {
+        document.getElementById('boughtkeys').style = "border: 2px solid white;"
     }
 }
 
@@ -250,18 +254,43 @@ async function refreshUsers(keyid) {
 
 if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
     RenderKeys()
+    document.getElementById('ecokeytypes').addEventListener('change', async function(e) {
+        if (e.target.value == 'onetime') {
+            document.getElementById('ecokeyperiod').disabled = true;
+            document.getElementById('ecokeyfrequency').disabled = true;
+        }
+        if (e.target.value == 'subscription') {
+            document.getElementById('ecokeyperiod').disabled = false;
+            document.getElementById('ecokeyfrequency').disabled = false;
+        }
+    })
+    document.getElementById('keylookup').addEventListener('submit', async function(e) {
+        document.getElementById('ecokeylookupstatusplaceholder').replaceChildren()
+        e.preventDefault()
+        const keyid = document.getElementById('keysearchbar').value
+        if (keyid == '') {
+            document.getElementById('ecokeylookupstatusplaceholder').replaceChildren(...parseHTML(`<p class='failure'>Enter a valid Key ID</p>`))
+        }
+        const keydata = await fetch(`https://api.rotur.dev/keys/get/${keyid}`).then(res => res.json())
+
+        if (keydata.error) {
+            document.getElementById('ecokeylookupstatusplaceholder').replaceChildren(...parseHTML(`<p class='failure'>${keydata.error}</p>`))
+        } else {
+            const userinfo = await fetch(`https://api.rotur.dev/profile?name=${activeacc.name}&include_posts=0`).then(res => res.json())
+            const usercurrency = userinfo.currency
+            document.getElementById('ecokeylookupplaceholder').style = 'border: 2px solid white;'
+            document.getElementById('ecokeylookupplaceholder').replaceChildren(...parseHTML(`
+            <h2>${keydata.name}</h2>
+            <div id='ecokeylookupinfo'>
+                <p>Price: ${keydata.price} RC</p>
+                <p>Type: ${keydata.type}</p>
+            </div>
+            <button id='ecokeybuy' data-name='${keydata.name}' data-keyid="${keydata.key}" data-currency='${usercurrency}' data-price='${keydata.price}'>Buy Key</button>
+            `))
+        }
+    })
 }
 
-document.getElementById('ecokeytypes').addEventListener('change', async function(e) {
-    if (e.target.value == 'onetime') {
-        document.getElementById('ecokeyperiod').disabled = true;
-        document.getElementById('ecokeyfrequency').disabled = true;
-    }
-    if (e.target.value == 'subscription') {
-        document.getElementById('ecokeyperiod').disabled = false;
-        document.getElementById('ecokeyfrequency').disabled = false;
-    }
-})
 
 document.addEventListener('click', async function(e) {
     if (e.target.className == 'tab') {
@@ -455,31 +484,5 @@ document.addEventListener('click', async function(e) {
             document.getElementById('ecokeylookupstatusplaceholder').replaceChildren(...parseHTML(`<p class='success'>Purchase Successful!</p>`))
         }
         return;
-    }
-})
-
-document.getElementById('keylookup').addEventListener('submit', async function(e) {
-    document.getElementById('ecokeylookupstatusplaceholder').replaceChildren()
-    e.preventDefault()
-    const keyid = document.getElementById('keysearchbar').value
-    if (keyid == '') {
-        document.getElementById('ecokeylookupstatusplaceholder').replaceChildren(...parseHTML(`<p class='failure'>Enter a valid Key ID</p>`))
-    }
-    const keydata = await fetch(`https://api.rotur.dev/keys/get/${keyid}`).then(res => res.json())
-
-    if (keydata.error) {
-        document.getElementById('ecokeylookupstatusplaceholder').replaceChildren(...parseHTML(`<p class='failure'>${keydata.error}</p>`))
-    } else {
-        const userinfo = await fetch(`https://api.rotur.dev/profile?name=${activeacc.name}&include_posts=0`).then(res => res.json())
-        const usercurrency = userinfo.currency
-        document.getElementById('ecokeylookupplaceholder').style = 'border: 2px solid white;'
-        document.getElementById('ecokeylookupplaceholder').replaceChildren(...parseHTML(`
-        <h2>${keydata.name}</h2>
-        <div id='ecokeylookupinfo'>
-            <p>Price: ${keydata.price} RC</p>
-            <p>Type: ${keydata.type}</p>
-        </div>
-        <button id='ecokeybuy' data-name='${keydata.name}' data-keyid="${keydata.key}" data-currency='${usercurrency}' data-price='${keydata.price}'>Buy Key</button>
-        `))
     }
 })

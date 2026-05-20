@@ -1,8 +1,21 @@
-import { sanitize, formatDate, parseHTML } from "../index.js"
+import { sanitize, formatDate, parseHTML, openErrorPopup, openSuccessPopup, openWarningPopup } from "../index.js"
 
 let currentfeeddata = [];
 let lastquery = 'feed'
 let system_cache = []
+let isTalon = false
+const talon_beta = false // Dev flag for when Talon is out and ready to be supported (hopefully it will be a drop-in API swap)
+
+const controller = new AbortController()
+const requestlimit = setTimeout(() => controller.abort(), 3000);
+
+if (talon_beta) {
+    document.getElementById('clawtalon').replaceChildren(...parseHTML(`<select id='clawtalonoption'>
+        <option value='Claw' selected>Claw</option>
+        <option value='Talon'>Talon</option>
+        </select>`
+    ))
+}
 
 function openPopup(post_id) {
     document.getElementById('overlay').style.display = 'flex';
@@ -48,34 +61,6 @@ function openLikesPopup(likes) {
     `))
 }
 
-function openErrorPopup(error) {
-    document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
-        <div id="popup-header">
-            <h1>Error</h1>
-            <button id="popup-x" class="closebtn">✕</button>
-        </div>
-        <p id="deleteconfirmdialogue">${error}</p>
-        <div id="popup-choices">
-            <button id="cancel" class="closebtn">OK</button>
-        </div>
-    `))
-}
-
-function openSuccessPopup(msg) {
-    document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
-        <div id="popup-header">
-            <h1>Success</h1>
-            <button id="popup-x" class="closebtn">✕</button>
-        </div>
-        <p id="deleteconfirmdialogue">${msg}</p>
-        <div id="popup-choices">
-            <button id="cancel" class="closebtn">OK</button>
-        </div>
-    `))
-}
-
 function closePopup() {
     document.getElementById('overlay').style.display = 'none';
 }
@@ -93,8 +78,13 @@ let premium = false
 if (!activeacc.uuid) {
     document.getElementById('postwindow').replaceChildren(...parseHTML(`<h2>Sign in to create posts!</h2>`))
 } else {
-    premium = await fetch(`https://api.rotur.dev/keys/check/${activeacc.name}?key=bd6249d2b87796a25c30b1f1722f784f`).then(res => res.json())
+    premium = await fetch(`https://api.rotur.dev/keys/check/${activeacc.name}?key=bd6249d2b87796a25c30b1f1722f784f`, {signal: controller.signal}).then(res => res.json()).catch((err) => {
+        clearTimeout(requestlimit)
+        openWarningPopup('An error occurred while checking for Claw premium.')
+        return ({owned: false})
+    })
     premium = premium.owned
+    clearTimeout(requestlimit)
     if (premium) {
         document.getElementById('limit-post').innerText = `0/600`
     }
@@ -185,7 +175,13 @@ function createPostElement(post) {
 }
 
 async function renderClawFeed() {
-    const feed = await fetch(`https://claw.rotur.dev/${lastquery}`).then(res => res.json())
+    const feed = await fetch(`https://claw.rotur.dev/${lastquery}`).then(res => res.json()).catch(err => {
+        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+            <h1>Claw</h1>
+            <h2>A communication error has occurred. If you're sure it's not your connection, then Rotur may be down right now.</h2>
+        `))
+        return;
+    })
     const feedbody = document.getElementById('feed').querySelector('[id="clawfeed"]')
 
     if (feed.length == 0) {
@@ -301,28 +297,28 @@ async function post(message, system) {
         }
         let postsuccess = ''
         document.getElementById('posterrorplaceholder').replaceChildren()
-            postsuccess = await fetch(`https://api.rotur.dev/post${system != `Unknown` ? `?os=${system == "Random" ? (system_cache[Math.floor(Math.random() * system_cache.length)] ?? "Nex") : system}` : ``}${system == "Unknown" ? `?` : `&`}auth=${activeacc.token}&content=${message}${potentialattachment ? `&attachment=${encodeURIComponent(potentialattachment)}` : ``}${document.getElementById('profileonly').checked ? `&profile_only=1` : ``}`)
-            if (postsuccess.error) {
-                document.getElementById('posterrorplaceholder').replaceChildren(...parseHTML(`<p class="failure">${postsuccess.error}</p>`))
+        postsuccess = await fetch(`https://api.rotur.dev/post${system != `Unknown` ? `?os=${system == "Random" ? (system_cache[Math.floor(Math.random() * system_cache.length)] ?? "Rotur Assistant") : system}` : ``}${system == "Unknown" ? `?` : `&`}auth=${activeacc.token}&content=${message}${potentialattachment ? `&attachment=${encodeURIComponent(potentialattachment)}` : ``}${document.getElementById('profileonly').checked ? `&profile_only=1` : ``}`)
+        if (postsuccess.error) {
+            document.getElementById('posterrorplaceholder').replaceChildren(...parseHTML(`<p class="failure">${postsuccess.error}</p>`))
+        } else {
+            document.getElementById('postcontent').value = ''
+            document.getElementById('clawimage').value = ''
+            document.getElementById('clearattachment').disabled = false
+            document.getElementById('clearattachment').style.display = 'none'
+            updateCharLimit(0)
+            if (document.getElementById('profileonly').checked) {
+                document.getElementById('profileonly').checked = false
+                openSuccessPopup('Successfully posted to your profile!')
             } else {
-                document.getElementById('postcontent').value = ''
-                document.getElementById('clawimage').value = ''
-                document.getElementById('clearattachment').disabled = false
-                document.getElementById('clearattachment').style.display = 'none'
-                updateCharLimit(0)
-                if (document.getElementById('profileonly').checked) {
-                    document.getElementById('profileonly').checked = false
-                    openSuccessPopup('Successfully posted to your profile!')
-                } else {
-                    renderClawFeed()
-                }
+                renderClawFeed()
             }
+        }
+        postbutton.disabled = false
+        postbutton.textContent = 'Send'
+        setTimeout(function() {
+            document.getElementById('posterrorplaceholder').replaceChildren()
+        }, 10000)
     }
-    postbutton.disabled = false
-    postbutton.textContent = 'Send'
-    setTimeout(function() {
-        document.getElementById('posterrorplaceholder').replaceChildren()
-    }, 10000)
 }
 
 async function reply(postid, message) {
@@ -364,17 +360,26 @@ function updatepostcontrols() {
 }
 
 let livefeed = ''
+let claw_ws = null
 
 document.getElementById('realtime').addEventListener('change', async function(e) {
     if (document.getElementById('realtime').checked) {
         document.getElementById('reloadfeed').disabled = true;
-        renderClawFeed()
+        claw_ws = new WebSocket("wss://socialws.rotur.dev")
+        claw_ws.onmessage = function(e) {
+            let data = JSON.parse(e.data)
+            if (!(data.cmd == 'ping' || data.cmd == 'handshake')) {
+                renderClawFeed()
+            }
+        }
         livefeed = setInterval(() => {
-            renderClawFeed()
-        }, 5000);
+            claw_ws.send(JSON.stringify({cmd: "ping"}))
+        }, 30000);
     } else {
         document.getElementById('reloadfeed').disabled = false;
         clearInterval(livefeed)
+        claw_ws.close()
+        claw_ws = null
     }
 })
 
@@ -394,6 +399,23 @@ document.getElementById('postsearchbar').addEventListener('submit', (event) => {
     renderClawFeed()
 })
 
+async function readImageFromClipboard() {
+    try {
+        const clipboardItems = await navigator.clipboard.read();
+        for (const item of clipboardItems) {
+            const imageType = item.types.find(type => type.startsWith('image/'));
+            if (imageType) {
+                const blob = await item.getType(imageType);
+                const imgUrl = URL.createObjectURL(blob);
+                return imgUrl;
+            }
+        }
+    } catch (err) {
+        console.error('Failed to read clipboard:', err);
+        return null;
+    }
+}
+
 document.addEventListener('click', async function(e) {
     if (e.target.className == 'deletebtn') {
         openPopup(e.target.dataset.postid)
@@ -408,20 +430,17 @@ document.addEventListener('click', async function(e) {
                 const imageType = clipboardItem.types.find(type => type.startsWith('image/'));
                 if (imageType) {
                     const blob = await clipboardItem.getType(imageType);
-                    
-                    const file = new File([blob], "image.png", { type: blob.type });
-                    
+                    const file = new File([blob], `image.${blob.type.split('/')[1]}`, { type: blob.type });
                     const dataTransfer = new DataTransfer();
                     dataTransfer.items.add(file);
                     target.files = dataTransfer.files;
                     document.getElementById('clearattachment').style.display = 'flex';
-
+                    return;
                 } else {
                     openErrorPopup('No image was detected on your clipboard.')
                 }
             }
         } catch (err) {
-            console.log(err)
             openErrorPopup('No image was detected on your clipboard.')
         }
     }
@@ -456,7 +475,12 @@ document.addEventListener('click', async function(e) {
         return;
     }
     if (e.target.id == 'reloadfeed') {
-        renderClawFeed()
+        const target = e.target
+        target.disabled = true
+        target.textContent = "..."
+        await renderClawFeed()
+        target.disabled = false
+        target.textContent = '⟳'
         return;
     }
     if (e.target.className == 'likebutton') {
@@ -475,8 +499,10 @@ document.addEventListener('click', async function(e) {
         let likeshtml = `<ul class='likelist'>`
         for (let i=0; i<likes.length; i++) {
             likeshtml += `<li>
-            <img src='https://avatars.rotur.dev/${likes[i] || "Spectator"}' alt='${likes[i] || "Spectator"}' width='24' height='24'>
-            <p>${likes[i] || "Unknown User"}</p>
+            <a href="lookup.html?user=${likes[i] || "Spectator"}">
+                <img src='https://avatars.rotur.dev/${likes[i] || "Spectator"}' alt='${likes[i] || "Spectator"}' width='24' height='24'>
+                <p>${likes[i] || "Unknown User"}</p>
+            </a>
             </li>`
         }
         likeshtml += `</ul>`
@@ -541,6 +567,18 @@ document.getElementById('feedfilter').addEventListener('change', async function(
     renderClawFeed()
 })
 
-document.getElementById('clawimage').addEventListener('change', async function(e) {
-    document.getElementById('clearattachment').style.display = 'flex'
+if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
+    document.getElementById('clawimage').addEventListener('change', async function(e) {
+        document.getElementById('clearattachment').style.display = 'flex'
+    })
+}
+
+document.getElementById('clawtalon').addEventListener('change', async function(e) {
+    isTalon = (document.getElementById('clawtalonoption').value == 'Talon')
+    if (isTalon) {
+        // Future code for transitioning things from Claw over to Talon
+    } else {
+        // Future code for transitioning things from Talon over to Claw
+    }
+
 })

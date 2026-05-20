@@ -1,13 +1,17 @@
 const parser = new DOMParser();
 
+const settings = await new Promise(resolve =>
+        chrome.storage.local.get('settings', data => resolve(data.settings?.padEnd(8, "0") || "00000000"))
+    ) ?? "00000000";
+
 // Functions used in multiple places
 
 export function sanitize(input) {
     return input.replace(/[<>&'"/()=]/g, char => {
         switch (char) {
+            case '&': return '&amp;';
             case '<': return '&lt;';
             case '>': return '&gt;';
-            case '&': return '&amp;';
             case '\'': return '&apos;';
             case '"': return '&quot;';
             case '/': return '&sol;';
@@ -18,10 +22,25 @@ export function sanitize(input) {
     });
 }; // Prevents HTML formatting from showing up in unwanted places and also decreases the chance of XSS (or SQL injection, though idk if that's a possible issue since this extension does not rely on an SQL database of its own)
 
+function ConvertToAMPM(time) {
+    const timearray = time.split(':')
+    let timestamp = parseInt(timearray[0])
+    let suffix = "AM"
+    if (timestamp > 11) {
+        timestamp -= 12
+        suffix = "PM"
+    }
+    if (timestamp == 0) {
+        timestamp = 12
+    }
+    timearray[0] = timestamp
+    return (timearray.join(':') + ` ${suffix}`)
+}
+
 export function formatDate(input) {
     let date = new Date(input)
     date = date.toString().split(' ')
-    let finaldate = date[0] + ', ' + date[1] + ' ' + date[2] + ', ' + date[3] + ' at ' + date[4]
+    let finaldate = date[0] + ', ' + date[1] + ' ' + date[2] + ', ' + date[3] + ' at ' + (settings[4] == "0" ? ConvertToAMPM(date[4]) : date[4])
     return finaldate;
 }
 
@@ -31,84 +50,7 @@ export function parseHTML(string) {
     return final;
 } // To satisfy Mozilla's security requirements (it didn't like variables inside innerHTML arguments)
 
-export async function reloadHeader() {
-    document.getElementById('header-placeholder').replaceChildren(...parseHTML(`
-    <div class="header" style='position: relative;'>
-        <a href="/index.html" class="headerbtns">Home</a>
-        <button class="headerbtns" data-headermenu='utilityflyout'>Utility</button>
-        <button class="headerbtns" data-headermenu='socialflyout'>Social</button>
-        <button class="headerbtns" data-headermenu='otherflyout'>Other</button>
-        <div id=accountarea class=headerbtns>
-            <h1>Accounts</h1>
-        </div>
-        <div id='utilityflyout' class='headerflyout' style="display: none;">
-            <ul>
-                <li data-ref='wallet'>Wallet</li>
-                <li data-ref='lookup'>Lookup</li>
-                <li data-ref='keymanager_acc'>Key Manager (Acc)</li>
-                <li data-ref='keymanager_eco'>Key Manager (Eco)</li>
-                <li data-ref='items'>Item Manager</li>
-                <li data-ref='gifts'>Gift Manager</li>
-            </ul>
-        </div>
-        <div id='socialflyout' class='headerflyout' style="display: none;">
-            <ul>
-                <li data-ref='lookup'>Lookup</li>
-                <li data-ref='claw'>Claw</li>
-                <li data-ref='rmail'>Rmail</li>
-            </ul>
-        </div>
-        <div id='otherflyout' class='headerflyout' style="display: none;">
-            <ul>
-                <li data-ref='wiki'>Wiki</li>
-                <li data-ref='themes'>Themes</li>
-                <li data-ref='services'>Rotur Services</li>
-                <li data-ref='about'>About</li>
-                <li data-ref='credits'>Credits</li>
-                <li data-ref='donate'>Donate</li>
-            </ul>
-        </div>
-        <div id='accountflyout' class='headerflyout' style="display: none;">
-            <ul id='accountflyoutlist'>
-            <li>Getting Accounts...</li>
-            </ul>
-        </div>
-    </div>
-    `))
-
-    const activeacc = await new Promise(resolve =>
-            chrome.storage.local.get('activeacc', data => resolve(data.activeacc || []))
-        ) ?? [];
-        const p = document.createElement('p')
-        p.textContent = activeacc.name ? `Active: ${activeacc.name}` : 'Not signed in'
-        if (activeacc.name?.length > 14) {
-            p.title = activeacc.name // In case the username is too long to show properly
-        }
-        document.getElementById('accountarea').appendChild(p)
-        
-    const list = document.getElementById('accountflyoutlist')
-    const accounts = await new Promise(resolve =>
-        chrome.storage.local.get('userdata', data => resolve(data.userdata || []))
-        ) ?? [];
-    list.replaceChildren()
-
-    if (accounts.length == 0) {
-        const li = document.createElement('li')
-        li.dataset.ref = 'accounts'
-        li.textContent = 'Not signed in'
-        list.appendChild(li)
-    } else {
-        accounts.forEach(acc => {
-            const li = document.createElement('li')
-            li.dataset.accref = acc.name
-            li.textContent = acc.name
-            if (acc.name.length > 16) {
-                li.title = acc.name // In case the username is too long to show properly
-            }
-            list.appendChild(li)
-        })
-    }
-}
+chrome.storage.session.remove('acceptinprogress')
 
 document.addEventListener('click', function(e) {
     if (e.target.className == 'appgridbtn') {
@@ -134,3 +76,44 @@ document.addEventListener('keydown', (e) => {
         cursor = 0;
     }
 });
+// Success, warning, and error pop-ups
+
+export function openErrorPopup(error) {
+    document.getElementById('overlay').style.display = 'flex';
+    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+        <div id="popup-header">
+            <h1>Error</h1>
+            <button id="popup-x" class="closebtn">✕</button>
+        </div>
+        <p id="deleteconfirmdialogue">${error}</p>
+        <div id="popup-choices">
+            <button id="cancel" class="closebtn">OK</button>
+        </div>
+    `))
+}
+export function openSuccessPopup(msg) {
+    document.getElementById('overlay').style.display = 'flex';
+    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+        <div id="popup-header">
+            <h1>Success</h1>
+            <button id="popup-x" class="closebtn">✕</button>
+        </div>
+        <p id="deleteconfirmdialogue">${msg}</p>
+        <div id="popup-choices">
+            <button id="cancel" class="closebtn">OK</button>
+        </div>
+    `))
+}
+export function openWarningPopup(warning) {
+    document.getElementById('overlay').style.display = 'flex';
+    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+        <div id="popup-header">
+            <h1>Warning</h1>
+            <button id="popup-x" class="closebtn">✕</button>
+        </div>
+        <p id="deleteconfirmdialogue">${warning}</p>
+        <div id="popup-choices">
+            <button id="cancel" class="closebtn">OK</button>
+        </div>
+    `))
+}

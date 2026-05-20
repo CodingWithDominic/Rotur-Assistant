@@ -14,7 +14,7 @@
             <h1>Select Active Account</h1>
             <div id="account_list"></div>
             <div id="switchaccountpanel">
-                <button id="switchaccbtn">Switch to selected account on service</button>
+                <button id="switchaccbtn"><img src="../images/misc_icons/switch.png"> Switch to selected account on service <img src="../images/misc_icons/switch.png"></button>
                 <button id="switchaccinfo">?</button>
             </div>
             <div id="disabledcontext"></div>
@@ -27,9 +27,19 @@
                     <button id="downloadsync">Retrieve data from Sync</button>
                 </div>
                 <button id="clearsync">Clear Sync Data</button>
+                <label>
+                    <input type="checkbox" id="scramblesync">
+                    Scramble account tokens in sync storage
+                </label>
             </div>
             <p style="display: none;">Due to Google limitations on sync storage size, uploading to sync is unavailable if you have more than 20 accounts added.</p>
             <div id="syncstatusplaceholder"></div>
+            <hr>
+            <div id="importexportroster">
+                <button id="importroster">Import Roster</button>
+                <button id="exportroster">Export Roster</button>
+            </div>
+            <input type="file" id="importrosterbtn" style="display: none;" accept=".json,application/json">
             <script type="module" src="../scripts/accounts.js"></script>
         </div>
         <div class="overlay" id="overlay">

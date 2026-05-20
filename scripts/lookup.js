@@ -5,20 +5,58 @@ let reloadinprogress = false
 let userdata_cache = ''
 let you_cache = ''
 
-import { sanitize, formatDate, parseHTML } from "../index.js"
+import { sanitize, formatDate, parseHTML, openErrorPopup, openWarningPopup, openSuccessPopup } from "../index.js"
 
 function desanitize(string) {
-    return string.replace('&sol;','/').replace('&lt;', '<').replace('&gt;', '>').replace('&lpar;', '(').replace('&rpar;', ')').replace("&equals;", "=").replace(`&quot;`, `"`).replace(`&#39;`, `'`).replace('&amp;', '&') // Used for handling items since Rotur decided to use the direct item names as the IDs instead.
+    return string.replaceAll('&sol;','/').replaceAll('&lt;', '<').replaceAll('&gt;', '>').replaceAll('&lpar;', '(').replaceAll('&rpar;', ')').replaceAll("&equals;", "=").replaceAll(`&quot;`, `"`).replaceAll(`&#39;`, `'`).replaceAll('&amp;', '&') // Used for handling items since Rotur decided to use the direct item names as the IDs instead.
 }
 
 const accounts = await new Promise(resolve =>
         chrome.storage.local.get('userdata', data => resolve(data.userdata || []))
     ) ?? [];
 
+const settings = await new Promise(resolve =>
+        chrome.storage.local.get('settings', data => resolve(data.settings || "0000000"))
+    ) ?? "00000000";
+
 let accountsarray = []
 accounts.forEach(acc => {
     accountsarray.push(acc.name)
 })
+
+async function getNotes() {
+    const notes1 = await new Promise(resolve =>
+        chrome.storage.sync.get('notes1', data => resolve(data.notes1 || {}))
+    ) ?? {};
+    const notes2 = await new Promise(resolve =>
+        chrome.storage.sync.get('notes2', data => resolve(data.notes2 || {}))
+    ) ?? {};
+    const notes3 = await new Promise(resolve =>
+        chrome.storage.sync.get('notes3', data => resolve(data.notes3 || {}))
+    ) ?? {};
+    const notes4 = await new Promise(resolve =>
+        chrome.storage.sync.get('notes4', data => resolve(data.notes4 || {}))
+    ) ?? {};
+    const notes5 = await new Promise(resolve =>
+        chrome.storage.sync.get('notes5', data => resolve(data.notes5 || {}))
+    ) ?? {};
+    return ({...notes1, ...notes2, ...notes3, ...notes4, ...notes5})
+}
+
+async function setNotes(notesobject) {
+    const notes1 = Object.fromEntries(Object.entries(notesobject).slice(0, 20)) ?? {};
+    const notes2 = Object.fromEntries(Object.entries(notesobject).slice(20, 40)) ?? {};
+    const notes3 = Object.fromEntries(Object.entries(notesobject).slice(40, 60)) ?? {};
+    const notes4 = Object.fromEntries(Object.entries(notesobject).slice(60, 80)) ?? {};
+    const notes5 = Object.fromEntries(Object.entries(notesobject).slice(80, 100)) ?? {};
+    chrome.storage.sync.set({notes1: notes1})
+    chrome.storage.sync.set({notes2: notes2})
+    chrome.storage.sync.set({notes3: notes3})
+    chrome.storage.sync.set({notes4: notes4})
+    chrome.storage.sync.set({notes5: notes5})
+}
+
+const notes = await getNotes()
 
 const activeacc = await new Promise(resolve =>
         chrome.storage.local.get('activeacc', data => resolve(data.activeacc || []))
@@ -28,16 +66,11 @@ const flagged = await new Promise(resolve =>
     chrome.storage.local.get('flagged', data => resolve(data.flagged || []))
 ) ?? [];
 
-const known_badges = ['Architext', "Asier System", "Bugger", "colon three", "dev", "discord", "friendly", "gingerbug", "Nex", "originOS", "orion", "pro", "rich", "Spark", "rotur", "Constellinux", "HuopaOS", "kyrOS", "flf", "Rotur Assistant"]
+const known_badges = ['Architext', "Asier System", "Bugger", "colon three", "dev", "discord", "friendly", "gingerbug", "Nex", "originOS", "orion", "pro", "rich", "Spark", "rotur", "Constellinux", "HuopaOS", "kyrOS", "flf", "Rotur Assistant", "OliveOS", "geec os", "Warpdrive", "passNet", "originChats", "Flouride", "flouride"]
 
 // Re-using code from claw.js for the claw posts section
 
 let premium = false;
-
-if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
-    premium = await fetch(`https://api.rotur.dev/keys/check/${activeacc.name}?key=bd6249d2b87796a25c30b1f1722f784f`).then(res => res.json())
-    premium = premium.owned
-}
 
 function openLikesPopup(likes) {
     document.getElementById('overlay').style.display = 'flex';
@@ -124,34 +157,6 @@ function openRequestPopup(user) {
             <button id="cancel" class="closebtn">Ignore</button>
             <button class="rejectreq" data-user='${user}'>Decline</button>
             <button class="acceptreq" data-user='${user}'>Accept</button>
-        </div>
-    `))
-}
-
-function openSuccessPopup(msg) {
-    document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
-        <div id="popup-header">
-            <h1>Success</h1>
-            <button id="popup-x" class="closebtn">✕</button>
-        </div>
-        <p id="deleteconfirmdialogue">${msg}</p>
-        <div id="popup-choices">
-            <button id="cancel" class="closebtn">OK</button>
-        </div>
-    `))
-}
-
-function openErrorPopup(error) {
-    document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
-        <div id="popup-header">
-            <h1>Error</h1>
-            <button id="popup-x" class="closebtn">✕</button>
-        </div>
-        <p id="deleteconfirmdialogue">${error}</p>
-        <div id="popup-choices">
-            <button id="cancel" class="closebtn">OK</button>
         </div>
     `))
 }
@@ -281,7 +286,6 @@ async function reply(postid, message) {
         replystatus.replaceChildren(...parseHTML(`<p class="failure">You can't post a blank reply</p>`))
     } else {
         replysuccess = await fetch(`https://api.rotur.dev/reply?id=${postid}&auth=${activeacc.token}&content=${message}`)
-        console.log(replysuccess)
         if (replysuccess.error) {
             replystatus.replaceChildren(...parseHTML(`<p class="failure">${replysuccess.error}</p>`))
         } else {
@@ -315,7 +319,7 @@ function openConfirmPurchasePopup(senderdata, recipientdata, amt, itemname) {
             <button id="popup-x" class="closebtn">✕</button>
         </div>
         <p>Confirm purchase of the item ${itemname}?</p>
-        <p>Your Balance: ${senderdata.currency} -> ${senderdata.currency - amt}</p>
+        <p>Your Balance: ${senderdata['sys.currency']} -> ${senderdata['sys.currency'] - amt}</p>
         <p>${recipientdata.username}'s Balance: ${recipientdata.currency} -> ${recipientdata.currency + amt}</p>
         <div id="popup-choices">
             <button id="cancel" class="closebtn">Cancel</button>
@@ -346,7 +350,7 @@ function getItems(itemdata) {
     const myitems = itemdata
     let item_html = ``
     myitems.forEach(item => {
-        item_html += `<li class='roturitem' id='roturitem_${sanitize(item.name)}'>
+        item_html += `<li class='roturitem' id='roturitem_${sanitize(item.name).replaceAll(' ', '~')}'>
                     <h2>${sanitize(item.name)}</h2>
                     <p class='roturitemauthor'>Creator: <img src='https://avatars.rotur.dev/${item.author}' width=20 height=20> ${item.author} | Current Owner: <img src='https://avatars.rotur.dev/${item.owner}' width=20 height=20> ${item.owner} </p>
                     <p>${sanitize(item.description)}</p>
@@ -402,6 +406,21 @@ function openPopup() {
     `))
 }
 
+function openConfirmClearNotePopup() {
+    document.getElementById('overlay').style.display = 'flex';
+    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+        <div id="popup-header">
+            <h1>Clear Note</h1>
+            <button id="popup-x" class="closebtn">✕</button>
+        </div>
+        <p id="deleteconfirmdialogue">Are you sure you want to clear the note you have for this user?</p>
+        <div id="popup-choices">
+            <button id="cancel" class="closebtn">No</button>
+            <button class="finalnoteclear">Yes</button>
+        </div>
+    `))
+}
+
 function closePopup() {
     document.getElementById('overlay').style.display = 'none';
 }
@@ -439,7 +458,7 @@ async function renderProfile(userdata, you) {
     let isfriends = false
     let requestinprogress = false
     let isBlocked = false
-    if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
+    if (activeacc.uuid && !flagged.includes(activeacc.uuid) && you) {
         isfollowinguser = following.includes(activeacc.name)
         isfollowedbyuser = followers.includes(activeacc.name)
         isfriends = you['sys.friends'].includes(name)
@@ -451,6 +470,9 @@ async function renderProfile(userdata, you) {
     `
     for (let i=0; i<(userdata.badges ?? []).length; i++) {
         let badge_name = known_badges.includes(userdata.badges[i].name) ? userdata.badges[i].name : `placeholder`
+        if (badge_name == 'flouride') {
+            badge_name = 'Flouride'
+        }
         badge_html += `
         <li><img src="../images/badges/${badge_name}.png" alt="${badge_name}" title="${badge_name == "placeholder" ? `${userdata.badges[i].name}
         
@@ -458,6 +480,11 @@ The badge shown is a placeholder badge in case Rotur Assistant doesn't recognize
 Original badge description: ${userdata.badges[i].description}` : `${userdata.badges[i].name}
         
 ${userdata.badges[i].description}`}" width="16" height="16"></li>`
+    }
+    if ((userdata.system == 'passNet' && (userdata.badges.findIndex(item => item.name == 'passNet') == -1)) || (userdata.system == 'PassNet' && (userdata.badges.findIndex(item => item.name == 'PassNet') == -1))) {
+        badge_html += `<li><img src="../images/badges/PassNet.png" alt="PassNet" title="PassNet
+        
+This account was created on PassNet" width="16" height="16"></li>` // Since passNet is the only Rotur system who literally doesn't have an "icon" key in their JSON (all other systems with no icons have the JSON key, but it's just blank (""))
     }
     badge_html += `
     </ul>`
@@ -509,7 +536,7 @@ ${userdata.badges[i].description}`}" width="16" height="16"></li>`
     <img class='userbanner' src="${userdata['sys.banned'] ? `https://raw.githubusercontent.com/CodingWithDominic/Rotur-Assistant/refs/heads/main/images/banned_banner.png` : `https://avatars.rotur.dev/.banners/${name}`}" alt="${name}'s Banner">
     <div class="useravatar">
         <img class='useravatarview' src="https://avatars.rotur.dev/${name}" alt="${name}'s Avatar">
-        <img class='useravataroverlay' src="https://avatars.rotur.dev/.overlay/${name}" alt="${name}'s Avatar Decoration">
+        ${settings[0] == '0' ? `<img class='useravataroverlay' src="https://avatars.rotur.dev/.overlay/${name}" alt="${name}'s Avatar Decoration">` : ``}
     </div>
     <div class="userinfo">
         <div class="socialactionbar">
@@ -534,8 +561,8 @@ ${userdata.badges[i].description}`}" width="16" height="16"></li>`
         </div>
         <p class='bio' title="${name}'s Bio">${sanitize(userdata.bio)}</p>
     </div>
-    <div class="userinfo2" ${userdata['sys.banned'] ? `style='margin-bottom: -7px;'` : ``}>
-        <p class="joindate">Member since: ${joindate}</p>
+    <div class="userinfo2">
+    ${userdata['sys.banned'] ? `` : `<p class="joindate">Member since: ${joindate}</p>`}
         <ul id="morebasicinfo">
             <li>
                 <h3 class="infolabel">Balance</h3>
@@ -566,11 +593,22 @@ ${userdata.badges[i].description}`}" width="16" height="16"></li>`
         </ul>
         ${userdata.id ? `<h3 class="infolabel">Rotur UUID</h3>
             <p class='supplementaryinfo'>${id}</p>
-            <hr class="dotted_separator">
+            <hr>
             ` : ``}
+        <div id='roturassistantnote'>
+            <h3>User note</h3>
+            <p id='ranotefineprint'>Leave a private, personal note about this user here. Only you will be able to see this note. To get around requiring a Rotur subscription, Rotur Assistant uses its own notes system, independent of the one Rotur itself has.</p>
+            <textarea placeholder='Note (only visible to you)' id='rausernotefield'>${sanitize(notes[name] ?? '')}</textarea>
+            <p id='ranotecharlimit' style="color: ${(notes[name]?.length ?? 0) > 300 ? 'red' : 'white'};">${notes[name]?.length ?? 0}/300</p>
+            <div id='noteactionbar'>
+                <button title='Clear Note' id='raclearnotebtn'><img src='../images/misc_icons/delete.png' width=24 height=24> Clear Note</button>
+                <button title='Save Note' id='rasavenotebtn'><img src='../images/misc_icons/save.png' width=24 height=24> Save Note</button>
+            </div>
+        </div>
     </div>
     ${userdata['sys.banned'] ? `` : `
         <div class="userinfo3">
+            <hr>
             <details id="followingpanel">
                 <summary>Following (${following.length})</summary>
                 <ul class='followuserlist' id="followinglist">${renderFollowingFollowers(following) || `<li><h2>This user has not followed anyone yet.</h2></li>`}</ul>
@@ -601,9 +639,16 @@ ${userdata.badges[i].description}`}" width="16" height="16"></li>`
 }
 
 async function performSearch(user) {
+    const controller = new AbortController()
+    const requestlimit = setTimeout(() => controller.abort(), 3000);
+    const controller2 = new AbortController()
+    const requestlimit2 = setTimeout(() => controller2.abort(), 10000);
     let searchtype2 = searchtype;
     if (user == '') {
         document.getElementById('lookuperror').replaceChildren(...parseHTML(`<p class='failure'>Please enter a ${document.getElementById('usersearchbarinput').placeholder}</p>`))
+        setTimeout(function() {
+            document.getElementById('lookuperror').replaceChildren()
+        }, 10000)
         return;
     }
     is_banned = false;
@@ -619,24 +664,60 @@ async function performSearch(user) {
             searchtype2 = 'name'
         }
     }
-    
-    const userdata = await fetch(`https://api.rotur.dev/profile?${searchtype2}=${user}${activeacc.uuid && !flagged.includes(activeacc.uuid) ? `&auth=${activeacc.token}` : ``}`).then(res => res.json()) // Added auth to decrease rate limits
+    const userdata = await fetch(`https://api.rotur.dev/profile?${searchtype2}=${user}${activeacc.uuid && !flagged.includes(activeacc.uuid) ? `&auth=${activeacc.token}` : ``}`, {signal: controller2.signal}).then(res => res.json()).catch((err) => {
+        document.getElementById('lookuperror').replaceChildren(...parseHTML(`<p class='failure'>An error occurred while searching this user's profile. This could be due to a deadlock, Rotur being down, or your internet connection. Please try again later.</p>`))
+        console.log(err)
+        clearTimeout(requestlimit2)
+        setTimeout(function() {
+            document.getElementById('lookuperror').replaceChildren()
+        }, 10000)
+        return;
+    }) // Added auth to decrease rate limits
+    clearTimeout(requestlimit2)
+    if (!userdata) {
+        document.getElementById('lookuperror').replaceChildren(...parseHTML(`<p class='failure'>An error occurred while searching this user's profile. This could be due to a deadlock, Rotur being down, or your internet connection. Please try again later.</p>`))
+        setTimeout(function() {
+            document.getElementById('lookuperror').replaceChildren()
+        }, 10000)
+        return;   
+    }
     if (userdata.error) {
         document.getElementById('lookuperror').replaceChildren(...parseHTML(`<p class='failure'>${searchtype == 'auto' ? 'No account was found that matches the inputted username, UUID, or Discord ID' : searchtype2 == 'name' ? 'No account with that username was found' : (searchtype2 == 'id' ? 'No account with that UUID was found' : 'No account associated with that Discord ID was found.')}</p>`))
+        setTimeout(function() {
+            document.getElementById('lookuperror').replaceChildren()
+        }, 10000)
         return;
     }
     let you = null
     if (flagged.includes(activeacc.uuid)) {
-        openErrorPopup('Due to an authentication issue that has been detected with your account, some interaction features have been disabled.')
+        openWarningPopup('Due to an authentication issue that has been detected with your account, some interaction features have been disabled.')
         premium = false
     } else {
         you = activeacc.uuid ? await fetch(`https://api.rotur.dev/get_user?auth=${activeacc.token}`).then(res => res.json()) : null
-        if ((you && you.error && (you.error == 'Invalid authentication credentials') && !you.username) || (you['sys.banned'])) {
-            flagged.push(activeacc.uuid)
-            chrome.storage.local.set({flagged: flagged})
-            openErrorPopup('Due to an authentication issue that has been detected with your account, some interaction features have been disabled.')
-            you = null;
+        if (you) {
+            if ((you.error && (you.error == 'Invalid authentication credentials') && !you.username) || (you['sys.banned'])) {
+                flagged.push(activeacc.uuid)
+                chrome.storage.local.set({flagged: flagged})
+                openWarningPopup('Due to an authentication issue that has been detected with your account, some interaction features have been disabled.')
+                you = null;
+            }
+            if (you && !(you['sys.tos_accepted'])){
+                openWarningPopup('Since your current active account has not accepted the Rotur TOS (it may have been updated since your last visit), some interaction features have been disabled.')
+                you = null;
+            } else if (you['sys.email_verified'] === false) {
+                openWarningPopup('Since your current active account has not verified its email yet, some interaction features have been disabled.')
+                you = null;
+            }
         }
+    }
+    if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
+        premium = await fetch(`https://api.rotur.dev/keys/check/${activeacc.name}?key=bd6249d2b87796a25c30b1f1722f784f`, {signal: controller.signal}).then(res => res.json()).catch((err) => {
+            clearTimeout(requestlimit)
+            console.warn('An error occurred while checking for Claw premium')
+            return ({owned: false})
+        })
+        premium = premium.owned
+        clearTimeout(requestlimit)
     }
     const queryString = window.location.search;
     const urlParams = new URLSearchParams(queryString);
@@ -644,15 +725,15 @@ async function performSearch(user) {
     const bypassprivate = Boolean(urlParams.get('bypass')) || reloadinprogress; // Skip the private profile popup if one of these conditions is met
     userdata_cache = userdata
 
+    you_cache = you
+
     if (userdata['sys.banned']) {
         is_banned = true
-        you_cache = you
         openPopup()
         return;
     }
     is_banned = false;
     if (userdata.private && !bypassprivate) {
-        you_cache = you
         openPopup()
         return;
     }
@@ -764,7 +845,7 @@ document.addEventListener('click', async function(e) {
     if (e.target.className == 'finalsendreq') {
         closePopup()
         const user = e.target.dataset.user
-        const request = await fetch(`https://api.rotur.dev/friends/request/${user}?auth=${activeacc.token}`, {method: 'POST'})
+        const request = await fetch(`https://api.rotur.dev/friends/request/${user}?auth=${activeacc.token}`, {method: 'POST'}).then(res => res.json())
         if (request.error) {
             openErrorPopup(request.error)
         } else {
@@ -780,9 +861,9 @@ document.addEventListener('click', async function(e) {
         if (unfriend) {
             const unfriendreq = await fetch(`https://api.rotur.dev/friends/remove/${user}?auth=${activeacc.token}`, {method: 'POST'})
             if (!unfriendreq.error) {
-                document.getElementById('addfriend').replaceChildren(...parseHTML(`<img src="../images/misc_icons/friend.png" width=24 height=24>`))
                 document.getElementById('addfriend').dataset.friendstatus = 'nofriend'
                 document.getElementById('addfriend').title = 'Add Friend'
+                document.getElementById('addfriend').replaceChildren(...parseHTML(`<img src="../images/misc_icons/add_friend.png" width=24 height=24>`))
             }
         }
         if (unfollow) {
@@ -809,9 +890,9 @@ document.addEventListener('click', async function(e) {
         if (request.error) {
             openErrorPopup(request.error)
         } else {
-            document.getElementById('addfriend').replaceChildren(...parseHTML(`<img src="../images/misc_icons/add_friend.png" width=24 height=24>`))
             document.getElementById('addfriend').dataset.friendstatus = 'nofriend'
             document.getElementById('addfriend').title = 'Add Friend'
+            document.getElementById('addfriend').replaceChildren(...parseHTML(`<img src="../images/misc_icons/add_friend.png" width=24 height=24>`))
         }
         return;
     }
@@ -822,9 +903,9 @@ document.addEventListener('click', async function(e) {
         if (request.error) {
             openErrorPopup(request.error)
         } else {
-            document.getElementById('addfriend').replaceChildren(...parseHTML(`<img src="../images/misc_icons/friend.png" width=24 height=24>`))
             document.getElementById('addfriend').dataset.friendstatus = 'friend'
-            document.getElementById('addfriend').title = 'Friends'            
+            document.getElementById('addfriend').title = 'Friends'   
+            document.getElementById('addfriend').replaceChildren(...parseHTML(`<img src="../images/misc_icons/friend.png" width=24 height=24>`))         
         }
         return;
     }
@@ -835,9 +916,9 @@ document.addEventListener('click', async function(e) {
         if (request.error) {
             openErrorPopup(request.error)
         } else {
-            document.getElementById('addfriend').replaceChildren(...parseHTML(`<img src="../images/misc_icons/add_friend.png" width=24 height=24>`))
             document.getElementById('addfriend').dataset.friendstatus = 'nofriend'
             document.getElementById('addfriend').title = 'Add Friend'
+            document.getElementById('addfriend').replaceChildren(...parseHTML(`<img src="../images/misc_icons/add_friend.png" width=24 height=24>`))
         }
         return;
     }
@@ -848,18 +929,45 @@ document.addEventListener('click', async function(e) {
         if (request.error) {
             openErrorPopup(request.error)
         } else {
-            document.getElementById('profileblockbutton').replaceChildren(...parseHTML(`<img src="../images/misc_icons/block.png" width=24 height=24>`))
             document.getElementById('profileblockbutton').title = 'Block User'
             document.getElementById('profileblockbutton').dataset.blocked = 'false'
+            document.getElementById('profileblockbutton').replaceChildren(...parseHTML(`<img src="../images/misc_icons/block.png" width=24 height=24>`))
         }
         return;
     }
-
+    if (e.target.id == 'rasavenotebtn') {
+        if (document.getElementById('rausernotefield').value.length > 300) {
+            openErrorPopup('Your note is too long.')
+        } else {
+            notes[userdata_cache.username] = document.getElementById('rausernotefield').value.replaceAll(`'`, `\'`)
+            if (notes[userdata_cache.username] == '') {
+                delete notes[userdata_cache.username]
+            }
+            if (Object.keys(notes).length > 100) {
+                delete notes[userdata_cache.username]
+                openErrorPopup('Due to Google limitations on sync storage, you can only have notes on up to 100 users.')
+            } else {
+                setNotes(notes)
+                openSuccessPopup('Successfully updated note for ' + userdata_cache.username)
+            }
+        }
+    }
+    if (e.target.id == 'raclearnotebtn') {
+        openConfirmClearNotePopup()
+    }
+    if (e.target.className == 'finalnoteclear') {
+        closePopup()
+        delete notes[userdata_cache.username]
+        document.getElementById('rausernotefield').value = ''
+        document.getElementById('ranotecharlimit').textContent = `0/300`
+        document.getElementById('ranotecharlimit').style = `color: white;`
+        setNotes(notes)
+    }
     // items.js re-used code
     if (e.target.className == 'buyitem') {
         const target = e.target
-        if (yourdata.currency < parseFloat(target.dataset.amt)) {
-            openErrorPopup(`Insufficient Funds (${yourdata.currency} < ${target.dataset.amt})`)
+        if (you_cache['sys.currency'] < parseFloat(target.dataset.amt)) {
+            openErrorPopup(`Insufficient Funds (${you_cache['sys.currency']} < ${target.dataset.amt})`)
         } else {
             openConfirmPurchasePopup(you_cache, userdata_cache, parseFloat(target.dataset.amt), target.dataset.itemname)
         }
@@ -872,7 +980,7 @@ document.addEventListener('click', async function(e) {
             openErrorPopup(itempurchasestatus.error)
         } else {
             openSuccessPopup(`Successfully purchased ${decodeURIComponent(target.dataset.itemname)}!`)
-            document.getElementById(`roturitem_${target.dataset.itemname}`).remove()
+            document.getElementById(`roturitem_${target.dataset.itemname.replaceAll(' ', '~')}`).remove()
             document.getElementById('useritemssummary').textContent = `Items (${document.getElementById('roturuseritemlist').childElementCount})`
             if (document.getElementById('roturuseritemlist').childElementCount == 0) {
                 document.getElementById('roturuseritemlist').remove()
@@ -922,8 +1030,10 @@ document.addEventListener('click', async function(e) {
         let likeshtml = `<ul class='likelist'>`
         for (let i=0; i<likes.length; i++) {
             likeshtml += `<li>
-            <img src='https://avatars.rotur.dev/${likes[i] || "Spectator"}' alt='${likes[i] || "Spectator"}' width='24' height='24'>
-            <p>${likes[i] || "Unknown User"}</p>
+            <a href='lookup.html?user=${likes[i] || "Spectator"}'>
+                <img src='https://avatars.rotur.dev/${likes[i] || "Spectator"}' alt='${likes[i] || "Spectator"}' width='24' height='24'>
+                <p>${likes[i] || "Unknown User"}</p>
+            </a>
             </li>`
         }
         likeshtml += `</ul>`
@@ -956,5 +1066,11 @@ document.addEventListener('input', async function (e) {
     if (e.target.className == 'replybox') {
         const len = e.target.value.length
         updateReplyCharLimit(e.target.dataset.postid, len)
+        return;
+    }
+    if (e.target.id == 'rausernotefield') {
+        document.getElementById('ranotecharlimit').textContent = `${e.target.value.length}/300`
+        document.getElementById('ranotecharlimit').style = `color: ${e.target.value.length > 300 ? 'red' : 'white'};`
+        return;
     }
 })

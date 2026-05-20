@@ -13,11 +13,18 @@ async function getSupporters() {
 
     const final_list = document.getElementById('subscribersplaceholder').children
 
+    document.getElementById('maxlabel').textContent += ` (${document.getElementById('tier_max').childElementCount})`
+    document.getElementById('prolabel').textContent += ` (${document.getElementById('tier_pro').childElementCount})`
+    document.getElementById('drivelabel').textContent += ` (${document.getElementById('tier_drive').childElementCount})`
+    document.getElementById('pluslabel').textContent += ` (${document.getElementById('tier_plus').childElementCount})`
+    document.getElementById('litelabel').textContent += ` (${document.getElementById('tier_lite').childElementCount})`
+
     Array.from(final_list).forEach(child => {
         if (!child.hasChildNodes()) {
-            const p = document.createElement('p')
-            p.innerText = 'No-one is subscribed to this tier right now.'
-            child.appendChild(p)
+            const h4 = document.createElement('h4')
+            h4.style = 'text-align: left;'
+            h4.textContent = 'No-one is subscribed to this tier right now.'
+            child.appendChild(h4)
         }
     })
 }

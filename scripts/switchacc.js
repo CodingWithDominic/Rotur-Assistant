@@ -1,25 +1,47 @@
 console.log('[Rotur Assistant] Rotur account switcher active') // This has to exist or else the switcher won't work
 
+window.onload = async () => {
+    if (window.location.href.includes('https://rotur.dev/terms-of-service')) {
+        const acceptinprogress = await new Promise(resolve =>
+            chrome.storage.session.get('acceptinprogress', data => resolve(data.acceptinprogress || null))
+        ) ?? null;
+        if (acceptinprogress) {
+            document.getElementById('accept-terms').click()
+            document.getElementById('accept-button').click() // Get around the https://rotur.dev origin limitation
+        }
+        return;
+    }
+    if (window.location.href.includes('https://rotur.dev/auth')) {
+        const acceptinprogress = await new Promise(resolve =>
+            chrome.storage.session.get('acceptinprogress', data => resolve(data.acceptinprogress || null))
+        ) ?? null;
+        if (acceptinprogress) {
+            chrome.runtime.sendMessage({status: 'accepted'})
+        }
+        return;
+    }
+}
+
 function updateToken(site, subspace, newToken) {
-const request = indexedDB.open(site);
+    const request = indexedDB.open(site);
 
-request.onsuccess = function(event) {
-    const db = event.target.result;
-    const transaction = db.transaction(subspace, 'readwrite');
-    const store = transaction.objectStore(subspace);
+    request.onsuccess = function(event) {
+        const db = event.target.result;
+        const transaction = db.transaction(subspace, 'readwrite');
+        const store = transaction.objectStore(subspace);
 
-    const getRequest = store.get('token');
+        const getRequest = store.get('token');
 
-    getRequest.onsuccess = function() {
-    const data = getRequest.result;
-    data.value = newToken;
-    store.put(newToken, 'token');
+        getRequest.onsuccess = function() {
+        const data = getRequest.result;
+        data.value = newToken;
+        store.put(newToken, 'token');
+        };
     };
-};
 
-request.onerror = function(e) {
-    console.error('DB error:', e.target.error);
-};
+    request.onerror = function(e) {
+        console.error('DB error:', e.target.error);
+    };
 }
 
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
@@ -82,7 +104,11 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
         sendResponse({ result: "done" });
         return;
     }
-
+    if (url.includes('https://git.rotur.dev')) {
+        window.location.href = `https://git.rotur.dev/user/rotur/callback?token=${message.data}`
+        sendResponse({ result: "done" });
+        return;
+    }
     if (url.includes('https://apps.rotur.dev')) {
         window.location.href = `https://apps.rotur.dev/auth?token=${message.data}`
         sendResponse({ result: "done" });

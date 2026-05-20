@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="stylesheet" href="../style.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+    </head>
+    <body>
+        <div id="header-placeholder"></div>
+        <script src="../header.js"></script>
+        <div class="container">
+            <h1>Notifications</h1>
+            <p>Notifications that you may have received across different Rotur services.</p>
+            <hr>
+            <div class="tabheader">
+                <button id='notifsfeed' class="tab">Notifications</button>
+                <button id='notifsettings' class="tab">Manage Sources</button>
+                <button id='notifendpoints' class="tab">Manage Endpoints</button>
+            </div>
+            <ul id="notificationslist">
+                <li><h2>Loading...</h2></li>
+            </ul>
+            <div id="notificationsettings" style="display: none;">
+                <details id="notifsourcecreateribbon">
+                    <summary style="margin: 0; margin-bottom: 3px;">Add Source</summary>
+                    <div id="notifsourcecreate">
+                        <input type="text" placeholder="Notification Source" id="notifsourcecreatesource">
+                        <input type="text" placeholder="Associated Username" id="notifsourcecreatename">
+                        <button id="notifsourcefinalcreate">+ Add Source</button>
+                        <div id="notifsourcestatus"></div>
+                    </div>
+                </details>
+                <hr>
+                <h2>Manage notification sources</h2>
+                <ul id="notifsourcemanager">
+                    <li><h2>Loading...</h2></li>
+                </ul>
+            </div>
+            <div id="notificationendpoints" style="display: none;">
+                <details id="notifendpointcreateribbon">
+                    <summary style="margin: 0; margin-bottom: 3px;">Add Endpoint</summary>
+                    <p style="font-size: 10px; margin: 0; margin-bottom: 3px;">Make sure you know what you're doing</p>
+                    <div id="notifendpointcreate">
+                        <input type="text" placeholder="Notification Endpoint URL" id="notifendpointcreateendpoint">
+                        <input type="text" placeholder="P256 Key" id="notifendpointcreatep256dh">
+                        <input type="text" placeholder="Auth Secret" id="notifendpointcreateauth">
+                        <input type="text" placeholder="Source Name" id="notifendpointcreatesource">
+                        <input type="text" placeholder="Fingerprint" id="notifendpointcreatefingerprint">
+                        <button id="notifendpointfinalcreate">+ Add Endpoint</button>
+                        <div id="notifendpointstatus"></div>
+                    </div>
+                </details>
+                <hr>
+                <h2>Manage notification endpoints</h2>
+                <ul id="notifendpointmanager">
+                    <li><h2>Loading...</h2></li>
+                </ul>
+            </div>
+        </div>
+        <div class="overlay" id="overlay">
+            <div class="popup">
+            </div>
+        </div>
+        <script type="module" src="../scripts/notifications.js"></script>
+        <div id="footer-placeholder"></div>
+        <script src="../footer.js"></script>
+    </body>
+</html>

@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Rotur Assistant",
-    "version": "1.0.1",
+    "version": "1.1",
     "description": "Manage and keep up with most of your Rotur things in one place. Anywhere on the web, anytime.",
     "browser_specific_settings": {
         "gecko": {
@@ -17,15 +17,30 @@
         "cookies",
         "storage",
         "activeTab",
-        "clipboardRead"
+        "clipboardRead",
+        "notifications",
+        "alarms",
+        "declarativeNetRequest"
     ],
+    "declarative_net_request": {
+        "rule_resources": [{
+        "id": "ruleset_1",
+        "enabled": false,
+        "path": "rules.json"
+    }]
+    },
     "host_permissions": ["https://*.mistium.com/*", "https://*.rotur.dev/*", "https://graphite.flufi.uk/*", "https://adthoughtsglobal.github.io/*", "https://runnova.github.io/*", "https://warpdrive.team/*", "https://antiviiris.github.io/originChats/*"],
     "content_scripts": [
     {
         "matches": ["https://*.mistium.com/*", "https://*.rotur.dev/*", "https://graphite.flufi.uk/*", "https://adthoughtsglobal.github.io/*", "https://runnova.github.io/*", "https://warpdrive.team/*", "https://antiviiris.github.io/originChats/*"],
-        "js": ["scripts/switchacc.js"]
+        "js": ["scripts/switchacc.js"],
+        "all_frames": true
     }
     ],
+    "background": {
+        "service_worker": "scripts/background.js",
+        "scripts": ["scripts/background.js"]
+    },
     "action": {
         "default_popup": "index.html",
         "default_icon": {

@@ -1,4 +1,4 @@
-import { parseHTML } from "../index.js";
+import { parseHTML, openErrorPopup, openSuccessPopup } from "../index.js";
 
 const activeacc = await new Promise(resolve =>
     chrome.storage.local.get('activeacc', data => resolve(data.activeacc || []))
@@ -21,34 +21,6 @@ function openSystemPopup(system_name, owner) {
         <div id="popup-choices">
             <button id="cancel" class="closebtn">Cancel</button>
             <button class="finalsystemconfirm" data-keyname='system' data-finalsystem='${system_name}'>Confirm</button>
-        </div>
-    `))
-}
-
-function openErrorPopup(error) {
-    document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
-        <div id="popup-header">
-            <h1>Error</h1>
-            <button id="popup-x" class="closebtn">✕</button>
-        </div>
-        <p id="deleteconfirmdialogue">${error}</p>
-        <div id="popup-choices">
-            <button id="cancel" class="closebtn">OK</button>
-        </div>
-    `))
-}
-
-function openSuccessPopup(msg) {
-    document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
-        <div id="popup-header">
-            <h1>Success</h1>
-            <button id="popup-x" class="closebtn">✕</button>
-        </div>
-        <p id="deleteconfirmdialogue">${msg}</p>
-        <div id="popup-choices">
-            <button id="cancel" class="closebtn">OK</button>
         </div>
     `))
 }

@@ -12,7 +12,7 @@ const themedata = {
 const themevarnames = ["--bg-color", "--scrollbar-bar", "--scrollbar-bg", "--headerandfooter", "--button", "--buttonhover", "--popupbg"]
 
 document.getElementById('header-placeholder').innerHTML = `
-    <div class="header" style='position: relative;'>
+    <nav class="header" style='position: relative;'>
         <a href="/index.html" class="headerbtns">Home</a>
         <button class="headerbtns" data-headermenu='utilityflyout'>Utility</button>
         <button class="headerbtns" data-headermenu='socialflyout'>Social</button>
@@ -27,6 +27,7 @@ document.getElementById('header-placeholder').innerHTML = `
                 <li data-ref='keymanager_eco'>Key Manager (Eco)</li>
                 <li data-ref='items'>Item Manager</li>
                 <li data-ref='gifts'>Gift Manager</li>
+                <li data-ref='notifications'>Notifications</li>
             </ul>
         </div>
         <div id='socialflyout' class='headerflyout' style="display: none;">
@@ -38,10 +39,12 @@ document.getElementById('header-placeholder').innerHTML = `
         </div>
         <div id='otherflyout' class='headerflyout' style="display: none;">
             <ul>
+                <li data-ref='settings'>Settings</li>
                 <li data-ref='wiki'>Wiki</li>
-                <li data-ref='themes'>Themes</li>
                 <li data-ref='services'>Rotur Services</li>
                 <li data-ref='about'>About</li>
+                <li data-ref='patch_notes'>Patch Notes</li>
+                <li data-ref='disclaimer'>Privacy Disclaimer</li>
                 <li data-ref='credits'>Credits</li>
                 <li data-ref='donate'>Donate</li>
             </ul>
@@ -51,8 +54,8 @@ document.getElementById('header-placeholder').innerHTML = `
             <li>Getting accounts...</li>
             </ul>
         </div>
-    </div>
-    `;
+    </nav>
+    `; // Switched from div to nav to better follow coding practices. I may rewrite some other stuff later to also better follow coding practices.
 
 async function checkSignin() {
     const activeacc = await new Promise(resolve =>
@@ -66,6 +69,22 @@ async function checkSignin() {
         }
         document.getElementById('accountarea').appendChild(p)
 }
+
+async function checkanchor() {
+    const settings = await new Promise(resolve =>
+    chrome.storage.local.get('settings', data => resolve(data.settings || "00000000"))
+    ) ?? "00000000";
+    if (settings[2] == '1') {
+        document.getElementsByClassName('container')[0].style = ('margin-top: 40px;' + (settings[3] == '1' ? ' padding-bottom: 105px;' : ''))
+        document.getElementById('header-placeholder').style = 'position: fixed; z-index: 4500;'
+    }
+    if (settings[3] == '1') {
+        document.getElementsByClassName('container')[0].style = ('padding-bottom: 105px;' + (settings[2] == '1' ? ' margin-top: 40px;' : ''))
+        document.getElementById('footer-placeholder').style = 'position: fixed; bottom: 0; z-index: 4400;'
+    }
+}
+
+checkanchor()
 
 async function appendaccounts() {
     const list = document.getElementById('accountflyoutlist')

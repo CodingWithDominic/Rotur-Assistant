@@ -1,7 +1,7 @@
-import { sanitize, formatDate, parseHTML } from "../index.js"
+import { sanitize, formatDate, parseHTML, openErrorPopup, openSuccessPopup } from "../index.js"
 
 function desanitize(string) {
-    return string.replace('&sol;','/').replace('&lt;', '<').replace('&gt;', '>').replace('&lpar;', '(').replace('&rpar;', ')').replace("&equals;", "=").replace(`&quot;`, `"`).replace(`&#39;`, `'`).replace('&amp;', '&') // Used for handling items since Rotur decided to use the direct item names as the IDs instead.
+    return string.replaceAll('&sol;','/').replaceAll('&lt;', '<').replaceAll('&gt;', '>').replaceAll('&lpar;', '(').replaceAll('&rpar;', ')').replaceAll("&equals;", "=").replaceAll(`&quot;`, `"`).replaceAll(`&#39;`, `'`).replaceAll('&amp;', '&') // Used for handling items since Rotur decided to use the direct item names as the IDs instead.
 }
 
 let last_sort = 'newest'
@@ -76,34 +76,6 @@ function openConfirmPurchasePopup(senderdata, recipientdata, amt, itemname) {
     `))
 }
 
-function openErrorPopup(error) {
-    document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
-        <div id="popup-header">
-            <h1>Error</h1>
-            <button id="popup-x" class="closebtn">✕</button>
-        </div>
-        <p id="deleteconfirmdialogue">${error}</p>
-        <div id="popup-choices">
-            <button id="cancel" class="closebtn">OK</button>
-        </div>
-    `))
-}
-
-function openSuccessPopup(msg) {
-    document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
-        <div id="popup-header">
-            <h1>Success</h1>
-            <button id="popup-x" class="closebtn">✕</button>
-        </div>
-        <p id="deleteconfirmdialogue">${msg}</p>
-        <div id="popup-choices">
-            <button id="cancel" class="closebtn">OK</button>
-        </div>
-    `))
-}
-
 function closePopup() {
     document.getElementById('overlay').style.display = 'none';
 }
@@ -146,11 +118,13 @@ async function getItems(user) {
     const myitems = await fetch(`https://api.rotur.dev/items/list/${user}`).then(res => res.json())
     let item_html = `<ul class='roturuseritemlist'>`
     myitems.forEach(item => {
-        item_html += `<li class='roturitem' id='roturitem_${sanitize(item.name)}'>
-            <h2>${sanitize(item.name)}</h2>
-            <button class='itemdeletebtn' title="Delete Item" data-itemname="${sanitize(item.name)}"><img src='../images/misc_icons/delete.png' width=24 height=24></button>
+        item_html += `<li class='roturitem' id='roturitem_${sanitize(item.name).replaceAll(' ', '~')}'>
+            <div class="itemnameheader">
+                <h2>${sanitize(item.name)}</h2>
+                <button class='itemdeletebtn' title="Delete Item" data-itemname="${sanitize(item.name)}"><img src='../images/misc_icons/delete.png' width=24 height=24></button>
+            </div>
             <p class='roturitemauthor'>Creator: <img src='https://avatars.rotur.dev/${item.author}' width=20 height=20> ${item.author} | Current Owner: <img src='https://avatars.rotur.dev/${item.owner}' width=20 height=20> ${item.owner} </p>
-            <p>${sanitize(item.description)}</p>
+            <p class='roturitemdesc'>${sanitize(item.description)}</p>
             <ul class='itemmetadatar1'>
                 <li>
                     <h3>Price</h3>
@@ -212,7 +186,7 @@ async function getSellingItems(filter) {
     }
     let item_html = `<ul class='roturuseritemlist'>`
     sellingitems.forEach(item => {
-        item_html += `<li class='roturitem' id='roturitem_${sanitize(item.name)}'>
+        item_html += `<li class='roturitem' id='roturitem_${sanitize(item.name).replaceAll(' ', '~')}'>
             <h2>${sanitize(item.name)}</h2>
             <p class='roturitemauthor'>Creator: <img src='https://avatars.rotur.dev/${item.author}' width=20 height=20> ${item.author} | Current Owner: <img src='https://avatars.rotur.dev/${item.owner}' width=20 height=20> ${item.owner} </p>
             <p>${sanitize(item.description)}</p>
@@ -251,6 +225,93 @@ async function getSellingItems(filter) {
 if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
     getItems(activeacc.name)
     getSellingItems(last_sort)
+    document.getElementById('create_item').addEventListener('submit', async function(e) {
+        e.preventDefault()
+        if (document.getElementById('createitemname').value == '') {
+            openErrorPopup('Please enter a valid name.')
+            return;
+        }
+        if (document.getElementById('createitemprice').value == '' || isNaN(parseInt(document.getElementById('createitemprice').value))) {
+            openErrorPopup('Please enter a valid price.')
+            return;
+        }
+        let jsondata = ''
+        if (document.getElementById('itemjsonmetadata').value != '') {
+            try {
+                jsondata = JSON.parse(document.getElementById('itemjsonmetadata').value)
+            } catch {
+                openErrorPopup('The JSON in the metadata field is not valid JSON.')
+                return;
+            }
+        }
+        const finalobject = {"name":document.getElementById('createitemname').value,
+                            "description":document.getElementById('createitemdesc').value,
+                            "price":parseInt(document.getElementById('createitemprice').value),
+                            "selling":document.getElementById('sellitemimmediately').checked,
+                            "data":(jsondata || {})
+                            }
+        const itemcreatesuccess = await fetch(`https://api.rotur.dev/items/create?auth=${activeacc.token}&item=${encodeURIComponent(JSON.stringify(finalobject))}`).then(res => res.json())
+
+        if (itemcreatesuccess.error) {
+            openErrorPopup(itemcreatesuccess.error)
+            return;
+        } else {
+            openSuccessPopup(`Item ${sanitize(document.getElementById('createitemname').value)} was created successfully!`)
+            getItems(activeacc.name)
+        }
+        this.reset()
+    })
+
+    document.getElementById('itemsearch').addEventListener('submit', async function(e) {
+        e.preventDefault()
+        document.getElementById('itemlookupstatusplaceholder').replaceChildren()
+        if (document.getElementById('itemsearchbar').value == '') {
+            return;
+        }
+        const itemquery = await fetch(`https://api.rotur.dev/items/get/${document.getElementById('itemsearchbar').value}`).then(res => res.json())
+
+        if (itemquery.error) {
+            document.getElementById('itemlookupstatusplaceholder').replaceChildren(...parseHTML(`<p class='failure'>This item does not exist</p>`))
+        } else {
+            document.getElementById('itemlookupplaceholder').style = 'border: 2px solid white; border-radius: 5px'
+            document.getElementById('itemlookupplaceholder').replaceChildren(...parseHTML(`
+                <div class='roturitem'>
+                    <h2>${sanitize(itemquery.name)}</h2>
+                    <p class='roturitemauthor'>Creator: <img src='https://avatars.rotur.dev/${itemquery.author}' width=20 height=20> ${itemquery.author} | Current Owner: <img src='https://avatars.rotur.dev/${itemquery.owner}' width=20 height=20> ${itemquery.owner} </p>
+                    <p>${sanitize(itemquery.description)}</p>
+                    <ul class='itemmetadatar1'>
+                        <li>
+                            <h3>Price</h3>
+                            <p>${itemquery.price} RC</p>
+                        </li>
+                        <li>
+                            <h3>Purchaseable</h3>
+                            <p class='isitempurchaseable'>${itemquery.selling ? "Yes" : "No"}</p>
+                        </li>
+                    </ul>
+                    <ul class='itemmetadatar2'>
+                        <li>
+                            <h3>Created</h3>
+                            <p>${formatDate(itemquery.created * 1000)}</p>
+                        </li>
+                        <li>
+                            <h3>Total Revenue</h3>
+                            <p>${itemquery.total_income}</p>
+                        </li>
+                    </ul>
+                    <button class='buyitem' data-itemname='${sanitize(itemquery.name)}' data-amt='${itemquery.price}' data-owner='${itemquery.owner}' ${(itemquery.owner == activeacc.name || !itemquery.selling) ? 'disabled' : ''}>Buy (${itemquery.price} RC)</button>
+                    <details class='itemtransferhistory'>
+                        <summary>Transfer History</summary>
+                        <ul class='transferhistory'>${formatTransferHistory(itemquery.transfer_history)}</ul>
+                    </details>
+                </div>`))
+        }
+    })
+
+    document.getElementById('itemsortselect').addEventListener('change', function(e) {
+        last_sort = document.getElementById('itemsortselect').value
+        getSellingItems(last_sort)
+    })
 }
 
 // Document listeners
@@ -283,7 +344,7 @@ document.addEventListener('click', async function(e) {
                 openErrorPopup(itemsellstatus.error)
                 target.checked = !target.checked
             } else {
-                const p = document.getElementById(`roturitem_${target.dataset.itemname}`).querySelector('[class="isitempurchaseable"]')
+                const p = document.getElementById(`roturitem_${target.dataset.itemname.replaceAll(' ', '~')}`).querySelector('[class="isitempurchaseable"]')
                 p.innerText = target.checked ? "Yes" : "No"
             }
         } catch {
@@ -293,7 +354,7 @@ document.addEventListener('click', async function(e) {
         return;
     }
     if (e.target.className == 'updateitempricebtn') {
-        const newprice = document.getElementById(`roturitem_${e.target.dataset.itemname}`).querySelector('[class="updateitemprice"]').value
+        const newprice = document.getElementById(`roturitem_${e.target.dataset.itemname.replaceAll(' ', '~')}`).querySelector('[class="updateitemprice"]').value
         if (isNaN(parseFloat(newprice)) || parseFloat(newprice) < 0.01) {
             openErrorPopup('Invalid Number')
         } else {
@@ -313,7 +374,7 @@ document.addEventListener('click', async function(e) {
     }
     if (e.target.className == 'beginitemtransfer') {
         const target = e.target
-        const user = document.getElementById(`roturitem_${e.target.dataset.itemname}`).querySelector('[class="itemtransferownership"]').value
+        const user = document.getElementById(`roturitem_${e.target.dataset.itemname.replaceAll(' ', '~')}`).querySelector('[class="itemtransferownership"]').value
         const userdata = await fetch(`https://api.rotur.dev/profile?name=${user}`).then(res => res.json())
         if (userdata.error) {
             openErrorPopup('This user does not exist')
@@ -383,93 +444,4 @@ document.addEventListener('click', async function(e) {
         }
         return;
     }
-})
-
-document.getElementById('create_item').addEventListener('submit', async function(e) {
-    e.preventDefault()
-    if (document.getElementById('createitemname').value == '') {
-        openErrorPopup('Please enter a valid name.')
-        return;
-    }
-    if (document.getElementById('createitemprice').value == '' || isNaN(parseInt(document.getElementById('createitemprice').value))) {
-        openErrorPopup('Please enter a valid price.')
-        return;
-    }
-    let jsondata = ''
-    if (document.getElementById('itemjsonmetadata').value != '') {
-        try {
-            jsondata = JSON.parse(document.getElementById('itemjsonmetadata').value)
-        } catch {
-            openErrorPopup('The JSON in the metadata field is not valid JSON.')
-            return;
-        }
-    }
-    const finalobject = {"name":document.getElementById('createitemname').value,
-                         "description":document.getElementById('createitemdesc').value,
-                         "price":parseInt(document.getElementById('createitemprice').value),
-                         "selling":document.getElementById('sellitemimmediately').checked,
-                         "data":(jsondata || {})
-                        }
-    const itemcreatesuccess = await fetch(`https://api.rotur.dev/items/create?auth=${activeacc.token}&item=${encodeURIComponent(JSON.stringify(finalobject))}`).then(res => res.json())
-
-    if (itemcreatesuccess.error) {
-        openErrorPopup(itemcreatesuccess.error)
-        return;
-    } else {
-        openSuccessPopup(`Item ${sanitize(document.getElementById('createitemname').value)} was created successfully!`)
-        getItems(activeacc.name)
-    }
-    this.reset()
-})
-
-document.getElementById('itemsearch').addEventListener('submit', async function(e) {
-    e.preventDefault()
-    document.getElementById('itemlookupstatusplaceholder').replaceChildren()
-    if (document.getElementById('itemsearchbar').value == '') {
-        return;
-    }
-    const itemquery = await fetch(`https://api.rotur.dev/items/get/${document.getElementById('itemsearchbar').value}`).then(res => res.json())
-    console.log(itemquery)
-
-    if (itemquery.error) {
-        document.getElementById('itemlookupstatusplaceholder').replaceChildren(...parseHTML(`<p class='failure'>This item does not exist</p>`))
-    } else {
-        document.getElementById('itemlookupplaceholder').style = 'border: 2px solid white; border-radius: 5px'
-        document.getElementById('itemlookupplaceholder').replaceChildren(...parseHTML(`
-            <div class='roturitem'>
-                <h2>${sanitize(itemquery.name)}</h2>
-                <p class='roturitemauthor'>Creator: <img src='https://avatars.rotur.dev/${itemquery.author}' width=20 height=20> ${itemquery.author} | Current Owner: <img src='https://avatars.rotur.dev/${itemquery.owner}' width=20 height=20> ${itemquery.owner} </p>
-                <p>${sanitize(itemquery.description)}</p>
-                <ul class='itemmetadatar1'>
-                    <li>
-                        <h3>Price</h3>
-                        <p>${itemquery.price} RC</p>
-                    </li>
-                    <li>
-                        <h3>Purchaseable</h3>
-                        <p class='isitempurchaseable'>${itemquery.selling ? "Yes" : "No"}</p>
-                    </li>
-                </ul>
-                <ul class='itemmetadatar2'>
-                    <li>
-                        <h3>Created</h3>
-                        <p>${formatDate(itemquery.created * 1000)}</p>
-                    </li>
-                    <li>
-                        <h3>Total Revenue</h3>
-                        <p>${itemquery.total_income}</p>
-                    </li>
-                </ul>
-                <button class='buyitem' data-itemname='${sanitize(itemquery.name)}' data-amt='${itemquery.price}' data-owner='${itemquery.owner}' ${(itemquery.owner == activeacc.name || !itemquery.selling) ? 'disabled' : ''}>Buy (${itemquery.price} RC)</button>
-                <details class='itemtransferhistory'>
-                    <summary>Transfer History</summary>
-                    <ul class='transferhistory'>${formatTransferHistory(itemquery.transfer_history)}</ul>
-                </details>
-            </div>`))
-    }
-})
-
-document.getElementById('itemsortselect').addEventListener('change', function(e) {
-    last_sort = document.getElementById('itemsortselect').value
-    getSellingItems(last_sort)
 })

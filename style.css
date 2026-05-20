@@ -31,6 +31,7 @@ body {
     display: flex;
     flex-direction: row;
     width: 400px;
+    background: var(--headerandfooter)
 }
 .headerbtns {
     display: flex;
@@ -110,6 +111,9 @@ a {
 
 #accountflyout {
     right: 0px;
+    max-height: 500px;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 #accountandarrow {
@@ -168,6 +172,29 @@ a {
     display: flex;
     flex-direction: row;
     gap: 25px;
+}
+
+#auth-container {
+    width: 400px;
+    height: 600px;
+    border: 1px solid #ccc;
+    margin: auto;
+}
+#auth-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+.hidden {
+    display: none;
+}
+#systemselector {
+    padding: 2px;
+    padding-left: 5px;
+}
+#systemselector label {
+    color: white;
+    font-size: 14px;
 }
 
 /*/ Container /*/
@@ -250,7 +277,7 @@ textarea {
     height: 100px;
     font-size: 14px;
     font-family: "Golos Text", sans-serif;
-    resize: none;
+    resize: vertical;
 }
 button img {
     pointer-events: none;
@@ -274,8 +301,8 @@ summary {
 .container label, .container li, .popup label, .popup p {
     font-size: 12px;
 }
-.container button:disabled {
-    opacity: 0.75;
+.container button:disabled, .popup button:disabled {
+    opacity: 0.7;
     cursor: not-allowed;
 }
 .wiki-container h2, .wiki-container h3, .wiki-container p {
@@ -336,6 +363,22 @@ summary {
     gap: 5px;
 }
 
+#securitystatement, #securityanswer {
+    font-size: 14px;
+    border-radius: 5px;
+    box-sizing: border-box;
+    padding: 5px;
+    width: 100%;
+}
+
+#securitycontainer {
+    margin-bottom: 5px;
+}
+
+#deletedisclaimercredits {
+    margin-bottom: 0;
+}
+
 /*/ Popup CSS /*/
 .overlay {
     position: fixed;
@@ -344,7 +387,7 @@ summary {
     display: none;
     align-items: center;
     justify-content: center;
-    z-index: 999;
+    z-index: 9999;
 }
 .popup {
     background: var(--popupbg);
@@ -413,8 +456,13 @@ summary {
     margin-top: 5px;
     margin-bottom: 5px;
 }
-#transactionpanel, #statspanel, #dangerzone, #followingpanel, #followerspanel, #economicstats, #userclawposts, #useritems, .followingpanel {
+#transactionpanel, #statspanel, #dangerzone, #followingpanel, #followerspanel, #economicstats, #userclawposts, #useritems, .followingpanel, #dangerousoptionscontainer {
     font-size: 24px;
+}
+
+.dangerzonefineprint {
+    font-size: 12px;
+    margin: 0;
 }
 
 #transactionpanel, #statspanel {
@@ -547,11 +595,15 @@ p[class='partialsuccess'] {
     border-bottom: 2px solid white;
     padding: 10px;
 }
+.transactionnote {
+    overflow-wrap: break-word;
+}
 #transactionpanel ul li p{
     font-size: 14px;
     text-align: left;
     margin: 0px;
     margin-bottom: 3px;
+    overflow-wrap: break-word;
 }
 #transactionpanel ul li:last-child {
     border-bottom: none;
@@ -591,7 +643,7 @@ hr[class='dotted_separator'] {
     margin-bottom: 0;
     margin-top: -5px;
     padding: 15px;
-    padding-bottom: auto;
+    padding-bottom: 0;
 }
 #dangerzone button {
     background: #ff6161;
@@ -602,6 +654,38 @@ hr[class='dotted_separator'] {
 #averageprofit {
     font-size: 16px;
 }
+#claimcountdowntext {
+    margin: 0;
+}
+/* TOS CSS */
+
+#toscontainer {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    justify-content: center;
+}
+
+#tosiframe {
+    width: 400px;
+    height: 400px;
+    margin-left: -15px;
+}
+
+#toscontainer label, #dailycreditnotifsect {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    align-self: center;
+    justify-self: center;
+    text-align: center;
+}
+
+#toscontainer a {
+    text-decoration: underline;
+}
+
 /*/ Account list CSS /*/
 #account_list {
     border: 2px solid white;
@@ -689,8 +773,18 @@ input[type="radio"] {
     background: var(--buttonhover);
 }
 
+#tokenloginbox, #rostername {
+    font-size: 14px;
+    border-radius: 5px;
+    box-sizing: border-box;
+    padding: 5px;
+    width: 100%;
+    margin-bottom: 8px;
+}
+
 #switchaccbtn:disabled {
     cursor: not-allowed;
+    box-shadow: none;
 }
 #disabledcontext {
     display: none;
@@ -721,18 +815,47 @@ input[type="radio"] {
     margin-top: 10px;
 }
 #switchaccbtn {
+    box-shadow: 0px 0px 4px 4px rgba(255, 255, 255, 0.26);
     flex: 9;
+    padding: 0;
+    height: 32px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
 }
+
+#switchaccbtn img {
+    width: 24px;
+    height: 24px;
+    margin: 0;
+    padding: 0;
+}
+
 #switchaccinfo {
     flex: 1;
     padding: 0;
+}
+#importexportroster {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+}
+
+#syncsection label {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
 }
 /*/ Lookup CSS /*/
 
 #usersearchbar, #giftsearch, #postsearchbar, #keylookup, #itemsearch {
     display: flex;
     flex-direction: row;
-    gap: 10px;
+    gap: 5px;
     margin-top: 8px;
     margin-bottom: 8px;
 }
@@ -1030,6 +1153,12 @@ ul[class='followuserlist'] li a img{
     margin-right: 5px;
 }
 
+#dangerousoptionscontainer {
+    background: rgb(64, 0, 0);
+    margin-bottom: 0;
+    padding-bottom: 5px;
+}
+
 .blockextraoptions {
     margin-top: 5px;
     display: flex;
@@ -1039,8 +1168,114 @@ ul[class='followuserlist'] li a img{
     padding-left: 15px;
 }
 
-#accrefreshtoken {
-    margin: 5px;
+#deleteacc_verydangerous {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    background: rgb(173, 0, 0);
+    padding: 0;
+    height: 32px;
+    margin-top: 5px;
+    margin-bottom: 8px;
+}
+
+#finalfinaldeleteacc_extremelydangerous_theresnogoingback {
+    background: rgb(173, 0, 0);  
+}
+
+#deleteacc_verydangerous:hover, #finalfinaldeleteacc_extremelydangerous_theresnogoingback:hover {
+    background: rgb(129, 0, 0);
+}
+
+#roturassistantnote {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
+#noteactionbar {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+}
+
+#rasavenotebtn {
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+
+#ranotefineprint {
+    font-size: 10px;
+    margin: 0;
+    padding: 0;
+    margin-bottom: 8px;
+}
+
+#password-container {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+#securitycheckheader {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+#securitycheckheader button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    max-width: 32px;
+    max-height: 32px;
+}
+
+#togglepassvisibility {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 0;
+    width: 50%;
+    height: 32px;
+    align-self: center;
+    justify-self: center;
+    margin-bottom: 5px;
+}
+
+#password-container label {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+}
+
+#password-container label:last-child {
+    margin-bottom: 8px;
+    margin-left: -6px;
+    font-size: 10px;
+}
+
+#password-container label input {
+    font-size: 14px;
+    border-radius: 5px;
+    box-sizing: border-box;
+    padding: 5px;
+    margin-left: auto;
+}
+
+#password-container label:last-child input {
+    margin-left: 0;
 }
 
 /*/ Gifts CSS /*/
@@ -1087,6 +1322,13 @@ p[class='claim_user'] {
     gap: 4px;
 }
 
+p[class='claim_user'] a {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+}
+
 #giftsplaceholder p[class='giftfineprint'] {
     font-size: 8px;
 }
@@ -1098,6 +1340,21 @@ p[class='claim_user'] {
     align-items: center;
     margin: 5px;
     gap: 10px;
+    position: relative;
+}
+
+#giftreload {
+    position: absolute;
+    width: 34px;
+    aspect-ratio: 1;
+    position: absolute;
+    padding: 0;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    right: 0px;
+    top: -25px;
 }
 
 #giftsplaceholder ul li [id^='giftrevokestatus'] p {
@@ -1211,16 +1468,12 @@ p[class='claim_user'] {
     padding: 0px;
     display: flex;
     flex-direction: column;
-    border: 2px solid white;
+    border: none;
     border-radius: 8px;
     overflow: hidden;
     list-style-type: none;
     margin-bottom: 15px;
 }
-
- #userclawposts ul {
-    border: none;
- }
 
 #feed ul li, #userclawposts ul li {
     border-bottom: 2px solid white;
@@ -1240,6 +1493,7 @@ p[class='claim_user'] {
     max-width: 100%;
     max-height: auto;
     border-radius: 5px;
+    justify-self: center;
 }
 
 #feed ul li p[class='postmetadata'], #userclawposts ul li p[class='postmetadata'] {
@@ -1248,6 +1502,8 @@ p[class='claim_user'] {
 }
 #feed ul li p[class='postcontent'], #userclawposts ul li p[class='postcontent'] {
     margin-top: 5px;
+    overflow-wrap: break-word;
+    
 }
 #feed ul li:last-child, #userclawposts ul li:last-child {
     border-bottom: none;
@@ -1347,21 +1603,24 @@ p[class='claim_user'] {
     gap: 6px;
     padding: 20px;
     margin: 0;
+    overflow-y: auto;
+    max-height: 400px;
 }
 
-.popup ul[class='likelist'] li {
+.popup ul[class='likelist'] li a {
     display: flex;
     flex-direction: row;
     gap: 8px;
     align-items: center;
+    text-decoration: none;
 }
 
-.popup ul[class='likelist'] li img {
+.popup ul[class='likelist'] li a img {
     border: 1px solid gray;
     border-radius: 4px;
 }
 
-.popup ul[class='likelist'] li p {
+.popup ul[class='likelist'] li a p {
     margin: 0;
 }
 
@@ -1416,6 +1675,8 @@ p[class='claim_user'] {
 #clearattachment, #feed .clearreplyattachment {
     width: 32px;
     height: 32px;
+    max-width: 32px;
+    max-height: 32px;
     display: none;
     padding: 0;
     align-items: center;
@@ -1433,6 +1694,24 @@ p[class='claim_user'] {
     margin-top: -15px;
 }
 
+/* Talon Stuff */
+
+#clawtalonoption {
+    cursor: pointer;
+    background: transparent;
+    font-size: 24px;
+    font-family: "Golos Text", sans-serif;
+    font-weight: 500;
+    color: white;
+    border: none;
+    margin-bottom: 5px;
+}
+
+#clawtalonoption option {
+    color: black;
+    cursor: pointer;
+}
+
 /*/ Account Key Manager CSS /*/
 
 #mainkeys, #sys_keys, #readonlykeys, #otherkeys {
@@ -1440,7 +1719,7 @@ p[class='claim_user'] {
     flex-direction: column;
     list-style-type: none;
     padding: 0;
-    border: 1px solid white;
+    border: none;
 }
 
 .keylistitem {
@@ -1589,7 +1868,9 @@ p[class='claim_user'] {
     font-size: 16px;
     overflow: hidden;
 }
-
+.mykeyentry, .ownedkeyentry {
+    padding-top: 4px;
+}
 .addusertoecokey {
     display: flex;
     flex-direction: row;
@@ -1653,8 +1934,7 @@ p[class='claim_user'] {
 }
 
 #ownedkeys, #boughtkeys {
-    border: 2px solid white;
-    border-radius: 8px;
+    border-radius: 5px;
 }
 
 .mykeyentry:not(:last-child), .ownedkeyentry:not(:last-child) {
@@ -1838,6 +2118,7 @@ p[class='claim_user'] {
     flex-direction: column;
     justify-content: center;
     gap: 3px;
+    position: relative;
 }
 
 #editbio label {
@@ -1847,6 +2128,17 @@ p[class='claim_user'] {
 
 #editbio button {
     width: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    align-self: center;
+    padding: 0;
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+#rasavenotebtn, #raclearnotebtn {
+    width: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1977,13 +2269,17 @@ p[class='profilefineprint'] {
     cursor: pointer;
 }
 
+#dangerousoptionscontainer summary {
+    width: 100%;
+}
+
 .saveallbtncontainer, #dangerousoptionscontainer {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding-left: 5px;
-    padding-right: 5px;
+    padding-left: 8px;
+    padding-right: 8px;
 }
 
 #profilesaveall {
@@ -2020,12 +2316,29 @@ p[class='profilefineprint'] {
     cursor: pointer;
 }
 
+#profilebiocharlimit {
+    position: absolute;
+    bottom: 20px;
+    left: 0;
+    font-size: 12px;
+}
+
+#ranotecharlimit {
+    text-align: left;
+    font-size: 12px;
+}
+
 /*/ Rmail CSS /*/
 
 #rmailheader {
     display: flex;
     flex-direction: row;
     position: relative;
+}
+
+#rmailimagefineprint {
+    margin: 0;
+    text-align: left;
 }
 
 #rmailheader button {
@@ -2037,7 +2350,7 @@ p[class='profilefineprint'] {
 #rmailsenttab ul, #rmailreceivedtab ul {
     list-style-type: none;
     padding-left: 0;
-    border: 2px solid white;
+    border: none;
     border-radius: 5px;
     align-items: center;
 }
@@ -2110,20 +2423,37 @@ p[class='profilefineprint'] {
     margin-bottom: 5px;
 }
 
+#rmail_author a {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+    align-items: center;
+    text-decoration: none;
+}
+
 #viewrmailtitle {
     display: flex;
 }
-
 
 #viewrmailbody {
     display: flex;
     text-align: left;
     font-size: 12px;
+    flex-direction: column;
 }
 
+#rmailimageplaceholder img {
+    margin-top: 3px;
+    max-width: 100%;
+    max-height: auto;
+    border-radius: 5px;
+    justify-self: center;
+}
 
 #viewrmailbody p {
     text-align: left;
+    margin-top: 0;
+    margin-bottom: 0;
 }
 
 .toandtimestamp {
@@ -2140,13 +2470,8 @@ p[class='profilefineprint'] {
     justify-content: right;
 }
 
-#compose_rmail {
-    position: absolute;
-    width: 25%;
-    padding-left: 0;
-    padding-right: 0;
-    right: 10px;
-    top: 10px;
+#rmailpage1, #rmailpage3 {
+    position: relative;
 }
 
 #rmailcompositionbox {
@@ -2168,7 +2493,7 @@ p[class='profilefineprint'] {
 }
 
 #rmail_comp_body {
-    height: 350px;
+    height: 250px;
 }
 
 #rmailcompositionbox button {
@@ -2181,15 +2506,15 @@ p[class='profilefineprint'] {
     width: 25%;
     padding-left: 0;
     padding-right: 0;
-    right: 10px;
-    top: 10px;
+    right: 0px;
+    top: 0px;
 }
 
 #rmail_goback2 {
-    width: 20%;
+    width: 22%;
     position: absolute;
-    top: 15px;
-    left: 10px;
+    top: 0px;
+    left: 0px;
 }
 
 .rmailpreview .rmailpreviewtimestamp {
@@ -2303,6 +2628,10 @@ ul[class='roturuseritemlist'] {
     align-items: center;
 }
 
+.roturitemdesc, #pronouns, .bio, .giftnote, .rmailpreviewbody, #viewrmailtitletext, #viewrmailbodytext {
+    overflow-wrap: break-word;
+}
+
 .roturitem p[class='roturitemauthor'] {
     text-align: center;
     justify-self: center;
@@ -2352,7 +2681,13 @@ ul[class='roturuseritemlist'] {
     align-items: center;
     justify-content: center;
 }
-
+.itemnameheader {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
 .itemdeletebtn {
     max-width: 32px;
     max-height: 32px;
@@ -2418,7 +2753,7 @@ ul[class='roturuseritemlist'] {
     text-align: left;
 }
 
-/* Themes */
+/* Settings */
 
 #themepicker {
     display: flex;
@@ -2470,6 +2805,94 @@ ul[class='roturuseritemlist'] {
     border-color: #000000;
 }
 
+#gensettings {
+    margin-top: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+#themessect {
+    margin-top: 5px;
+}
+
+#createnotesect {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+#createnotecharlimit {
+    text-align: left;
+    margin: 0;
+}
+
+.gensettingssect {
+    display: flex;
+    flex-direction: column;
+    justify-content: left;
+    text-align: left;
+}
+
+/* Note Manager CSS */
+
+#usernotelist {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+#usernotelist li ul {
+    display: flex;
+    flex-direction: row;
+    list-style-type: none;
+    padding-left: 0;
+}
+
+#usernotelist li ul li {
+    flex: 1;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    border: 1px solid white;
+}
+
+#usernotelist li ul li:last-child {
+    padding-right: 8px;
+}
+
+.notemanuserbar {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    text-align: center;
+    align-items: center;
+    cursor: pointer;
+}
+.notemanuserbar h3 {
+    margin: 0;
+    pointer-events: none;
+}
+
+.notemancharlimit {
+    display: flex;
+    margin: 0;
+}
+
+.notemanuserbar img {
+    border: 1px solid gray;
+    border-radius: 4px;
+    pointer-events: none;
+}
+
+#usernotelist button {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+}
+
 /*/ Wiki CSS /*/
 
 .wiki-container {
@@ -2485,7 +2908,7 @@ ul[class='roturuseritemlist'] {
     margin: 5px;
 }
 
-#subscribersplaceholder ul li a, .creditslist li a {
+#subscribersplaceholder ul li a, .creditslist li a, .creditslist li div{
     font-size: 16px;
     display: flex;
     flex-direction: row;
@@ -2494,12 +2917,12 @@ ul[class='roturuseritemlist'] {
     text-decoration: none;
 }
 
-#subscribersplaceholder ul li a img, .creditslist li a img {
+#subscribersplaceholder ul li a img, .creditslist li a img, .creditslist li div img {
     border: 1px solid gray;
     border-radius: 4px;
 }
 
-.wiki-container p[class='fineprint'], .wiki-container p[class='fineprint'] a {
+.wiki-container p[class='fineprint'], .wiki-container p[class='fineprint'] a, .container p[class='fineprint'], .container p[class='fineprint'] a {
     font-size: 10px;
 }
 
@@ -2564,4 +2987,169 @@ h2[class='badgeintitle2'] {
 
 .keystabheader {
     margin-bottom: 10px;
+}
+
+/* Notifications CSS */
+
+#notificationslist, #notifsourcemanager, #notifendpointmanager {
+    border-radius: 5px;
+    list-style-type: none;
+    padding-left: 0;
+}
+
+#notificationslist li {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px;
+    border-bottom: 2px solid white;
+}
+
+#notificationslist li h3, #notificationslist li p {
+    margin: 0;
+    text-align: left;
+    overflow-wrap: break-word;
+}
+
+#notificationslist .fineprint {
+    font-size: 10px;
+}
+
+.notiftitlebar {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+    align-items: center;
+    text-decoration: none;
+}
+
+.notiftitlebar img {
+    border: 2px solid gray;
+    border-radius: 5px;
+}
+
+#notificationslist li:last-child {
+    border-bottom: none;
+}
+
+#notifsourcecreate, #notifendpointcreate {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+}
+
+.sourcelist, .endpointlist {
+    list-style-type: none;
+    padding-left: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.endpointlist {
+    gap: 6px;
+}
+
+.endpointlist li {
+    text-align: left;
+    overflow-wrap: break-word;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.sourcedatabody, .endpointdatabody {
+    position: relative;
+    border-bottom: 2px solid white;
+    padding-bottom: 8px;
+}
+
+.sourcedatabody h2, .endpointdatabody h2 {
+    margin: 12px;
+}
+
+.sourcedatabody:last-child, .endpointdatabody:last-child {
+    border-bottom: none;
+}
+
+.sourcelist li {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    justify-content: space-between;
+    padding: 5px 10px;
+}
+
+.sourcelist li a {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    text-decoration: none;
+}
+
+.sourcelist li img {
+    border: 2px solid gray;
+    border-radius: 5px;
+}
+
+.sendertitle {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.sendertitle h4 {
+    margin: 0;
+    text-align: left;
+}
+
+.sendertitle p {
+    margin: 0;
+    font-size: 10px;
+    text-align: left;
+}
+
+.removesource, .removeendpoint {
+    max-width: 32px;
+    max-height: 32px;
+    position: absolute;
+    top: -4px;
+    right: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+}
+
+.removesender {
+    max-width: 32px;
+    max-height: 32px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+    cursor: pointer;
+    margin-left: auto;
+}
+
+.removesource img {
+    margin: 0;
+    padding: 0;
+}
+
+.senderlistentry:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.globalremoveoption {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    align-items: center;
+    margin-top: 5px;
+    margin-left: 10px;
+}
+
+.patchnotelist li {
+    margin-bottom: 5px;
 }

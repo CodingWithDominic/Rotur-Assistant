@@ -11,6 +11,9 @@ const flagged = await new Promise(resolve =>
     chrome.storage.local.get('flagged', data => resolve(data.flagged || []))
 ) ?? [];
 
+let giftdata_cache = ''
+let filter_cache = 'all'
+
 function openPopup(amt, note) {
     document.getElementById('overlay').style.display = 'flex';
     document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
@@ -34,37 +37,9 @@ function closePopup() {
     document.getElementById('overlay').style.display = 'none';
 }
 
-async function getGifts(filter) {
-    if (accounts.length == 0) {
-        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(
-            `<h1>Gift Manager</h1>
-            <h3>You are not signed in! Please head over to the account manager to add an account first.</h3>`))
-        return;
-    }
-    if (flagged.includes(activeacc.uuid)) {
-        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
-            <h1>Gift Manager</h1>
-            <h3>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h3>
-        `))
-        return;
-    }
-    const giftdata = await fetch(`https://api.rotur.dev/gifts/mine?auth=${activeacc.token}`).then(res => res.json()).catch(err => {
-        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
-            <h1>Gift Manager</h1>
-            <h3>A communication error has occurred. If you're sure it's not your connection, then Rotur may be down right now.</h3>
-        `))
-        return;
-    })
-    if (giftdata.error && giftdata.error == "Invalid authentication key") {
-        flagged.push(activeacc.uuid)
-        chrome.storage.local.set({flagged: flagged})
-        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
-            <h1>Gift Manager</h1>
-            <h3>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h3>
-        `))
-        return;
-    }
-    let giftsArray = giftdata.gifts.reverse() // Reverse because the API returns oldest to newest, and I prefer newest to oldest
+function renderGifts(filter) {
+    const giftdata = giftdata_cache
+    let giftsArray = giftdata.gifts
     const gift_count = giftsArray.length
     
     if (filter == 'claimed') {
@@ -88,13 +63,13 @@ async function getGifts(filter) {
         <li>
             <h2>Gift created on ${formatDate(gift_snippet.created_at)}</h2>
             <p>Amount: ${gift_snippet.amount} RC</p>
-            ${gift_snippet.note ? `<p>Note: ${sanitize(gift_snippet.note)}</p>` : ``}
+            ${gift_snippet.note ? `<p class='giftnote'>Note: ${sanitize(gift_snippet.note)}</p>` : ``}
             ${gift_snippet.expires_at ? `<p>Expires: ${formatDate(gift_snippet.expires_at)}</p>` : `<p>Expires: Never</p>`}
             <p>Code: ${gift_snippet.code}</p>
             <p>ID: ${gift_snippet.id}</p>
             <p class="giftfineprint">*The code, not the ID, is what appears in gift URLs, and what the claiming API looks for when it receives a request to claim a gift.</p>
             ${gift_snippet.claimed_at ? `
-                <p class='claim_user'>Claimed by:  <img src='https://avatars.rotur.dev/${gift_snippet.claimed_by}' width="24" height="24">  ${gift_snippet.claimed_by}</p>
+                <p class='claim_user'>Claimed by:  <a href="lookup.html?user=${gift_snippet.claimed_by}" style="text-decoration: none;"><img src='https://avatars.rotur.dev/${gift_snippet.claimed_by}' width="24" height="24"> ${gift_snippet.claimed_by}</a></p>
                 <p>Claimed on: ${formatDate(gift_snippet.claimed_at)}</p>
                 ` : `
                 <div id="giftcontrolbuttons_${gift_snippet.code}">
@@ -110,7 +85,42 @@ async function getGifts(filter) {
     }
 
     document.getElementById('giftsplaceholder').replaceChildren(...parseHTML(giftlisthtml))
+}
 
+async function getGifts(filter) {
+    if (accounts.length == 0) {
+        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(
+            `<h1>Gift Manager</h1>
+            <h3>You are not signed in! Please head over to the account manager to add an account first.</h3>`))
+        return;
+    }
+    if (flagged.includes(activeacc.uuid)) {
+        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+            <h1>Gift Manager</h1>
+            <h3>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h3>
+        `))
+        return;
+    }
+    if (giftdata_cache == '') {
+        giftdata_cache = await fetch(`https://api.rotur.dev/gifts/mine?auth=${activeacc.token}`).then(res => res.json()).catch(err => {
+            document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+                <h1>Gift Manager</h1>
+                <h3>A communication error has occurred. If you're sure it's not your connection, then Rotur may be down right now.</h3>
+            `))
+            return;
+        })
+        if (giftdata_cache.error && giftdata_cache.error == "Invalid authentication key") {
+            flagged.push(activeacc.uuid)
+            chrome.storage.local.set({flagged: flagged})
+            document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+                <h1>Gift Manager</h1>
+                <h3>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h3>
+            `))
+            return;
+        }
+        giftdata_cache.gifts = giftdata_cache.gifts.reverse()
+    }
+    renderGifts(filter)
 }
 
 async function performGiftSearch(query) {
@@ -144,7 +154,9 @@ getGifts('all')
 
 document.addEventListener('change', async function(e) {
     if (e.target.name == 'giftfilter') {
-        getGifts(e.target.id)
+        e.preventDefault()
+        filter_cache = e.target.id
+        renderGifts(filter_cache)
     }
 })
 
@@ -176,6 +188,18 @@ document.addEventListener('click', async function(e) {
     }
     if (e.target.id == 'cancel' || e.target.id == 'popup-x') {
         closePopup()
+        return;
+    }
+    if (e.target.id == 'giftreload') {
+        e.preventDefault()
+        const target = e.target
+        target.disabled = true
+        target.textContent = '…'
+        giftdata_cache = await fetch(`https://api.rotur.dev/gifts/mine?auth=${activeacc.token}`).then(res => res.json())
+        giftdata_cache.gifts = giftdata_cache.gifts.reverse()
+        renderGifts(filter_cache)
+        target.disabled = false
+        target.textContent = '⟳'
         return;
     }
     if (e.target.id == 'finalcreate') {
@@ -277,8 +301,10 @@ document.addEventListener('click', async function(e) {
     }
 })
 
-document.getElementById('giftsearch').addEventListener('submit', (event) => {
-    event.preventDefault(); // Stop page reload
-    const query = document.getElementById('giftsearchbar').value;
-    performGiftSearch(query);
-});
+if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
+    document.getElementById('giftsearch').addEventListener('submit', (event) => {
+        event.preventDefault(); // Stop page reload
+        const query = document.getElementById('giftsearchbar').value;
+        performGiftSearch(query);
+    });
+}
