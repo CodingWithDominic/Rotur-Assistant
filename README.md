@@ -23,7 +23,7 @@ A versatile Chrome extension for the Rotur ecosystem that allows you to interact
 
 ### 1.0
 - Initial release
-- 
+
 ### 1.0.1
 - Fixed a possible XSS vulnerability reported by furina. Turns out, .replace() only replaces the first instance of a charater, rather than all of them. I was also unaware of the .replaceAll() function at the time, which does what I initially thought .replace() did.
 - Added support for pasting images into image pickers via shift + click, mainly to address an issue on some browsers / systems (such as firefox) where the extension would close once the file picker was open.
