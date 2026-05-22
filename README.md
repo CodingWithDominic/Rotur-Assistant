@@ -1,7 +1,7 @@
 # Rotur Assistant
 A versatile Chrome extension for the Rotur ecosystem that allows you to interact with most of Rotur with ease. Anytime, anywhere.
 
-Features:
+## Features
 - Wallet
 - Economic Stats (Calculator Included)
 - Detailed Lookup
@@ -14,22 +14,23 @@ Features:
 - Chrome: Download the repo, go to chrome://extensions, click "Load Unpacked", and then select the folder you got by downloading this repo. Make sure you have "Developer Mode" enabled in the top-right corner.
 - Firefox: First, download the repo. Then, click the extension icon in the top-right corner. Click on "Discover Extensions" if necessary. Then click on the settings icon right under where the search bar is. Then click on "Debug Add-ons". From there, click "Load Temporary Add-on", and then click on the zip file you got by downloading this repo. Do not unzip the folder first.
 
-### Miscellaneous links
+## Miscellaneous links
 - RoturGit counterpart of this repo: https://git.rotur.dev/Dominic/Rotur-Assistant
 - Rotur Assistant (Chrome / Chromium): https://chromewebstore.google.com/detail/rotur-assistant/hpjnmifgongkndfhfobdeppffcgjhleh
 - Rotur Assistant (Firefox): https://addons.mozilla.org/addon/rotur-assistant/
 
 ## Patch Notes
 
-#1.0
+### 1.0
 - Initial release
-#1.0.1
+- 
+### 1.0.1
 - Fixed a possible XSS vulnerability reported by furina. Turns out, .replace() only replaces the first instance of a charater, rather than all of them. I was also unaware of the .replaceAll() function at the time, which does what I initially thought .replace() did.
 - Added support for pasting images into image pickers via shift + click, mainly to address an issue on some browsers / systems (such as firefox) where the extension would close once the file picker was open.
 - Some wiki corrections
 - Add more tooltips in some places
 
-#1.1
+### 1.1
 - Fixed a bug where the send button would persist upon sharing a claw post. Turns out, I created a logical error while fixing another bug in 1.0.1 where having a blank post with an image attached would still upload the image to Milo's RoturCDN server, but would still abort the post due to the post being blank, effectively creating a way to waste Milo's server space.
 - Claw's "Update in real time" option now only refreshes the feed when it receives a message from the claw websocket, rather than every 5 seconds.
 - Added an option to scramble account tokens when uploading to sync.
