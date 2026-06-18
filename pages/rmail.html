@@ -8,12 +8,13 @@
         <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
     </head>
     <body>
-        <div id="header-placeholder"></div>
+        <header id="header-placeholder"></header>
         <script src="../header.js"></script>
         <div class="container">
             <div id="rmailpage1">
                 <h1>Rmail</h1>
                 <button id="compose_rmail">+ Compose</button>
+                <hr class="full-size">
                 <div id="rmailheader">
                     <button class="rmailtab" id="rmail_sent" style="border-bottom: 2px solid white;">Sent</button>
                     <button class="rmailtab" id="rmail_received">Received</button>
@@ -37,7 +38,7 @@
                         <button class='rmaildelete' title="Delete Rmail from feed" id='viewrmaildelete' data-payloadidx='1'><img src='../images/misc_icons/delete.png' width=24 height=24></button>
                     </div>
                 </div>
-                <hr>
+                <hr class="full-size">
                 <div id="rmail_author">
                     <a id="author_href" href="lookup.html?user=Spectator">
                         <img id='viewrmailauthorpfp' src="https://avatars.rotur.dev/.banned_user" width="40" height="40" alt="placeholder">
@@ -54,7 +55,7 @@
                         <p class="rmailpreviewtimestamp" id="viewrmailtimestamp">1/1/2026</p>
                     </div>
                 </div>
-                <hr class="dotted_separator">
+                <hr class="full-size dotted_separator">
                 <div id="viewrmailtitle">
                     <h2 id="viewrmailtitletext">Rmail Title</h2>
                 </div>
@@ -66,6 +67,7 @@
             <div id="rmailpage3" style="display: none;">
                 <h1>Compose Rmail</h1>
                 <button id="rmail_goback2">&larr; Back</button>
+                <hr class="full-size">
                 <form id="rmailcompositionbox">
                     <label class="compositiontitle">
                         To: 
@@ -79,12 +81,12 @@
                     <textarea id="rmail_comp_body" placeholder="Content"></textarea>
                     <div id="imagebar">
                         <label class="rmailattachment">
-                            Image (Optional): 
-                            <input type="file" id="rmailimage" title="Shift-click to paste image instead" accept="image/*">
+                            Image(s) (Optional): 
+                            <input type="file" id="rmailimage" title="Shift-click to paste image instead" accept="image/*" multiple>
                         </label>
-                        <button id="clearattachment" title="Clear Attachment" type="button">✕</button>
+                        <button id="clearattachment" title="Clear Attachments" type="button">✕</button>
                     </div>
-                    <p class="fineprint" id="rmailimagefineprint">*Images will only be visible to other Rotur Assistant users using version 1.1 or higher</p>
+                    <p class="fineprint" id="rmailimagefineprint">*Images will only be visible to other Rotur Assistant users using version 1.1 or higher, or orion users</p>
                     <button id="send_rmail">Send &rarr;</button>
                 </form>
             </div>
@@ -94,7 +96,28 @@
             </div>
         </div>
         <script type="module" src="../scripts/rmail.js"></script>
-        <div id="footer-placeholder"></div>
+        <footer id="footer-placeholder"></footer>
         <script src="../footer.js"></script>
+        <template id="rmailcard">
+            <li class='rmailpreview' data-payloadidx='1'>
+                <div class='rmailauthorheader'>
+                    <img class='authorpfp' src='https://avatars.rotur.dev/Sender' width=40 height=40 alt='Sender'>
+                    <h2>User 1</h2>
+                    <div class='rmailtorecipient'>
+                        <p>To: </p>
+                        <img class="recipientpfp" src='https://avatars.rotur.dev/Recipient' width=24 height=24 alt='Recipient'>
+                        <p class="rmailto">User 2</p>
+                    </div>
+                </div>
+                <div class='rmailpreviewbody'>
+                    <h3>Title</h3>
+                </div>
+                <div class='rmailactionbuttons'>
+                    <button class='rmailreply' title="Reply to Rmail" data-payloadidx='1' data-rmailtitle='Title' data-rmailauthor='User 1'>&larrhk;</button>
+                    <button class='rmaildelete' title="Delete Rmail from feed" data-payloadidx='1'><img src='../images/misc_icons/delete.png' width=24 height=24></button>
+                </div>
+                <p class='rmailpreviewtimestamp'>Timestamp</p>
+            </li>
+        </template>
     </body>
 </html>

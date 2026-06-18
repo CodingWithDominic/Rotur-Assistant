@@ -8,7 +8,7 @@
         <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
     </head>
     <body>
-        <div id="header-placeholder"></div>
+        <header id="header-placeholder"></header>
         <script src="../header.js"></script>
         <div class="container">
             <div id="clawtalon"><h1>Claw</h1></div>
@@ -37,7 +37,7 @@
                 </form>
                 <div id="posterrorplaceholder"></div>
             </div>
-            <hr>
+            <hr class="full-size">
             <div id="feedcontrols">
                 <button id="reloadfeed" title="Refresh Feed">⟳</button>
                 <label>
@@ -68,7 +68,56 @@
             <div class="popup"></div>
         </div>
         <script type="module" src="../scripts/claw.js"></script>
-        <div id="footer-placeholder"></div>
+        <footer id="footer-placeholder"></footer>
         <script src="../footer.js"></script>
+        <template id="clawposttemplate">
+            <li id="post-postid" class="clawpostbody">
+                <div class='postauthor'>
+                    <a href='../pages/lookup.html?user=user'>
+                        <img class='clawpfp' src='user' href='../pages/lookup.html?user=user' alt='user' width='32' height='32'>
+                        <h2 class="clawpostauthortitle">User</h2>
+                    </a>
+                    <div class="clawpostactionbar">
+                        <button class='repostbtn' title="Repost Post" data-postid='postid'><img src='../images/misc_icons/repost.png' width='24' height='24'></button>
+                        <button class='deletebtn' title="Delete Post" data-postid='postid'><img src='../images/misc_icons/delete.png' width='24' height='24'></button>
+                    </div>
+                </div>
+                <p class='postcontent'>Hello, claw!</p>
+                <img class='clawattachment' src=''>
+                <p class='postmetadata'>Posted from Rotur Assistant on 1/1/1970</p>
+                <div class='feedbackbar'>
+                    <button class='likebutton' data-postid='postid'>Like</button>
+                    <button class='viewlikes' data-postid='postid'>View Likes</button>
+                    <button class='copypostid' data-postid='postid'>Copy Post ID</button>
+                </div>
+                <details class='repliesbtn' data-postid='postid'>
+                <summary class='replydropdownlabel'>View Replies (0)</summary>
+                    <div class='repliesplaceholder'>
+                        <ul class='reply' id='replies-postid'></ul>
+                    </div>
+                    <div class='replyboxplaceholder'>
+                        <textarea class='replybox' data-postid='postid' placeholder='Add a reply for User' name='userclawpostreplybox'></textarea>
+                        <p class="postcharlimit" id="limit-id">0/300</p>
+                        <button class='sendreply' data-postid='postid'>Send</button>
+                        <h2>Sign in to add a reply</h2>
+                    </div>
+                    <div class='replyerrorplaceholder'></div>
+                </details>
+            </li>
+        </template>
+        <template id="clawreplytemplate">
+            <li>
+                <div class='postauthor'>
+                    <a href='../pages/lookup.html?user=User'>
+                        <img class='clawpfp' src='https://avatars.rotur.dev/User' alt='User' width='32' height='32'>
+                        <h2 class="clawreplyauthor"></h2>
+                    </a>
+                    <button class='copypostid' data-postid='replyid'>Copy Reply ID</button>
+                </div>
+                <p class='postcontent'>Hello User!</p>
+                <img class='clawattachment' src=''>
+                <p class='postmetadata'>Posted on 1/1/1970</p>
+            </li>
+        </template>
     </body>
 </html>

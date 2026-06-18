@@ -8,7 +8,7 @@
         <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
     </head>
     <body>
-        <div id="header-placeholder"></div>
+        <header id="header-placeholder"></header>
         <script src="../header.js"></script>
         <div class="container">
             <h1>Lookup a Rotur User below</h1>
@@ -36,6 +36,7 @@
                 <button id="usersearch" title="Search User" type="submit"><img src='../images/app_icons/lookup.png' width="16" height="16"></button>
             </form>
             <div id="lookuperror"></div>
+            <hr class="beforeprofile" style="display: none;">
             <div id="lookupplaceholder"></div>
             <script type="module" src="../scripts/lookup.js"></script>
         </div>
@@ -45,14 +46,230 @@
                     <h1>Private Profile</h1>
                     <button id="popup-x" class="closebtn">✕</button>
                 </div>
-                <h2>This user's private setting is set to "true". View profile anyways?</h2>
+                <h2>This user's private setting is set to "true". View anyways?</h2>
                 <div id="popup-choices">
                     <button id="cancel" class="closebtn">No</button>
                     <button id="viewanyway">Yes</button>
                 </div>
             </div>
         </div>
-        <div id="footer-placeholder"></div>
+        <footer id="footer-placeholder"></footer>
         <script src="../footer.js"></script>
+        <template id="profiletemplate">
+            <img class='userbanner' src="" alt="user's Banner">
+            <div class="useravatar">
+                <img class='useravatarview' src="https://avatars.rotur.dev/user" alt="user's Avatar">
+                <img class='useravataroverlay' src="https://avatars.rotur.dev/.overlay/user" alt="user's Avatar Decoration">
+                <div class="statusicon"></div>
+            </div>
+            <div class="userinfo">
+                <div class="socialactionbar">
+                    <div class="socialactionbarbuttons">
+                            <button id='followuser' data-targetname ='user' data-following='false'>+ Follow</button>
+                            <button id='addfriend' data-targetname ='user' data-friendstatus='nofriend' title="Add Friend"><img src="../images/misc_icons/add_friend.png" width=24 height=24></button>
+                            <button id='profileblockbutton' data-friendstatus='false' data-following='false' data-targetname='name' data-blocked='no' title="Block User"><img src="../images/misc_icons/block.png" width=24 height=24></button>
+                            <button id='profileeditbutton' title="Edit Profile" data-targetname ='user'><img src="../images/misc_icons/edit.png" width=24 height=24></button>
+                        <button id='profilereload' title="Refresh Profile">⟳</button>
+                    </div>
+                    <p class='socialstatus'>Follows you</p>
+                </div>
+                <h1 id="usertitle">User</h1>
+                <!-- Only show if user status is visible -->
+                <p class="userstatus">Status</p>
+                <hr class="full-size dotted_separator" id="status_separator">
+                <!---->
+                <div id="pronounsandbadges">
+                    <h3 id="pronouns" title="user's Pronouns">he/him</h3>
+                    <ul id="badges"></ul>
+                </div>
+                <p class='bio' title="User's Bio"></p>
+            </div>
+            <div class="userinfo2">
+            <p class="joindate">Member since: 1/1/1970</p>
+                <ul id="morebasicinfo">
+                    <li>
+                        <h3 class="infolabel">Balance</h3>
+                        <p class='supplementaryinfo' id="balanceinfo">0</p>
+                    </li>
+                    <li>
+                        <h3 class="infolabel">System</h3>
+                        <p class='supplementaryinfo' id="systeminfo">Rotur Assistant
+                    </li>
+                    <li>
+                        <h3 class="infolabel">Subscription</h3>
+                        <p class='supplementaryinfo' id="subinfo">Free</p>
+                    </li>
+                </ul>
+                <ul id="evenmorebasicinfo">
+                    <li>
+                        <h3 class="infolabel">Account Index</h3>
+                        <p class='supplementaryinfo' id="accidx">&infin;</p>
+                    </li>
+                    <li>
+                        <h3 class="infolabel">Group Tag</h3>
+                        <p class='supplementaryinfo' id="groupinfo">None</p>
+                    </li>
+                    <li>
+                        <h3 class="infolabel">Standing</h3>
+                        <p class='supplementaryinfo' id="standinginfo">Good</p>
+                    </li>
+                </ul>
+                <div id="useruuidplaceholder">
+                    <h3 class="infolabel">Rotur UUID</h3>
+                    <p class='supplementaryinfo' id="uuidinfo">id</p>
+                </div>
+                <hr class="uuidbar">
+                <div id='roturassistantnote'>
+                    <h3>User note</h3>
+                    <p id='ranotefineprint'>Leave a private, personal note about this user here. Only you will be able to see this note. To get around requiring a Rotur subscription, Rotur Assistant uses its own notes system, independent of the one Rotur itself has.</p>
+                    <textarea placeholder='Note (only visible to you)' id='rausernotefield'></textarea>
+                    <p id='ranotecharlimit' style="color: white;">0/300</p>
+                    <div id='noteactionbar'>
+                        <button title='Clear Note' id='raclearnotebtn'><img src='../images/misc_icons/delete.png' width=24 height=24> Clear Note</button>
+                        <button title='Save Note' id='rasavenotebtn'><img src='../images/misc_icons/save.png' width=24 height=24> Save Note</button>
+                    </div>
+                </div>
+            </div>
+            <div class="userinfo3">
+                <hr>
+                <details id="followingpanel">
+                    <summary id="followingsummary">Following (0)</summary>
+                    <ul class='followuserlist' id="followinglist">
+                        <li>
+                            <h2>This user has not followed anyone yet.</h2>
+                        </li>
+                    </ul>
+                </details>
+                <hr class="dotted_separator">
+                <details id="followerspanel">
+                    <summary id="followerssummary">Followers (0)</summary>
+                    <ul class='followuserlist' id="followerslist">
+                        <li>
+                            <h2>This user has no followers yet.</h2>
+                        </li>
+                    </ul>
+                </details>
+                <hr>
+                <details id="userclawposts">
+                    <summary id='clawpostssummary'>Claw Posts (0)</summary>
+                    <ul id="clawpostslist">
+                        <li>
+                            <h2>This user has not made any claw posts yet.</h2>
+                        </li>
+                    </ul>
+                </details>
+                <hr class="dotted_separator">
+                <details id="useritems">
+                    <summary id='useritemssummary'>Items (0)</summary>
+                    <ul class="roturuseritemlist">
+                        <li>
+                            <h2>This user does not own any items yet.</h2>
+                        </li>
+                    </ul>
+                </details>
+                <hr class="dotted_separator">
+                <details id="economicstats">
+                    <summary>Economic Info</summary>
+                    <div id="economicplaceholder"></div>
+                </details>
+            </div>
+        </template>
+        <template id="listusertemplate">
+            <li class='listuser' data-user='user'>
+                <a href='../pages/lookup.html?user=user'>
+                    <img src='https://avatars.rotur.dev/user' alt='user' width='40' height='40'>
+                    <p>User</p>
+                </a>
+            </li>
+        </template>
+        <template id="friendrequestbuttons">
+            <div class='profilerequestactions'>
+                <button class='profileacceptreq' title="Accept Friend Request" data-user="user" data-action='acceptreq'>✓</button>
+                <button class='profiledeclinereq' title="Decline Friend Request" data-user="user" data-action='declinereq'>✕</button>
+            </div>
+        </template>
+        <template id="clawposttemplate">
+            <li id="post-postid" class="clawpostbody">
+                <span class="pinnedpostlabel"><img src='../images/misc_icons/pin.png' width='12' height='12'> Pinned</span>
+                <div class='postauthor'>
+                    <a href='../pages/lookup.html?user=user'>
+                        <img class='clawpfp' src='user' href='../pages/lookup.html?user=user' alt='user' width='32' height='32'>
+                        <h2 class="clawpostauthortitle">User</h2>
+                    </a>
+                    <div class="clawpostactionbar">
+                        <button class='repostbtn' title="Repost Post" data-postid='postid'><img src='../images/misc_icons/repost.png' width='24' height='24'></button>
+                        <button class='pinbtn' title="Pin Post" data-postid='postid'><img src='../images/misc_icons/pin.png' width='24' height='24'></button>
+                        <button class='deletebtn' title="Delete Post" data-postid='postid'><img src='../images/misc_icons/delete.png' width='24' height='24'></button>
+                    </div>
+                </div>
+                <p class='postcontent'>Hello, claw!</p>
+                <img class='clawattachment' src=''>
+                <p class='postmetadata'>Posted from Rotur Assistant on 1/1/1970</p>
+                <div class='feedbackbar'>
+                    <button class='likebutton' data-postid='postid'>Like</button>
+                    <button class='viewlikes' data-postid='postid'>View Likes</button>
+                    <button class='copypostid' data-postid='postid'>Copy Post ID</button>
+                </div>
+                <details class='repliesbtn' data-postid='postid'>
+                <summary class='replydropdownlabel'>View Replies (0)</summary>
+                    <div class='repliesplaceholder'>
+                        <ul class='reply' id='replies-postid'></ul>
+                    </div>
+                    <div class='replyboxplaceholder'>
+                        <textarea class='replybox' data-postid='postid' placeholder='Add a reply for User' name='userclawpostreplybox'></textarea>
+                        <p class="postcharlimit" id="limit-id">0/300</p>
+                        <button class='sendreply' data-postid='postid'>Send</button>
+                        <h2>Sign in to add a reply</h2>
+                    </div>
+                    <div class='replyerrorplaceholder'></div>
+                </details>
+            </li>
+        </template>
+        <template id="clawreplytemplate">
+            <li>
+                <div class='postauthor'>
+                    <a href='../pages/lookup.html?user=User'>
+                        <img class='clawpfp' src='https://avatars.rotur.dev/User' alt='User' width='32' height='32'>
+                        <h2 class="clawreplyauthor"></h2>
+                    </a>
+                    <button class='copypostid' data-postid='replyid'>Copy Reply ID</button>
+                </div>
+                <p class='postcontent'>Hello User!</p>
+                <img class='clawattachment' src=''>
+                <p class='postmetadata'>Posted on 1/1/1970</p>
+            </li>
+        </template>
+        <template id="roturitemtemplate">
+            <li class='roturitem' id='roturitem_rotur_item'>
+                <h2>Rotur Item</h2>
+                <p class='roturitemauthor'>Creator: <img src='https://avatars.rotur.dev/author' width=20 height=20> author | Current Owner: <img src='https://avatars.rotur.dev/owner' width=20 height=20> owner </p>
+                <p class="roturitemdesc">itemdesc</p>
+                <ul class='itemmetadatar1'>
+                    <li>
+                        <h3>Price</h3>
+                        <p class="roturitemprice">1 RC</p>
+                    </li>
+                    <li>
+                        <h3>Purchaseable</h3>
+                        <p class='isitempurchaseable'>Yes</p>
+                    </li>
+                </ul>
+                <ul class='itemmetadatar2'>
+                    <li>
+                        <h3>Created</h3>
+                        <p class="roturitemcreationdate">1/1/1970</p>
+                    </li>
+                    <li>
+                        <h3>Total Revenue</h3>
+                        <p class="roturitemtotalrevenue">0</p>
+                    </li>
+                </ul>
+                <button class='buyitem' data-itemname='itemname' data-amt='price' data-owner='user'>Buy (0 RC)</button>
+                <details class='itemtransferhistory'>
+                    <summary>Transfer History</summary>
+                    <ul class='transferhistory'></ul>
+                </details>
+            </li>
+        </template>
     </body>
 </html>

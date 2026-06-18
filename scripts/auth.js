@@ -1,3 +1,5 @@
+import { openWarningPopup } from "../index.js";
+
 // Moved here because google wants to avoid a potential XSS vulnerability with inline js in html
 window.addEventListener('message', function(event) {
     // Verify the origin for security
@@ -29,8 +31,8 @@ window.addEventListener('message', function(event) {
             }
 
             let activeacc = await new Promise(resolve =>
-                chrome.storage.local.get('activeacc', data => resolve(data.activeacc || []))
-            ) ?? [];
+                chrome.storage.local.get('activeacc', data => resolve(data.activeacc || {}))
+            ) ?? {};
 
             let existing_users = await new Promise(resolve =>
                 chrome.storage.local.get('userdata', data => resolve(data.userdata || []))
@@ -53,16 +55,17 @@ window.addEventListener('message', function(event) {
                     flagged_accs = flagged_accs.filter(acc => acc != existing_users[exist_index].uuid)
                     chrome.storage.local.set({flagged: flagged_accs})
                 }
-                if (activeacc.uuid == existing_users[exist_index].uuid) {
-                    chrome.storage.local.set({activeacc: existing_users[exist_index]})
-                }
+                chrome.storage.local.set({activeacc: existing_users[exist_index]})
             } else {
                 existing_users.push(userobject);
+                activeacc = existing_users[existing_users.length - 1]
+                chrome.storage.local.set({ activeacc: activeacc });
+            }
+            if (token.startsWith('rotur_st_')) {
+                chrome.storage.session.set({roturstwarning: true})
             }
 
             chrome.storage.local.set({ userdata: existing_users });
-            activeacc = existing_users[existing_users.length - 1]
-            chrome.storage.local.set({ activeacc: activeacc });
             chrome.storage.session.remove('sum_cache')
             
             window.location.replace('../pages/accounts.html')
@@ -76,3 +79,14 @@ window.onload = function() {
     document.getElementById('auth-iframe').style.display = 'block';
     document.getElementById('loading').style.display = 'none';
 };
+
+document.getElementById('requiredperms').addEventListener('click', function(e) {
+    openWarningPopup('')
+    document.getElementById('popupdialogue').innerHTML = `If you see a screen saying "Choose what to share" upon signing in, Rotur Assistant requires (bare minimum) Read-only, economy, and social permissions. Even if you do choose the mentioned permissions, a few parts of Rotur Assistant may still not work correctly with a sub-token. To ensure the smoothest experience (since Rotur Assistant was designed and tested primarily around the main token), choose "Full account access". If you are scared that Rotur Assistant may delete your account, mess with your settings, or steal all your credits, you can always check the extension's <a href="https://github.com/CodingWithDominic/Rotur-Assistant" target="_blank" rel="noopener noreferrer">source code</a>.`
+    document.getElementById('overlay').querySelector('h1').textContent = "Notice"
+    Array.from(document.getElementsByClassName('closebtn')).forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            document.getElementById('overlay').style.display = 'none'
+        })
+    })
+})

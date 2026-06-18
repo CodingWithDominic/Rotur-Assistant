@@ -1,4 +1,4 @@
-import { parseHTML, sanitize, openSuccessPopup, openErrorPopup } from "../index.js";
+import { parseHTML, sanitize, openSuccessPopup, openErrorPopup, MiniError, CreateEmptyPlaceholder, openWarningPopup } from "../index.js";
 
 const themedata = {
     oceanblue: ["#0F0052", "#004DB1", "#00002B", "#0012B4", "#4F46E5", "#4338CA", "#03009C"],
@@ -55,6 +55,21 @@ function openConfirmClearNotePopup2(user) {
     `))
 }
 
+function openConfirmClearCachePopup() {
+    document.getElementById('overlay').style.display = 'flex';
+    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+        <div id="popup-header">
+            <h1>Clear Cache</h1>
+            <button id="popup-x" class="closebtn">✕</button>
+        </div>
+        <p id="deleteconfirmdialogue">Clear any cached data Rotur Assistant may have? Rotur Assistant caches some stuff in order to improve user experience and reduce overall load on the Rotur API.</p>
+        <div id="popup-choices">
+            <button id="cancel" class="closebtn">Cancel</button>
+            <button id="finalcacheclear">Clear Cache</button>
+        </div>
+    `))
+}
+
 function closePopup() {
     document.getElementById('overlay').style.display = 'none';
 }
@@ -66,6 +81,14 @@ function replaceCharAtIdx(string, index, newchar) {
     return newStr;
 }
 
+const default_app_settings =
+{
+    rows: 3,
+    utils: true,
+    social: true,
+    misc: true
+}
+
 const themevarnames = ["--bg-color", "--scrollbar-bar", "--scrollbar-bg", "--headerandfooter", "--button", "--buttonhover", "--popupbg"]
 const currenttheme = await new Promise(resolve =>
     chrome.storage.local.get('theme', data => resolve(data.theme || "oceanblue"))
@@ -75,7 +98,34 @@ let settings = await new Promise(resolve =>
     chrome.storage.local.get('settings', data => resolve(data.settings || "00000000"))
     ) ?? "00000000";
 
-const setting_ids = ['renderoverlays', 'renderoverlaysglobal', 'anchorheader', 'anchorfooter', '24h']
+let display_mode = await new Promise(resolve =>
+    chrome.storage.local.get('ui_mode', data => resolve(data.ui_mode || "popup"))
+    ) ?? "popup";
+
+let preferredcdn = await new Promise(resolve =>
+    chrome.storage.local.get('preferredcdn', data => resolve(data.preferredcdn || "roturcdn"))
+    ) ?? "roturcdn";
+
+let app_settings = await new Promise(resolve =>
+    chrome.storage.local.get('app_settings', data => resolve(data.app_settings || default_app_settings))
+    ) ?? default_app_settings;
+
+document.getElementById('roturphotoswarning').style.display = (preferredcdn == 'roturphotos') ? 'block' : 'none'
+document.getElementById('fluficdnwarning').style.display = (preferredcdn == 'fluficdn') ? 'block' : 'none'
+
+document.getElementsByName('cdnoption').forEach(option => {
+    if (option.value == preferredcdn) {
+        option.selected = true;
+    }
+})
+
+document.getElementById('showutils').checked = app_settings.utils
+document.getElementById('showsocial').checked = app_settings.social
+document.getElementById('showmisc').checked = app_settings.misc
+document.getElementById('approwinput').value = app_settings.rows
+document.getElementById('approwlabel').textContent = app_settings.rows
+
+const setting_ids = ['renderoverlays', 'renderoverlaysglobal', 'anchorheader', 'anchorfooter', '24h', 'circular', 'showstatusicons']
 for (let i=0; i<setting_ids.length; i++) {
     const setting = setting_ids[i]
     document.getElementById(setting).checked = (settings[i] == "1")
@@ -95,6 +145,12 @@ async function updateTheme() {
 Array.from(document.getElementsByName('themeselect')).forEach(theme => {
     if (theme.value == currenttheme) {
         theme.checked = true;
+    }
+})
+
+Array.from(document.getElementsByName('ra_displayoption')).forEach(mode => {
+    if (mode.value == display_mode) {
+        mode.checked = true;
     }
 })
 
@@ -149,33 +205,38 @@ async function setNotes(notesobject) {
 
 const notes = await getNotes()
 
+function CreateNoteElement(user) {
+    const notecard = document.getElementById('notecardtemplate').content.cloneNode(true)
+    notecard.querySelector('li').id = `notepanel-${user.replaceAll(' ', '~')}`
+    notecard.querySelectorAll('[data-user]').forEach(elem => {
+        elem.dataset.user = user
+    })
+    notecard.querySelector('img').src = `https://avatars.rotur.dev/${user}`
+    notecard.querySelector('img').alt = user
+    notecard.querySelector('h3').textContent = user
+    if (user.length > 13) {
+        notecard.querySelector('h3').style = `font-size: ${30 - user.length}px;`
+    }
+    notecard.querySelector('textarea').value = (notes[user] ?? '')
+    notecard.querySelector('textarea').id = `noteman-${user.replaceAll(' ', '~')}`
+    notecard.querySelector('.notemancharlimit').textContent = `${(notes[user] ?? '').length}/300`
+    notecard.querySelector('.notemancharlimit').id = `limit-${user.replaceAll(' ', '~')}`
+    return notecard;
+}
+
 function updateNotes() {
     const note_users = Object.keys(notes)
     const notelist = document.getElementById('usernotelist')
     if (note_users.length == 0) {
-        notelist.replaceChildren(...parseHTML(`<li><h2>You haven't created any notes yet!</h2></li>`))
+        notelist.replaceChildren(CreateEmptyPlaceholder("You haven't created any notes yet!"))
         notelist.style = 'border: none;'
     } else {
-        let notes_html = ``
+        const notes_html = []
         note_users.forEach(user => {
-            notes_html += `<li id="notepanel-${user}">
-                <ul>
-                    <li>
-                        <div class='notemanuserbar' data-user='${user}'>
-                            <img src='https://avatars.rotur.dev/${user}' alt='${user}' width='32' height='32'>
-                            <h3${user.length > 13 ? ` style="font-size: ${30 - user.length}px;"` : ``}>${user}</h3>
-                        </div>
-                        <button class='notemansavebtn' data-user='${user}'><img src='../images/misc_icons/save.png' width=24 height=24> Save Note</button>
-                        <button class='notemandelbtn' data-user='${user}'><img src='../images/misc_icons/delete.png' width=24 height=24> Delete Note</button>
-                    </li>
-                    <li>
-                        <textarea id='noteman-${user.replaceAll(' ', '~')}' class='notemantextbox' placeholder='Edit User Note...' data-user='${user}'>${sanitize(notes[user] ?? '')}</textarea>
-                        <p class='notemancharlimit' id="limit-${user.replaceAll(' ', '~')}" style='color: ${(notes[user] ?? '').length > 300 ? 'red' : 'white'}'>${(notes[user] ?? '').length}/300</p>
-                    </li>
-                </ul>
-            </li>`
+            notes_html.push(CreateNoteElement(user))
         })
-        notelist.replaceChildren(...parseHTML(notes_html))
+
+        notelist.replaceChildren(...notes_html)
         notelist.style = 'border: 1px solid white;'
     }
 }
@@ -187,11 +248,6 @@ document.getElementById('gensettings').addEventListener('click', async function(
         settings = replaceCharAtIdx(settings, 2, (e.target.checked ? '1' : '0'))
         checkanchor()
         chrome.storage.local.set({settings: settings})
-        if (e.target.checked) {
-            
-        } else {
-
-        }
     }
     if (e.target.id == 'renderoverlays') {
         settings = replaceCharAtIdx(settings, 0, (e.target.checked ? '1' : '0'))
@@ -204,6 +260,14 @@ document.getElementById('gensettings').addEventListener('click', async function(
     }
     if (e.target.id == '24h') {
         settings = replaceCharAtIdx(settings, 4, (e.target.checked ? '1' : '0'))
+        chrome.storage.local.set({settings: settings})
+    }
+    if (e.target.id == 'circular') {
+        settings = replaceCharAtIdx(settings, 5, (e.target.checked ? '1' : '0'))
+        chrome.storage.local.set({settings: settings})
+    }
+    if (e.target.id == 'showstatusicons') {
+        settings = replaceCharAtIdx(settings, 6, (e.target.checked ? '1' : '0'))
         chrome.storage.local.set({settings: settings})
     }
     if (e.target.id == 'renderoverlaysglobal') {
@@ -228,8 +292,27 @@ document.getElementById('gensettings').addEventListener('click', async function(
             });
         }
         chrome.storage.local.set({settings: settings})
+        return;
     }
-
+    if (e.target.id == 'showutils') {
+        app_settings.utils = e.target.checked
+        chrome.storage.local.set({app_settings: app_settings})
+        return;
+    }
+    if (e.target.id == 'showsocial') {
+        app_settings.social = e.target.checked
+        chrome.storage.local.set({app_settings: app_settings})
+        return;
+    }
+    if (e.target.id == 'showmisc') {
+        app_settings.misc = e.target.checked
+        chrome.storage.local.set({app_settings: app_settings})
+        return;
+    }
+    if (e.target.id == 'clearcache') {
+        openConfirmClearCachePopup()
+        return;
+    }
 })
 
 document.getElementById('themepicker').addEventListener('change', async function(e) {
@@ -277,10 +360,10 @@ document.addEventListener('click', async function(e) {
         closePopup()
         delete notes[e.target.dataset.user]
         setNotes(notes)
-        document.getElementById(`notepanel-${e.target.dataset.user}`).remove()
+        document.getElementById(`notepanel-${e.target.dataset.user.replaceAll(' ', '~')}`).remove()
         const notelist = document.getElementById('usernotelist')
         if (notelist.childElementCount == 0) {
-            notelist.replaceChildren(...parseHTML(`<li><h2>You haven't created any notes yet!</h2></li>`))
+            notelist.replaceChildren(CreateEmptyPlaceholder("You haven't created any notes yet!"))
         }
         return;
     }
@@ -296,7 +379,7 @@ document.addEventListener('click', async function(e) {
             document.getElementById(`noteman-${user.replaceAll(' ', '~')}`).value = note
             document.getElementById(`limit-${user.replaceAll(' ', '~')}`).textContent = `${note.length}/300`
         }
-        document.getElementById('createnotestatusplaceholder').replaceChildren(...parseHTML(`<p class='success'>Note for ${user} was overwritten successfully!</p>`))
+        document.getElementById('createnotestatusplaceholder').replaceChildren(MiniError('success', `Note for ${user} was overwritten successfully!`))
         document.getElementById('createusernoteuser').value = ''
         document.getElementById('createusernotenote').value = ''
         document.getElementById(`createnotecharlimit`).value = '0/300'
@@ -308,13 +391,15 @@ document.addEventListener('click', async function(e) {
         target.disabled = true
         target.textContent = "Creating..."
         let user = document.getElementById('createusernoteuser').value
-        const userexists = await fetch(`https://api.rotur.dev/profile?name=${user}&include_posts=no`).then(res => res.json())
+        const userexists = await fetch(`https://api.rotur.dev/profile?name=${user}&include_posts=no`).then(res => res.json()).catch(err => {
+            return {error: "Communcation Error"}
+        })
         user = userexists.username ?? ''
         const note = document.getElementById('createusernotenote').value
         if (userexists.error) {
-            document.getElementById('createnotestatusplaceholder').replaceChildren(...parseHTML(`<p class='failure'>This user does not exist</p>`))
+            document.getElementById('createnotestatusplaceholder').replaceChildren(MiniError('failure', `${userexists.error == "Communication Error" ? `A communication error has occurred.` : `This user does not exist`}`))
         } else if (note.length > 300) {
-            document.getElementById('createnotestatusplaceholder').replaceChildren(...parseHTML(`<p class='failure'>Your note is too long</p>`))
+            document.getElementById('createnotestatusplaceholder').replaceChildren(MiniError('failure', "Your note is too long"))
         } else if (Object.keys(notes).some(item => item.toLowerCase() == user.toLowerCase())) {
             openConfirmOverwriteNotePopup(user)
         } else if (Object.keys(notes).length > 99) {
@@ -322,23 +407,8 @@ document.addEventListener('click', async function(e) {
         } else {
             notes[user] = note.replaceAll(`'`, `\'`)
             setNotes(notes)
-            document.getElementById('usernotelist').appendChild(...parseHTML(`<li id="notepanel-${user}">
-                <ul>
-                    <li>
-                        <div class='notemanuserbar' data-user='${user}'>
-                            <img src='https://avatars.rotur.dev/${user}' alt='${user}' width='32' height='32'>
-                            <h3${user.length > 13 ? ` style="font-size: ${30 - user.length}px;"` : ``}>${user}</h3>
-                        </div>
-                        <button class='notemansavebtn' data-user='${user}'><img src='../images/misc_icons/save.png' width=24 height=24> Save Note</button>
-                        <button class='notemandelbtn' data-user='${user}'><img src='../images/misc_icons/delete.png' width=24 height=24> Delete Note</button>
-                    </li>
-                    <li>
-                        <textarea id='noteman-${user.replaceAll(' ', '~')}' class='notemantextbox' placeholder='Edit User Note...' data-user='${user}'>${sanitize(notes[user] ?? '')}</textarea>
-                        <p class='notemancharlimit' id="limit-${user.replaceAll(' ', '~')}" style='color: ${(notes[user] ?? '').length > 300 ? 'red' : 'white'}'>${(notes[user] ?? '').length}/300</p>
-                    </li>
-                </ul>
-            </li>`))
-            document.getElementById('createnotestatusplaceholder').replaceChildren(...parseHTML(`<p class='success'>Note for ${user} was created successfully!</p>`))
+            document.getElementById('usernotelist').appendChild(CreateNoteElement(user))
+            document.getElementById('createnotestatusplaceholder').replaceChildren(MiniError('success', `Note for ${user} was created successfully!`))
             document.getElementById('createusernoteuser').value = ''
             document.getElementById('createusernotenote').value = ''
             document.getElementById(`createnotecharlimit`).textContent = '0/300'
@@ -347,6 +417,12 @@ document.addEventListener('click', async function(e) {
         target.textContent = "+ Create Note"
         
         setTimeout(function() { document.getElementById('createnotestatusplaceholder').replaceChildren() }, 10000)
+        return;
+    }
+    if (e.target.id == 'finalcacheclear') {
+        closePopup()
+        chrome.storage.session.clear()
+        openSuccessPopup('Cache cleared successfully.')
     }
 })
 
@@ -364,4 +440,28 @@ document.getElementById('createnotesect').addEventListener('input', function(e) 
         textlimit.textContent = `${e.target.value.length}/300`
         textlimit.style = e.target.value.length > 300 ? 'color: red;' : 'color: white;'
     }
+})
+
+const modeToggle = document.getElementById('mode-toggle');
+
+document.getElementById('popupsidebaroptions').addEventListener('change', (e) => {
+    display_mode = e.target.value
+    const newMode = e.target.value
+    chrome.storage.local.set({ ui_mode: newMode });
+});
+
+document.getElementById('preferredcdnoptions').addEventListener('change', (e) => {
+    preferredcdn = e.target.value
+    chrome.storage.local.set({ preferredcdn: preferredcdn });
+    document.getElementById('roturphotoswarning').style.display = (preferredcdn == 'roturphotos') ? 'block' : 'none'
+    document.getElementById('fluficdnwarning').style.display = (preferredcdn == 'fluficdn') ? 'block' : 'none'
+});
+
+document.getElementById('approwinput').addEventListener('input', function(e) {
+    document.getElementById('approwlabel').textContent = e.target.value
+})
+
+document.getElementById('approwinput').addEventListener('change', function(e) {
+    app_settings.rows = Number(e.target.value)
+    chrome.storage.local.set({app_settings: app_settings})
 })

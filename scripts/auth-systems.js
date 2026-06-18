@@ -1,4 +1,9 @@
-import { parseHTML } from "../index.js"
+const config = {
+    elements: ['select', 'option'],
+    attributes: ['value', 'selected']
+}
+
+const sanitizer = new Sanitizer(config)
 
 let system_cache = []
 async function getSystems() {
@@ -12,7 +17,7 @@ async function getSystems() {
         systemoptions += `<option value="${systemsarray[i]}" ${systemsarray[i] == "Rotur Assistant" ? "selected" : ""}>${systemsarray[i]}</option>`
     }
     systemoptions += `<option value="Random">Random System</option>`
-    document.getElementById('authselectscreen').replaceChildren(...parseHTML(systemoptions))
+    document.getElementById('authselectscreen').setHTML(systemoptions, {sanitizer: sanitizer})
 }
 
 getSystems()

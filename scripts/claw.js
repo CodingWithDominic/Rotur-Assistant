@@ -1,4 +1,4 @@
-import { sanitize, formatDate, parseHTML, openErrorPopup, openSuccessPopup, openWarningPopup } from "../index.js"
+import { sanitize, formatDate, openErrorPopup, openSuccessPopup, openWarningPopup, CreateEmptyPlaceholder, MiniError, UploadImage } from "../index.js"
 
 let currentfeeddata = [];
 let lastquery = 'feed'
@@ -7,19 +7,24 @@ let isTalon = false
 const talon_beta = false // Dev flag for when Talon is out and ready to be supported (hopefully it will be a drop-in API swap)
 
 const controller = new AbortController()
-const requestlimit = setTimeout(() => controller.abort(), 3000);
+const requestlimit = setTimeout(() => controller.abort(), 5000);
+
+const config = {
+    elements: ['p', 'img', 'div', 'h1', 'h2', 'h3', 'h4', 'button', 'ul', 'li', 'select', 'option', 'a'],
+    attributes: ['src', 'alt', 'href', 'width', 'height', 'id', 'class', 'data', 'value', 'title', 'disabled', 'selected']
+}
+const sanitizer = new Sanitizer(config)
 
 if (talon_beta) {
-    document.getElementById('clawtalon').replaceChildren(...parseHTML(`<select id='clawtalonoption'>
+    document.getElementById('clawtalon').setHTML(`<select id='clawtalonoption'>
         <option value='Claw' selected>Claw</option>
         <option value='Talon'>Talon</option>
-        </select>`
-    ))
+        </select>`, {sanitizer: sanitizer})
 }
 
 function openPopup(post_id) {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Delete post</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -29,12 +34,12 @@ function openPopup(post_id) {
             <button id="cancel" class="closebtn">No</button>
             <button class="finaldelete" data-postid='${post_id}'>Yes</button>
         </div>
-    `))
+    `, {sanitizer: sanitizer})
 }
 
 function openRepostPopup(post_id) {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Repost post</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -44,12 +49,12 @@ function openRepostPopup(post_id) {
             <button id="cancel" class="closebtn">No</button>
             <button class="finalrepost" data-postid='${post_id}'>Yes</button>
         </div>
-    `))
+    `, {sanitizer: sanitizer})
 }
 
 function openLikesPopup(likes) {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Likes</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -58,7 +63,7 @@ function openLikesPopup(likes) {
         <div id="popup-choices">
             <button id="cancel" class="closebtn">Close</button>
         </div>
-    `))
+    `, {sanitizer: sanitizer})
 }
 
 function closePopup() {
@@ -66,8 +71,8 @@ function closePopup() {
 }
 
 const activeacc = await new Promise(resolve =>
-    chrome.storage.local.get('activeacc', data => resolve(data.activeacc || []))
-) ?? [];
+    chrome.storage.local.get('activeacc', data => resolve(data.activeacc || {}))
+) ?? {};
 
 const flagged = await new Promise(resolve =>
     chrome.storage.local.get('flagged', data => resolve(data.flagged || []))
@@ -76,7 +81,7 @@ const flagged = await new Promise(resolve =>
 let premium = false
 
 if (!activeacc.uuid) {
-    document.getElementById('postwindow').replaceChildren(...parseHTML(`<h2>Sign in to create posts!</h2>`))
+    document.getElementById('postwindow').replaceChildren(CreateEmptyPlaceholder('Sign in to create posts!', true))
 } else {
     premium = await fetch(`https://api.rotur.dev/keys/check/${activeacc.name}?key=bd6249d2b87796a25c30b1f1722f784f`, {signal: controller.signal}).then(res => res.json()).catch((err) => {
         clearTimeout(requestlimit)
@@ -91,7 +96,9 @@ if (!activeacc.uuid) {
 }
 
 if (flagged.includes(activeacc.uuid)) {
-    document.getElementById('postwindow').replaceChildren(...parseHTML(`<h3>Due to an authentication issue that has been detected with your current account, interaction features has been disabled.</h3>`))
+    const h3 = document.createElement('h3')
+    h3.textContent = 'Due to an authentication issue that has been detected with your current account, interaction features has been disabled.'
+    document.getElementById('postwindow').replaceChildren(h3)
 }
 
 async function getSystems() {
@@ -102,86 +109,129 @@ async function getSystems() {
     let systemoptions = ``
 
     for (let i=0; i<systemsarray.length; i++) {
-            systemoptions += `<option value="${systemsarray[i]}" ${systemsarray[i] == "Rotur Assistant" ? 'selected' : ''}>${systemsarray[i]}</option>`
+            systemoptions += `<option value="${sanitize(systemsarray[i])}" ${systemsarray[i] == "Rotur Assistant" ? 'selected' : ''}>${sanitize(systemsarray[i])}</option>`
     }
     systemoptions += `<option value="Random">Random System</option>`
     systemoptions += `<option value="Unknown">"Unknown"</option>`
     if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
-        document.getElementById('system').replaceChildren(...parseHTML(systemoptions))
+        document.getElementById('system').setHTML(systemoptions, {sanitizer: sanitizer})
     }
 }
 
 getSystems()
 
 function createReplyElement(reply) {
-    const li = `<li>
-                    <div class='postauthor'>
-                        <a href='../pages/lookup.html?user=${reply.user || "Spectator"}'>
-                            <img class='clawpfp' src='https://avatars.rotur.dev/${reply.user || "Spectator"}' alt='${reply.user || "Spectator"}' width='32' height='32'>
-                            <h2>${reply.user || "Unknown User"}</h2>
-                        </a>
-                        <button class='copypostid' data-postid='${reply.id}'>Copy Reply ID</button>
-                    </div>
-                    <p class='postcontent'>${sanitize(reply.content)}</p>
-                    ${reply.attachment ? `<img class='clawattachment' src='${sanitize(reply.attachment)}'>` : ''}
-                    <p class='postmetadata'>Posted on ${formatDate(reply.timestamp)}</p>
-                </li>`;
-    return li;
+    const clawreply = document.getElementById('clawreplytemplate').content.cloneNode(true)
+
+    clawreply.querySelector('a').href = `../pages/lookup.html?user=${reply.user || "Spectator"}`
+    clawreply.querySelector('.copypostid').dataset.postid = reply.id
+    clawreply.querySelector('.clawpfp').src = `https://avatars.rotur.dev/${reply.user || "Spectator"}`
+    clawreply.querySelector('.clawpfp').alt = reply.user || "Spectator"
+    clawreply.querySelector('h2').textContent = reply.user || "Unknown User"
+    clawreply.querySelector('.postcontent').innerText = reply.content
+    if (reply.attachment) {
+        clawreply.querySelector('.clawattachment').src = reply.attachment
+    } else {
+        clawreply.querySelector('.clawattachment').remove()
+    }
+    clawreply.querySelector('.postmetadata').textContent = `Posted on ${formatDate(reply.timestamp)}`
+    return clawreply;
 }
 
-
 function appendReplies(postdata) {
-    let replybody = ``
+    const replybody = []
     for (let i=0; i<postdata.replies.length; i++) {
-        replybody += createReplyElement(postdata.replies[i])
+        replybody.push(createReplyElement(postdata.replies[i]))
     }
     return replybody
 }
 
 function createPostElement(post) {
-    const li = document.createElement('li');
-    li.id = `post-${post.id}`;
-    li.className = 'clawpostbody'
-    li.replaceChildren(...parseHTML(`<div class='postauthor'>
-        <a href='../pages/lookup.html?user=${post.user || "Spectator"}'>
-            <img class='clawpfp' src='https://avatars.rotur.dev/${post.user || "Spectator"}' href='../pages/lookup.html?user=${post.user}' alt='${post.user}' width='32' height='32'>
-            <h2>${post.user || "Unknown User"}</h2>
-        </a>
-            ${(activeacc.uuid && !flagged.includes(activeacc.uuid)) ? `${post.user == activeacc.name ? `<button class='deletebtn' title="Delete" data-postid='${post.id}'><img src='../images/misc_icons/delete.png' width='24' height='24'></button>` : `<button class='repostbtn' title="Repost" data-postid='${post.id}'><img src='../images/misc_icons/repost.png' width='24' height='24'></button></button>`}` : ``}
-        </div>
-        <p class='postcontent'>${sanitize(post.content)}</p>
-        ${post.attachment ? `<img class='clawattachment' src='${sanitize(post.attachment)}'>` : ''}
-        <p class='postmetadata'>Posted from ${post.os ?? "Unknown System"} on ${formatDate(post.timestamp)}</p>
-        <div class='feedbackbar'>
-            <button class='likebutton' data-postid='${post.id}' ${(activeacc.uuid && !flagged.includes(activeacc.uuid)) ? '' : 'disabled'}>${post.likes && post.likes.includes(activeacc.name) ? `❤️ Unlike (${post.likes ? post.likes.length : 0})` : `🩶 Like (${post.likes ? post.likes.length : 0})`}</button>
-            <button class='viewlikes' data-postid='${post.id}' ${post.likes ? `data-likes=${JSON.stringify(post.likes)}` : 'disabled'}>View Likes</button>
-            <button class='copypostid' data-postid='${post.id}'>Copy Post ID</button>
-        </div>
-        <details class='repliesbtn' data-postid='${post.id}'>
-        <summary class='replydropdownlabel'>View Replies (${post.replies ? post.replies.length : 0})</summary>
-            <div class='repliesplaceholder'>
-                ${post.replies ? `<ul class='reply' id='replies-${post.id}'>${appendReplies(post)}</ul>` : ``}
-            </div>
-            <div class='replyboxplaceholder'>
-            ${(activeacc.uuid && !flagged.includes(activeacc.uuid)) ? `
-                <textarea class='replybox' data-postid='${post.id}' placeholder='Add a reply for ${post.user}'></textarea>
-                <p class="postcharlimit" id="limit-${post.id}">0/${premium ? '600' : '300'}</p>
-                <button class='sendreply' data-postid='${post.id}'>Send</button>`
-                : `${flagged.includes(activeacc.uuid) ? `<h3>Due to an authentication issue with your current account, this feature has been disabled.</h3>` : `<h2>Sign in to add a reply</h2>`}`}
-            </div>
-            <div class='replyerrorplaceholder'></div>
-        </details>`))
-    return li;
+    const repost = post.is_repost
+    const clawpost = document.getElementById('clawposttemplate').content.cloneNode(true)
+    clawpost.querySelector('li').id = `post-${post.id}`
+    clawpost.querySelector('.clawpfp').src = `https://avatars.rotur.dev/${post.user || "Spectator"}`
+    clawpost.querySelector('.clawpfp').alt = post.user || "Spectator"
+    clawpost.querySelector('a').href = `../pages/lookup.html?user=${post.user || "Spectator"}`
+    clawpost.querySelector('.clawpfp').href = `../pages/lookup.html?user=${post.user || "Spectator"}`
+    clawpost.querySelectorAll('[data-postid]').forEach(elementnode => {
+        elementnode.dataset.postid = post.id
+    })
+    clawpost.querySelectorAll('[data-user]').forEach(elementnode => {
+        elementnode.dataset.user = post.user
+    }) // Get around having to do it manually since it appears so often
+
+    clawpost.querySelector('.clawpostauthortitle').textContent = post.user ? (post.user + ' ') : "Unknown User "
+    if (repost) {
+        const mark = document.createElement('mark')
+        mark.textContent = post.original_post.profile_only ? `Profile + Repost` : `Repost`
+        mark.className = `repostbadge`
+        clawpost.querySelector('.clawpostauthortitle').appendChild(mark)
+        clawpost.querySelector('.repostbtn').disabled = true
+        clawpost.querySelector('.repostbtn').title = "Repost (Cannot repost profile-only posts or other reposts)"
+    } else if (post.profile_only) {
+        const mark = document.createElement('mark')
+        mark.textContent = `Profile`
+        mark.className = `repostbadge`
+        clawpost.querySelector('.clawpostauthortitle').appendChild(mark)  
+        clawpost.querySelector('.repostbtn').disabled = true
+        clawpost.querySelector('.repostbtn').title = "Repost (Cannot repost profile-only posts or other reposts)"
+    }
+    if (!activeacc.uuid || flagged.includes(activeacc.uuid)) {
+        clawpost.querySelector('.repostbtn').remove()
+        clawpost.querySelector('.deletebtn').remove()
+    } else if (post.user == activeacc.name) {
+        clawpost.querySelector('.repostbtn').style = 'right: 36px;'
+    } else {
+        clawpost.querySelector('.deletebtn').remove()
+    }
+    if (post.attachment || (repost && post.original_post.attachment)) {
+        clawpost.querySelector('.clawattachment').src = repost ? post.original_post.attachment : post.attachment
+    } else {
+        clawpost.querySelector('.clawattachment').remove()
+    }
+    clawpost.querySelector('.postcontent').innerText = repost ? post.original_post.content : post.content
+    clawpost.querySelector('.postmetadata').textContent = `Posted from ${(repost ? post.original_post.os : post.os) ?? "Unknown System"} on ${formatDate(repost ? post.original_post.timestamp : post.timestamp)}`
+
+    clawpost.querySelector('.likebutton').textContent = `${post.likes && post.likes.includes(activeacc.name) ? `❤️ Unlike (${post.likes ? post.likes.length : 0})` : `🩶 Like (${post.likes ? post.likes.length : 0})`}`
+    clawpost.querySelector('.likebutton').disabled = !activeacc.uuid
+    if (post.likes) {
+        clawpost.querySelector('.viewlikes').dataset.likes = JSON.stringify(post.likes)
+    } else {
+        clawpost.querySelector('.viewlikes').disabled = true
+    }
+    clawpost.querySelector('.replydropdownlabel').textContent = `View Replies (${post.replies ? post.replies.length : 0})`
+    if (activeacc.uuid) {
+        clawpost.querySelector('.replyboxplaceholder').querySelector('h2').remove()
+        clawpost.querySelector('.postcharlimit').id = `limit-${post.id}`
+        clawpost.querySelector('.postcharlimit').textContent = `0/${premium ? "600" : "300"}`
+        clawpost.querySelector('.replybox').placeholder = `Add a reply for ${post.user}`
+    } else {
+        clawpost.querySelector('.replyboxplaceholder').querySelectorAll(':not(h2)').forEach(elemNode => {
+            elemNode.remove()
+        })
+    }
+    if (post.replies) {
+        clawpost.querySelector(`.reply`).id = `replies-${post.id}`
+        clawpost.querySelector(`.reply`).replaceChildren(...appendReplies(post))
+    } else {
+        clawpost.querySelector(`.reply`).remove()
+    }
+    return clawpost;
 }
 
 async function renderClawFeed() {
     const feed = await fetch(`https://claw.rotur.dev/${lastquery}`).then(res => res.json()).catch(err => {
-        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+        document.getElementsByClassName('container')[0].setHTML(`
             <h1>Claw</h1>
-            <h2>A communication error has occurred. If you're sure it's not your connection, then Rotur may be down right now.</h2>
-        `))
+            <h3>A communication error has occurred. If you're sure it's not your connection, then Rotur may be down right now.</h3>
+        `, {sanitizer: sanitizer})
         return;
     })
+    if (feed.error) {
+        openErrorPopup(feed.error)
+        return;
+    }
     const feedbody = document.getElementById('feed').querySelector('[id="clawfeed"]')
 
     if (feed.length == 0) {
@@ -189,10 +239,12 @@ async function renderClawFeed() {
                            "feed":"Nobody has made a post yet... maybe you can be the first!"
                             }
         feedbody.style = 'border: none;'
-        feedbody.replaceChildren(...parseHTML(`<li><h2>${errorjson[lastquery] ? errorjson[lastquery] : lastquery.includes('following_feed') ? "Either you aren't following anybody or none of the people you follow has made a claw post yet." : "No posts match this search."}</h2></li>`))
+        feedbody.setHTML(`<li id='noclawposts'><h2>${errorjson[lastquery] ? sanitize(errorjson[lastquery]) : lastquery.includes('following_feed') ? "Either you aren't following anybody or none of the people you follow has made a claw post yet." : "No posts match this search."}</h2></li>`, {sanitizer: sanitizer})
+        currentfeeddata = []
         return;
     } else {
         feedbody.style = 'border: 2px solid white;'
+        document.getElementById('noclawposts')?.remove()
     }
 
     if (currentfeeddata.length == 0) {
@@ -203,7 +255,6 @@ async function renderClawFeed() {
         });
         return;
     }
-
     const newPosts = feed.filter(post1 =>
         !currentfeeddata.some(post2 => post2.id === post1.id)
     );
@@ -212,18 +263,16 @@ async function renderClawFeed() {
         !feed.some(post2 => post2.id === post1.id)
     );
     currentfeeddata = feed;
+    deletedPosts.forEach(post => {
+        document.getElementById(`post-${post.id}`)?.remove();
+    });
     // Add new posts
     newPosts.forEach(post => {
-        if (feed[1].timestamp > newPosts[newPosts.length - 1].timestamp) {
+        if ((feed[1] ?? feed[0]).timestamp > newPosts[newPosts.length - 1].timestamp) {
             feedbody.appendChild(createPostElement(post));
         } else {
             feedbody.prepend(createPostElement(post));
         }
-    });
-
-    deletedPosts.forEach(post => {
-        const el = document.getElementById(`post-${post.id}`);
-        if (el) el.remove();
     });
 
     feed.forEach(post => {
@@ -237,7 +286,7 @@ async function renderClawFeed() {
                 document.getElementById(`post-${post.id}`).querySelector('[class="repliesplaceholder"]').appendChild(ul)
             }
             const replies = document.getElementById(`post-${post.id}`).querySelector('[class="reply"]')
-            replies.replaceChildren(...parseHTML(appendReplies(post)))
+            replies.replaceChildren(...appendReplies(post))
             document.getElementById(`post-${post.id}`).querySelector('[class="replydropdownlabel"]').textContent = `View Replies (${post.replies ? post.replies.length : 0})`
         }
     }
@@ -261,7 +310,11 @@ function updateReplyCharLimit(postid, num) {
 
 async function post(message, system) {
     if (message == '') {
-        document.getElementById('posterrorplaceholder').replaceChildren(...parseHTML(`<p class="failure">You can't post a blank post</p>`))
+        document.getElementById('posterrorplaceholder').replaceChildren(MiniError('failure', "You can't post a blank post"))
+        setTimeout(function() {
+            document.getElementById('posterrorplaceholder').replaceChildren()
+        }, 10000)
+        return;
     } else {
         let potentialattachment = ''
         const postbutton = document.getElementById('sendpost')
@@ -272,23 +325,12 @@ async function post(message, system) {
         const attachment = document.getElementById('clawimage').files[0]
 
         if (attachment) {
-            const reader = new FileReader();
-
-            reader.onloadend = () => {
-                potentialattachment = reader.result
-            };
-
-            reader.readAsDataURL(attachment);
-            const response = await fetch('https://roturcdn.milosantos.com/api/image/upload?public=true', {
-                method: 'POST',
-                body: attachment
-            }).then(res => res.json());
-
-            potentialattachment = `https://roturcdn.milosantos.com/${response.id}`;
-            if (potentialattachment.includes('undefined')) {
-                document.getElementById('posterrorplaceholder').replaceChildren(...parseHTML(`<p class="failure">Attachment failed to upload</p>`))
+            potentialattachment = await UploadImage(attachment)
+            if (!potentialattachment) {
+                document.getElementById('posterrorplaceholder').replaceChildren(MiniError('failure', "Attachment failed to upload"))
                 postbutton.disabled = false
                 postbutton.textContent = 'Send'
+                document.getElementById('clearattachment').disabled = false
                 setTimeout(function() {
                     document.getElementById('posterrorplaceholder').replaceChildren()
                 }, 10000)
@@ -297,9 +339,9 @@ async function post(message, system) {
         }
         let postsuccess = ''
         document.getElementById('posterrorplaceholder').replaceChildren()
-        postsuccess = await fetch(`https://api.rotur.dev/post${system != `Unknown` ? `?os=${system == "Random" ? (system_cache[Math.floor(Math.random() * system_cache.length)] ?? "Rotur Assistant") : system}` : ``}${system == "Unknown" ? `?` : `&`}auth=${activeacc.token}&content=${message}${potentialattachment ? `&attachment=${encodeURIComponent(potentialattachment)}` : ``}${document.getElementById('profileonly').checked ? `&profile_only=1` : ``}`)
+        postsuccess = await fetch(`https://api.rotur.dev/post${system != `Unknown` ? `?os=${system == "Random" ? (system_cache[Math.floor(Math.random() * system_cache.length)] ?? "Rotur Assistant") : system}` : ``}${system == "Unknown" ? `?` : `&`}auth=${activeacc.token}&content=${message}${potentialattachment ? `&attachment=${encodeURIComponent(potentialattachment)}` : ``}${document.getElementById('profileonly').checked ? `&profile_only=1` : ``}`).then(res => res.json())
         if (postsuccess.error) {
-            document.getElementById('posterrorplaceholder').replaceChildren(...parseHTML(`<p class="failure">${postsuccess.error}</p>`))
+            document.getElementById('posterrorplaceholder').replaceChildren(MiniError('failure', postsuccess.error))
         } else {
             document.getElementById('postcontent').value = ''
             document.getElementById('clawimage').value = ''
@@ -308,7 +350,7 @@ async function post(message, system) {
             updateCharLimit(0)
             if (document.getElementById('profileonly').checked) {
                 document.getElementById('profileonly').checked = false
-                openSuccessPopup('Successfully posted to your profile!')
+                document.getElementById('posterrorplaceholder').replaceChildren(MiniError('success', "Successfully posted to your profile!"))
             } else {
                 renderClawFeed()
             }
@@ -331,11 +373,11 @@ async function reply(postid, message) {
 
     let replysuccess = ''
     if (content == '') {
-        replystatus.replaceChildren(...parseHTML(`<p class="failure">You can't post a blank reply</p>`))
+        replystatus.replaceChildren(MiniError('failure', "You can't post a blank reply"))
     } else {
         replysuccess = await fetch(`https://api.rotur.dev/reply?id=${postid}&auth=${activeacc.token}&content=${message}`)
         if (replysuccess.error) {
-            replystatus.replaceChildren(...parseHTML(`<p class="failure">${replysuccess.error}</p>`))
+            replystatus.replaceChildren(MiniError('failure', replysuccess.error))
         } else {
             document.getElementById(`post-${postid}`).querySelector('[class="replybox"]').value = ``
             updateReplyCharLimit(postid, 0)
@@ -356,6 +398,7 @@ function updatepostcontrols() {
     document.getElementById('postcontent').disabled = (lastquery != 'feed')
     document.getElementById('clawimage').disabled = (lastquery != 'feed')
     document.getElementById('system').disabled = (lastquery != 'feed')
+    document.getElementById('profileonly').disabled = (lastquery != 'feed')
     document.getElementById('sendpost').disabled = ((lastquery != 'feed') || (document.getElementById('sendpost').value.length > (premium ? 600 : 300)))
 }
 
@@ -394,9 +437,13 @@ if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
 
 document.getElementById('postsearchbar').addEventListener('submit', (event) => {
     event.preventDefault();
-    lastquery = 'search_posts?q=' + document.getElementById('postsearchbarinput').value
-    updatepostcontrols()
-    renderClawFeed()
+    if (document.getElementById('postsearchbarinput').value) {
+        lastquery = 'search_posts?q=' + document.getElementById('postsearchbarinput').value
+        updatepostcontrols()
+        renderClawFeed()
+    } else {
+        openErrorPopup('A search query is required')
+    }
 })
 
 async function readImageFromClipboard() {

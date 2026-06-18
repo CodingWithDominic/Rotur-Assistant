@@ -8,12 +8,12 @@
         <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
     </head>
     <body>
-        <div id="header-placeholder"></div>
+        <header id="header-placeholder"></header>
         <script src="../header.js"></script>
         <div class="container">
             <h1>Key Manager (Economy)</h1>
             <p id="keyfineprint">This page is for managing keys that are purchaseable (either one-time or recursively). For the page that manages keys associated with your account, see <a href="../pages/keymanager_acc.html">Key Manager (Account)</a></p>
-            <hr>
+            <hr class="full-size">
             <div class="tabheader keystabheader">
                 <button id='createdtab' class="tab">Mine</button>
                 <button id='boughttab' class="tab">Bought</button>
@@ -32,13 +32,13 @@
                 <input type="text" id="ecokeyname" placeholder="Key Name">
                 <div id="keytypeandprice">
                     <form id="ecokeytype">
-                        <label>Key Type:</label>
+                        <label for="ecokeytypes">Key Type:</label>
                         <div id="ecokeytypes">
                             <label class="radiochoices"><input id="onetimeoption" name="subtype" type="radio" value="onetime" checked> One-time</label>
                             <label class="radiochoices"><input id="suboption" name="subtype" type="radio" value="subscription"> Subscription</label>
                         </div>
                     </form>
-                    <input type="number" id="ecokeyprice" placeholder="Price" step="0.01">
+                    <input type="number" id="ecokeyprice" placeholder="Price (RC)" step="0.01">
                 </div>
                 <div id="subfrequency">
                     <h3>Bill every:</h3>
@@ -68,7 +68,74 @@
             <div class="popup"></div>
         </div>
         <script type="module" src="../scripts/keys_eco.js"></script>
-        <div id="footer-placeholder"></div>
+        <footer id="footer-placeholder"></footer>
         <script src="../footer.js"></script>
+        <template id="mykeytemplate">
+            <li class="mykeyentry" id="key-keyid">
+                <h2 class='ecokeynameheader'>Key Name</h2>
+                <div class='ecokeydetails'>
+                    <label class='editecokeyname'>Name: <input type='text' name='ecokeyupdatenamefield' placeholder='Key Name' class='ecokeynameupdate' value="keyname"> <button class="ecokeysave" title="Save Name" id="savename-keyid" data-keyid='keyid'><image src='../images/misc_icons/save.png' width=24 height=24 alt='Save'></button></label>
+                    <p class="keyidlabel">ID: 123</p>
+                    <p class="keytypelabel">Type: Subscription</p>
+                    <p class="keybillinglabel">Bills every: 1 month</p>
+                    <form class='editpriceandhook'>
+                        <label>Price: <input type='text' name='ecokeypricefield' placeholder='Price (RC)' class='ecokeypriceupdate' value="1"> RC <button type="button" class="ecokeysave" title="Save Price" id="saveprice-keyid" data-keyid='keyid'><image src='../images/misc_icons/save.png' width=24 height=24 alt='Save'></button></label>
+                        <label>Webhook: <input type='text' name='ecokeywebhookfield' placeholder='Webhook URL' class='ecokeywebhook' value="keywebhook"> <button type="button" class="ecokeysave" title="Save Webhook" id="savehook-keyid" data-keyid='keyid'><image src='../images/misc_icons/save.png' width=24 height=24 alt='Save'></button></label>
+                    </form>
+                    <div class='ecokeycontrolpanel'>
+                        <button type="button" class="ecokeyrevoke" id="revoke-keyid" data-keyid='keyid'>Revoke Key</button>
+                        <button type="button" class="ecokeydelete" id="delete-keyid" data-keyid='keyid'>Delete Key</button>
+                    </div>
+                    <div class='ecokeystatus'></div>
+                </div>
+                <hr class="dotted_separator">
+                <details class="ecokeyusersowner">
+                    <summary class='ecokeyuserlistcount'>Users (0)</summary>
+                    <ul class='ecokeyuserlist'></ul>
+                    <div class='addusertoecokey'>
+                        <input type="text" class="ecokeynewuser" name='ecokeyadduserfield' id="adduser-keyid" placeholder="Username">
+                        <button class="ecokeynewuserconfirm" data-keyid='keyid'>Add User</button>
+                    </div>
+                    <div class='ecokeyadduserstatus'></div>
+                </details>
+            </li>
+        </template>
+        <template id="boughtkeytemplate">
+            <li class="ownedkeyentry" id="key-keyid2">
+                <h2 class='ecokeynameheader'>Key Name</h2>
+                <div class='ecokeydetails'>
+                    <p class="ecokeyownerlabel"></p>
+                    <p class="keyidlabel">ID: 123</p>
+                    <p class="keytypelabel">Type: Subscription</p>
+                    <p class="keypricelabel">Price: 1 RC</p>
+                    <p class="keybillinglabel">Bills every: 1 Month</p>
+                    <div class='ecokeywebhookdisplay'>
+                        <span class='ecokeywebhookurl'>Webhook URL: URL</span>
+                        <button type="button" class="ecokeycopy" id="copyhook-keyid" data-keyid='keyid' data-webhook='URL'><image src='../images/misc_icons/copy.png' width=24 height=24 alt='Copy'></button>
+                        </div>
+                    <div class='ecokeycontrolpanel'>
+                        <button class="ecokeysubcancel" id="cancel-keyid" data-keyid='keyid' data-owner='Creator'>Cancel Subscription</button>
+                    </div>
+                    <div class='ecokeystatus'></div>
+
+                </div>
+                <hr class="dotted_separator">
+                <details class="ecokeyusersowner">
+                    <summary class='ecokeyuserlistcount'>Users (1)</summary>
+                    <ul class=ecokeyuserlist></ul>
+                </details>
+            </li>
+        </template>
+        <template id="keyusertemplate">
+            <li class="ecokeyuser">
+                <div class='ecokeyuserheader'>
+                    <img src="https://avatars.rotur.dev/User" alt="User" width=32 height=32>
+                    <h2>User</h2>
+                    <button class='removeacc' data-name="User" title="Remove user from key" data-nextbill="2100" data-refundprice="1" data-keyid="123">✕</button>
+                </div>
+                <p class="purchasedate">Purchased 5 BCE</p>
+                <p class="nextbillingdate">Next Billing: Idk bro</p>
+            </li>
+        </template>
     </body>
 </html>

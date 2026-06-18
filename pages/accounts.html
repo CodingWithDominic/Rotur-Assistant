@@ -8,7 +8,7 @@
         <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
     </head>
     <body>
-        <div id="header-placeholder"></div>
+        <header id="header-placeholder"></header>
         <script src="../header.js"></script>
         <div class="container">
             <h1>Select Active Account</h1>
@@ -18,7 +18,7 @@
                 <button id="switchaccinfo">?</button>
             </div>
             <div id="disabledcontext"></div>
-            <hr>
+            <hr class="full-size">
             <h2>Sync Data</h2>
             <p>This will sync any Rotur Account data you have, including the tokens of all the Rotur accounts you have added above, to your Google Account. While this will save time having to re-add all your accounts on another instance of Rotur Assistant in another window or on another device, this will effectively put the security of all your Rotur Accounts at the mercy of the security of your Google Account.</p>
             <div id="syncsection">
@@ -34,7 +34,7 @@
             </div>
             <p style="display: none;">Due to Google limitations on sync storage size, uploading to sync is unavailable if you have more than 20 accounts added.</p>
             <div id="syncstatusplaceholder"></div>
-            <hr>
+            <hr class="full-size">
             <div id="importexportroster">
                 <button id="importroster">Import Roster</button>
                 <button id="exportroster">Export Roster</button>
@@ -45,7 +45,27 @@
         <div class="overlay" id="overlay">
             <div class="popup"></div>
         </div>
-        <div id="footer-placeholder"></div>
-        <script src="../footer.js"></script>        
+        <footer id="footer-placeholder"></footer>
+        <script src="../footer.js"></script>   
+        <template id="acclistentrytemplate">
+            <label class='acclistentry' data-name="User" draggable="false">
+                <div class="drag-handle" draggable="true">
+                    <span></span><span></span>
+                    <span></span><span></span>
+                    <span></span><span></span>
+                    <span></span><span></span>
+                    <span></span><span></span>
+                    <span></span><span></span>
+                </div>
+                <input type="radio" name="account" value="0">
+                <img src="name" alt="name" class="acclistimage">
+                <span class="usernamespan">Name</span>
+                <div class='accountpanel'>
+                    <button class='viewprofile' title='View Profile' data-name='name'><img src='../images/misc_icons/usericon.png' width=24 height=24></button>
+                    <button class='editprofile' title='Edit Profile' data-name='name'><img src='../images/misc_icons/edit.png' width=24 height=24></button>
+                    <button class='removeacc' title='Remove Account' data-name='name' data-id='uuid'>✕</button>
+                </div>
+            </label>
+        </template>     
     </body>
 </html>

@@ -1,28 +1,38 @@
-import { parseHTML, openErrorPopup, openSuccessPopup } from "../index.js";
+import { parseHTML, openErrorPopup, openSuccessPopup, sanitize } from "../index.js";
 
 const activeacc = await new Promise(resolve =>
-    chrome.storage.local.get('activeacc', data => resolve(data.activeacc || []))
+    chrome.storage.local.get('activeacc', data => resolve(data.activeacc || {}))
+) ?? {};
+
+const flagged = await new Promise(resolve =>
+    chrome.storage.local.get('flagged', data => resolve(data.flagged || []))
 ) ?? [];
 
-if (!activeacc.uuid) {
+if (!activeacc.uuid || flagged.includes(activeacc.uuid) || !navigator.onLine) {
     Array.from(document.getElementsByClassName('systemswitch')).forEach(btn => {
         btn.style.display = 'none'
     })
 }
 
+const config = {
+    elements: ['p', 'img', 'div', 'h1', 'h2', 'h3', 'h4', 'button', 'ul', 'li', 'select', 'option', 'input', 'hr', 'a'],
+    attributes: ['src', 'alt', 'href', 'width', 'height', 'id', 'class', 'data', 'value', 'title', 'disabled', 'type', 'placeholder', 'step']
+}
+const sanitizer = new Sanitizer(config)
+
 function openSystemPopup(system_name, owner) {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Confirm New System</h1>
             <button id="popup-x" class="closebtn">✕</button>
         </div>
-        <p id="deleteconfirmdialogue">Change your system to ${system_name}? This will give the owner of the system, <img src='https://avatars.rotur.dev/${owner}' width=16 height=16> ${owner}, elevated permissions over your Rotur account, including the ability to ban or delete your Rotur account. Do note that Mistium, being the owner of Rotur, has elevated permissions over all Rotur accounts, regardless of system. On top of that, each time you claim a daily credit, the system owner will get 0.25 credits. Only proceed with this action if you trust the system's owner.</p>
+        <p id="deleteconfirmdialogue">Change your system to ${sanitize(system_name)}? This will give the owner of the system, <img src='https://avatars.rotur.dev/${owner}' width=16 height=16> ${owner}, elevated permissions over your Rotur account, including the ability to ban or delete your Rotur account. Do note that Mistium, being the owner of Rotur, has elevated permissions over all Rotur accounts, regardless of system. On top of that, each time you claim a daily credit, the system owner will get 0.25 credits. Only proceed with this action if you trust the system's owner.</p>
         <div id="popup-choices">
             <button id="cancel" class="closebtn">Cancel</button>
-            <button class="finalsystemconfirm" data-keyname='system' data-finalsystem='${system_name}'>Confirm</button>
+            <button class="finalsystemconfirm" data-keyname='system' data-finalsystem='${sanitize((system_name == 'PassNet') ? 'passNet' : system_name)}'>Confirm</button>
         </div>
-    `))
+    `, {sanitizer: sanitizer})
 }
 
 function closePopup() {

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="stylesheet" href="../style.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+    </head>
+    <body>
+        <header id="header-placeholder"></header>
+        <script src="../header.js"></script>
+        <div class="container">
+            <h1>ICN Editor</h1>
+            <p>View, edit, and manage ICN files here.</p>
+            <hr class="full-size">
+            <div class="tabheader">
+                <button id='icneditortab' class="tab">Editor</button>
+                <button id='icnsettingstab' class="tab">Settings</button>
+                <button id='icndocstab' class="tab">Docs</button>
+            </div>
+            <div id="icneditor">
+                <div id="icneditorcontrolbar">
+                    <button id="icn_linebyline">Line-by-line</button>
+                    <button id="icn_oneline">One-line</button>
+                    <button id="icn_import">Import</button>
+                    <button id="icn_export">Export</button>
+                    <input type="file" id="icnimportbtn" style="display: none;" accept=".icn, application/icn, .txt, data/txt">
+                </div>
+                <textarea id="icn_field" placeholder="ICN goes here..." spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+                <button id="rendericn">Render</button>
+                <hr class="full-size dotted_separator">
+                <canvas id="icn_canvas" width="370" height="240"></canvas>
+                <button id="resetcamera">Reset Camera</button>
+            </div>
+            <div id="icnsettings" style="display: none">
+                <form id="canvasbgsettings">
+                    <h3 style="text-align: left;">Background:</h3>
+                    <label>
+                        <input type="radio" name="canvasbg" value="white">
+                        White
+                    </label>
+                    <label>
+                        <input type="radio" name="canvasbg" value="black">
+                        Black
+                    </label>
+                    <label>
+                        <input type="radio" name="canvasbg" value="transparent">
+                        Transparent
+                    </label>
+                    <label>
+                        <input type="radio" name="canvasbg" value="dark">
+                        Transparent-Dark
+                    </label>
+                </form>
+                <hr class="dotted_separator">
+                <label>
+                    <input type="checkbox" id="togglegrid">
+                    Show canvas grid
+                </label>
+                <label>
+                    Grid Size: 
+                    <input type="range" id="gridsizeslider" min="1" max="20" value="10">
+                    <span id="gridslidervalue">10</span>
+                </label>
+                <hr>
+                <label>
+                    <input type="checkbox" id="specialcommands" title="Allow rendering of ICN commands that only work within Rotur Assistant.">
+                    Allow exclusive commands
+                </label>
+            </div>
+            <div id="icndocs" style="display: none">
+                <div class="wiki-container">
+                    <h2>ICN Docs</h2>
+                    <p>Since ICN has consistent syntax and a small amount of commands, Rotur Assistant is able to provide its own version of the <a href="https://icn.rotur.dev/" target="_blank" rel="noopener noreferrer">ICN documentation</a>. Note that any command or argument that is highlighted in <mark class="highlight_yellow">yellow</mark> are things that only work within Rotur Assistant's implementation of ICN, and nowhere else. You can toggle support for these special commands in the ICN settings tab.</p>
+                    <hr class="full-size">
+                    <h3>w</h3>
+                    <p class="icnsyntaxfineprint">Syntax: w (num)<br>Example command: w 5<br><mark class="highlight_yellow">Alias: width, weight</mark></p>
+                    <p>Sets the weight (or width) of any subsequent line-based commands that come after this. Defaults to 1 on Rotur Assistant.</p>
+                    <h3>c</h3>
+                    <p class="icnsyntaxfineprint">Syntax: c (#hex)<br>Example command: c #0000FF<br><mark class="highlight_yellow">Alias: color, colour</mark></p>
+                    <p>Sets the color of any subsequent shapes drawn. Defaults to black (#000000) on Rotur Assistant.</p>
+                    <h3>scale</h3>
+                    <p class="icnsyntaxfineprint">Syntax: scale (num)<br>Example command: scale 2</p>
+                    <p>Sets the proportional scale of subsequent shapes drawn. Defaults to 1 on Rotur Assistant.</p>
+                    <h3>dot</h3>
+                    <p class="icnsyntaxfineprint">Syntax: dot x y<br>Example command: dot 1 1</p>
+                    <p>Creates a circular dot at the specified location.</p>
+                    <h3>line</h3>
+                    <p class="icnsyntaxfineprint">Syntax: line x1 y1 x2 y2<br>Example command: line -1 -2 3 4</p>
+                    <p>Creates a straightforward line from point A to point B</p>
+                    <h3>rect</h3>
+                    <p class="icnsyntaxfineprint">Syntax: rect x y width height<br>Example command: rect 0 0 4 3<br><mark class="highlight_yellow">Alias: rectangle</mark></p>
+                    <p>Creates a filled rectangle. The width and height stretch outward from the center where the specified x and y is.</p>
+                    <h3>square</h3>
+                    <p class="icnsyntaxfineprint">Syntax: square x y width height<br>Example command: square 0 0 5 5</p>
+                    <p>Same as rect, but the shape is hollow</p>
+                    <h3>tri</h3>
+                    <p class="icnsyntaxfineprint">Syntax: tr1 x1 y1 x2 y2 x3 y3<br>Example command: tri 3 3 4 4 2 5<br><mark class="highlight_yellow">Alias: triangle</mark></p>
+                    <p>Creates a filled triangle between the specified points</p>
+                    <h3>cutcircle</h3>
+                    <p class="icnsyntaxfineprint">Syntax: cutcircle x y rad startangle sweepangle <mark class="highlight_yellow">filled</mark><br>Example command: cutcircle 0 0 6 15 60 <mark class="highlight_yellow">filled</mark><br><mark class="highlight_yellow">Alias: arc</mark></p>
+                    <p>Creates an arc (partial circle or full circle). The sweepangle spreads outward in both directions from the startangle.</p>
+                    <h3>ellipse</h3>
+                    <p class="icnsyntaxfineprint">Syntax: ellipse x y width height_multiplier direction <mark class="highlight_yellow">filled</mark><br>Example command: ellipse 0 0 5 2 0 <mark class="highlight_yellow">1</mark><br><mark class="highlight_yellow">Alias: oval</mark></p>
+                    <p>Creates a hollow oval at the specified position.</p>
+                    <h3>curve</h3>
+                    <p class="icnsyntaxfineprint">Syntax: curve x1 y1 x2 y2 gx gy<br>Example command: curve 0 0 5 5 0 5</p>
+                    <p>Draws a bezier curve between 2 points, with the 3rd point acting as the reference point the curve gravitates towards</p>
+                    <h3>cont</h3>
+                    <p class="icnsyntaxfineprint">Syntax: cont x y<br>Example command: cont 5 5</p>
+                    <p>Allows some commands to continue from the last point of the previous shape drawn. This works best with the line command.</p>
+                    <h3>move</h3>
+                    <p class="icnsyntaxfineprint">Syntax: move x y<br>Example command: move 4 6</p>
+                    <p>Moves the canvas's reference point to the specified point</p>
+                    <h3>back</h3>
+                    <p class="icnsyntaxfineprint">Syntax: back<br>Example command: back</p>
+                    <p>Resets the canvas's reference point back to 0, 0. This is the only ICN command that doesn't have any arguments</p>
+                    <h3>image*</h3>
+                    <p class="icnsyntaxfineprint">Syntax: image (url) scale<br>Example command: image https://avatars.rotur.dev/Rotur_Assistant 5</p>
+                    <p class="fineprint">*This command is intentionally left out of the official ICN docs, and not all renderers may support this command.</p>
+                    <p>This command draws an image from the specified image URL, with the 2nd argument being the height of the image (in pixels). The image is always centered at -10, -10 on the canvas no matter what, not even being affected by the move command. This command mainly exists so that developers of OriginOS apps can have an easier time making eye-catching icons for their apps.</p>
+                    <hr class="full-size">
+                    <section id="ra_icn">
+                        <h2><mark class="highlight_yellow">Exclusive Commands</mark></h2>
+                        <p>Note that anything past this point is exclusive to Rotur Assistant</p>
+                        <hr>
+                        <h3>circle</h3>
+                        <p class="icnsyntaxfineprint">Syntax: circle x y radius<br>Example command: circle 4 3 5 filled<br>Alias: cir</p>
+                        <p>Draws a circle at the specified point. This is basically the dot command, but a little more specific.</p>
+                        <h3>cutcircle2</h3>
+                        <p class="icnsyntaxfineprint">Syntax: cutcircle2 x y radius startangle sweepangle filled (ccw? true/false)<br>Example command: cutcircle2 4 4 5 90 180 0 true<br>Alias: arc2</p>
+                        <p>Same as the cutcircle command, except you specify where the arc starts and ends, and goes clockwise or counterclockwise depending on what's specified.</p>
+                        <h3>ellipse2</h3>
+                        <p class="icnsyntaxfineprint">Syntax: ellipse2 x y width height direction filled<br>Example command: ellipse2 1 1 5 10 45 filled<br>Alias: oval2</p>
+                        <p>Same as the ellipse command, except the height is no longer dependent on the width.</p>
+                    </section>
+                </div>
+            </div>
+        </div>
+        <div class="overlay" id="overlay">
+            <div class="popup"></div>
+        </div>
+        <script type="module" src="../scripts/icn.js"></script>
+        <footer id="footer-placeholder"></footer>
+        <script src="../footer.js"></script>
+    </body>
+</html>

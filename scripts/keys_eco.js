@@ -1,8 +1,8 @@
-import { sanitize, formatDate, parseHTML } from "../index.js"
+import { sanitize, formatDate, parseHTML, CreateEmptyPlaceholder, MiniError } from "../index.js"
 
 const activeacc = await new Promise(resolve =>
-    chrome.storage.local.get('activeacc', data => resolve(data.activeacc || []))
-) ?? [];
+    chrome.storage.local.get('activeacc', data => resolve(data.activeacc || {}))
+) ?? {};
 
 const flagged = await new Promise(resolve =>
     chrome.storage.local.get('flagged', data => resolve(data.flagged || []))
@@ -119,19 +119,25 @@ function closePopup() {
 }
 
 function renderUsers(userdata, type, creator, id, price) {
-    let userlist_html = ``
+    const userlist_html = []
     const userlist = Object.keys(userdata)
     userlist.forEach(user => {
-        userlist_html += `<li class="ecokeyuser">
-        <div class='ecokeyuserheader'>
-            <img src="https://avatars.rotur.dev/${user}" alt="${user}" width=32 height=32>
-            <h2>${user} ${user == creator ? "👑" : ""}</h2>
-            ${(user != creator) && (creator == activeacc.name) ? `<button class='removeacc' data-name="${user}" title="Remove user from key" data-nextbill="${userdata[user].next_billing}" data-refundprice="${price}" data-keyid="${id}">✕</button>` : ''}
-        </div>
-        <p>${type == "subscription" ? "Subscribed" : "Purchased"}: ${formatDate(userdata[user].time * 1000)}</p>
-        ${type == "subscription" && (user != creator) && userdata[user].next_billing ? `<p>Next Billing: ${formatDate(userdata[user].next_billing)}</p>` : ""}
-        </li>
-        `
+        const usercard = document.getElementById('keyusertemplate').content.cloneNode(true)
+        usercard.querySelector('img').src = `https://avatars.rotur.dev/${user}`
+        usercard.querySelector('img').alt = user
+        usercard.querySelector('h2').textContent = `${user} ${user == creator ? "👑" : ""}`
+        if ((user != creator) && (creator == activeacc.name)) {
+            usercard.querySelector('.removeacc').dataset.name = user
+            usercard.querySelector('.removeacc').dataset.nextbill = userdata[user].next_billing
+            usercard.querySelector('.removeacc').dataset.refundprice = price
+            usercard.querySelector('.removeacc').dataset.keyid = id
+        } else {
+            usercard.querySelector('.removeacc').remove()
+        }
+        usercard.querySelector('.purchasedate').textContent = `${type == "subscription" ? "Subscribed" : "Purchased"}: ${formatDate(userdata[user].time * 1000)}`
+        userdata[user].next_billing ? usercard.querySelector('.nextbillingdate').textContent = `Next Billing: ${formatDate(userdata[user].next_billing)}` : usercard.querySelector('.nextbillingdate').remove()
+
+        userlist_html.push(usercard)
     })
     return userlist_html;
 }
@@ -147,20 +153,32 @@ async function RenderKeys() {
         return;
     })
     clearTimeout(requestlimit)
-    if (keys.error) {
-        flagged.push(activeacc.uuid)
-        chrome.storage.local.set({flagged: flagged})
-        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
-            <h1>Key Manager (Economy)</h1>
-            <p id="keyfineprint">This page is for managing keys that are purchaseable (either one-time or recursively). For the page that manages keys associated with your account, see <a href="../pages/keymanager_acc.html">Key Manager (Account)</a></p>
-            <hr>
-            <h3>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h3>
-        `))
+    if (keys && keys.error) {
+        if (keys.error.includes('Invalid')) {
+            flagged.push(activeacc.uuid)
+            chrome.storage.local.set({flagged: flagged})
+            document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+                <h1>Key Manager (Economy)</h1>
+                <p id="keyfineprint">This page is for managing keys that are purchaseable (either one-time or recursively). For the page that manages keys associated with your account, see <a href="../pages/keymanager_acc.html">Key Manager (Account)</a></p>
+                <hr>
+                <h3>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h3>
+            `))
+            return;
+        } else {
+            document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+                <h1>Key Manager (Economy)</h1>
+                <p id="keyfineprint">This page is for managing keys that are purchaseable (either one-time or recursively). For the page that manages keys associated with your account, see <a href="../pages/keymanager_acc.html">Key Manager (Account)</a></p>
+                <hr>
+                <h3>The sub-token you have granted for your current account does not allow you to view this page. To resolve this issue, please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> and reauthenticate.</h3>
+            `))
+        }
+    }
+    if (!keys) {
         return;
     }
 
-    let my_keys_html = ``
-    let owned_keys_html = ``
+    const my_keys_html = []
+    const owned_keys_html = []
 
     let my_keys = []
     let owned_keys = []
@@ -168,74 +186,70 @@ async function RenderKeys() {
     keys.forEach(key => {
         if (key.creator == activeacc.name) {
             my_keys.push(key)
-            my_keys_html += `<li class="mykeyentry" id="key-${key.key}">
-                <h2 class='ecokeynameheader'>${sanitize(key.name)}</h2>
-                <div class='ecokeydetails'>
-                    <label class='editecokeyname'>Name: <input type='text' placeholder='Key Name' class='ecokeynameupdate' value="${sanitize(key.name ?? "Unknown Key")}"> <button class="ecokeysave" title="Save Name" id="savename-${key.key}" data-keyid='${key.key}'><image src='../images/misc_icons/save.png' width=24 height=24 alt='Save'></button></label>
-                    <p>ID: ${key.key}</p>
-                    <p>Type: ${key.type}</p>
-                    ${key.type == 'subscription' ? `<p>Bills every: ${key.subscription.frequency} ${key.subscription.period + (key.subscription.frequency != 1 ? 's' : '')}</p>` : ``}
-                    <form class='editpriceandhook'>
-                        <label>Price: <input type='text' placeholder='Price' class='ecokeypriceupdate' value=${key.price ?? 0}> RC <button type="button" class="ecokeysave" title="Save Price" id="saveprice-${key.key}" data-keyid='${key.key}'><image src='../images/misc_icons/save.png' width=24 height=24 alt='Save'></button></label>
-                        <label>Webhook: <input type='text' placeholder='Webhook URL' class='ecokeywebhook' value=${sanitize(key.webhook ?? '')}> <button type="button" class="ecokeysave" title="Save Webhook" id="savehook-${key.key}" data-keyid='${key.key}'><image src='../images/misc_icons/save.png' width=24 height=24 alt='Save'></button></label>
-                    </form>
-                    <div class='ecokeycontrolpanel'>
-                        <button type="button" class="ecokeyrevoke" id="revoke-${key.key}" data-keyid='${key.key}'>Revoke Key</button>
-                        <button type="button" class="ecokeydelete" id="delete-${key.key}" data-keyid='${key.key}'>Delete Key</button>
-                    </div>
-                    <div class='ecokeystatus'></div>
-                </div>
-                <hr class="dotted_separator">
-                <details class="ecokeyusersowner">
-                    <summary class='ecokeyuserlistcount'>Users (${Object.keys(key.users).length})</summary>
-                    <ul class=ecokeyuserlist>${renderUsers(key.users, key.type, key.creator, key.key, key.price)}</ul>
-                    <div class='addusertoecokey'>
-                        <input type="text" class="ecokeynewuser" id="adduser-${key.key}" placeholder="Username">
-                        <button class="ecokeynewuserconfirm" data-keyid='${key.key}'>Add User</button>
-                    </div>
-                    <div class='ecokeyadduserstatus'></div>
-                </details>
-            </li>`
+            const mykey = document.getElementById('mykeytemplate').content.cloneNode(true)
+            mykey.querySelector('.mykeyentry').id = `key-${key.key}`
+            mykey.querySelectorAll('[data-keyid]').forEach(keyobj => {
+                keyobj.dataset.keyid = key.key
+            })
+            mykey.querySelector('.ecokeynameheader').textContent = key.name
+            mykey.querySelector('.ecokeynameupdate').value = key.name
+            mykey.querySelector('.keyidlabel').textContent = `ID: ${key.key}`
+            mykey.querySelector('.keytypelabel').textContent = `Type: ${key.type}`
+            key.type == 'subscription' ? mykey.querySelector('.keybillinglabel').textContent = `Bills every: ${key.subscription.frequency} ${key.subscription.period + (key.subscription.frequency != 1 ? 's' : '')}` : mykey.querySelector('.keybillinglabel').remove()
+            mykey.querySelector('.ecokeypriceupdate').value = (key.price ?? 0)
+            mykey.querySelector('.ecokeywebhook').value = (key.webhook ?? '')
+            mykey.querySelector('[id*="saveprice-"]').id = `saveprice-${key.key}`
+            mykey.querySelector('[id*="savehook-"]').id = `savehook-${key.key}`
+            mykey.querySelector('[id*="savename-"]').id = `savename-${key.key}`
+            mykey.querySelector('.ecokeyuserlistcount').textContent = `Users (${Object.keys(key.users).length})`
+            mykey.querySelector('.ecokeynewuser').id = `adduser-${key.key}`
+            mykey.querySelector('.ecokeyuserlist').replaceChildren(...renderUsers(key.users, key.type, key.creator, key.key, key.price))
+            mykey.querySelector('.ecokeyrevoke').id = `revoke-${key.key}`
+            mykey.querySelector('.ecokeydelete').id = `delete-${key.key}`
+
+            my_keys_html.push(mykey)
         } else {
+            const config = {
+                elements: ['p', 'img'],
+                attributes: ['src', 'alt', 'width', 'height']
+            }
+            const sanitizer = new Sanitizer(config)
             owned_keys.push(key)
-            owned_keys_html += `<li class="ownedkeyentry" id="key-${key.key}">
-                <h2 class='ecokeynameheader'>${sanitize(key.name)}</h2>
-                <div class='ecokeydetails'>
-                    <p class="ecokeyownerlabel">Owner: <img src="https://avatars.rotur.dev/${key.creator}" alt="${key.creator}" width=24 height=24> ${key.creator}</p>
-                    <p>ID: ${key.key}</p>
-                    <p>Type: ${key.type}</p>
-                    <p>Price: ${key.price} RC</p>
-                    ${key.type == 'subscription' ? `<p>Bills every: ${key.subscription.frequency} ${key.subscription.period + (key.subscription.frequency != 1 ? 's' : '')}</p>` : ``}
-                    ${key.webhook ? `<div class='ecokeywebhookdisplay'>
-                        <span class='ecokeywebhookurl'>Webhook URL: ${sanitize(key.webhook)}</span>
-                        <button type="button" class="ecokeycopy" id="copyhook-${key.key}" data-keyid='${key.key}' data-webhook='${key.webhook}'><image src='../images/misc_icons/copy.png' width=24 height=24 alt='Copy'></button>
-                        </div>` 
-                        : ``}
-                    ${key.type == 'subscription' ? `
-                    <div class='ecokeycontrolpanel'>
-                        <button class="ecokeysubcancel" id="cancel-${key.key}" data-keyid='${key.key}' data-owner='${key.creator}'>Cancel Subscription</button>
-                    </div>
-                    <div class='ecokeystatus'></div>
-                        ` : ``}
-                </div>
-                <hr class="dotted_separator">
-                <details class="ecokeyusersowner">
-                    <summary class='ecokeyuserlistcount'>Users (${Object.keys(key.users).length})</summary>
-                    <ul class=ecokeyuserlist>${renderUsers(key.users, key.type, key.creator, key.key)}</ul>
-                </details>
-            </li>`
+            const boughtkey = document.getElementById('boughtkeytemplate').content.cloneNode(true)
+
+            boughtkey.querySelector('.ownedkeyentry').id = `key-${key.key}`
+            boughtkey.querySelectorAll('[data-keyid]').forEach(keyobj => {
+                keyobj.dataset.keyid = key.key
+            })
+            boughtkey.querySelector('.ecokeyownerlabel').setHTML(`Owner: <img src="https://avatars.rotur.dev/${key.creator}" alt="${key.creator}" width=24 height=24> ${key.creator}`, {sanitizer: sanitizer})
+            boughtkey.querySelector('.ecokeynameheader').textContent = key.name
+            boughtkey.querySelector('.keyidlabel').textContent = `ID: ${key.key}`
+            boughtkey.querySelector('.keytypelabel').textContent = `Type: ${key.type}`
+            key.type == 'subscription' ? boughtkey.querySelector('.keybillinglabel').textContent = `Bills every: ${key.subscription.frequency} ${key.subscription.period + (key.subscription.frequency != 1 ? 's' : '')}` : boughtkey.querySelector('.keybillinglabel').remove()
+            if (key.webhook) {
+                boughtkey.querySelector('.ecokeywebhookurl').textContent = `Webhook URL: ${key.webhook}`
+                boughtkey.querySelector('.ecokeycopy').id = `copyhook-${key.key}`
+                boughtkey.querySelector('.ecokeycopy').dataset.webhool = key.webhook
+            } else {
+                boughtkey.querySelector('.ecokeywebhookdisplay').remove()
+            }
+            boughtkey.querySelector('.ecokeyuserlistcount').textContent = `Users (${Object.keys(key.users).length})`
+            boughtkey.querySelector('.ecokeyuserlist').replaceChildren(...renderUsers(key.users, key.type, key.creator, key.key, key.price))
+            boughtkey.querySelector('.ecokeysubcancel').id = `cancel-${key.key}`
+            boughtkey.querySelector('.ecokeysubcancel').dataset.owner = key.creator
+            owned_keys_html.push(boughtkey)
         }
     })
-    document.getElementById('ownedkeys').replaceChildren(...parseHTML(my_keys_html))
-    document.getElementById('boughtkeys').replaceChildren(...parseHTML(owned_keys_html))
+    document.getElementById('ownedkeys').replaceChildren(...my_keys_html)
+    document.getElementById('boughtkeys').replaceChildren(...owned_keys_html)
     if (my_keys.length == 0) {
-        document.getElementById('ownedkeys').replaceChildren(...parseHTML(`<li><h2>You haven't created any keys yet!</h2></li>`))
+        document.getElementById('ownedkeys').replaceChildren(CreateEmptyPlaceholder("You haven't created any keys yet!"))
         document.getElementById('ownedkeys').style = "border: none;"
     } else {
         document.getElementById('ownedkeys').style = "border: 2px solid white;"
     }
     if (owned_keys.length == 0) {
-        document.getElementById('boughtkeys').replaceChildren(...parseHTML(`<li><h2>You haven't purchased any keys yet!</h2></li>`))
+        document.getElementById('boughtkeys').replaceChildren(CreateEmptyPlaceholder("You haven't purchased any keys yet!"))
         document.getElementById('boughtkeys').style = "border: none;"
     } else {
         document.getElementById('boughtkeys').style = "border: 2px solid white;"
@@ -248,7 +262,7 @@ async function refreshUsers(keyid) {
     const key = keys[0]
     const userlist = document.getElementById(`key-${keyid}`).querySelector('[class="ecokeyuserlist"]')
     const userlistcount = document.getElementById(`key-${keyid}`).querySelector('[class="ecokeyuserlistcount"]')
-    userlist.replaceChildren(...parseHTML(renderUsers(key.users, key.type, key.creator, key.key, key.price)))
+    userlist.replaceChildren(...renderUsers(key.users, key.type, key.creator, key.key, key.price))
     userlistcount.innerText = `Users (${Object.keys(key.users).length})`
 }
 
@@ -269,24 +283,34 @@ if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
         e.preventDefault()
         const keyid = document.getElementById('keysearchbar').value
         if (keyid == '') {
-            document.getElementById('ecokeylookupstatusplaceholder').replaceChildren(...parseHTML(`<p class='failure'>Enter a valid Key ID</p>`))
+            document.getElementById('ecokeylookupstatusplaceholder').replaceChildren(MiniError('failure', 'Enter a valid Key ID'))
         }
         const keydata = await fetch(`https://api.rotur.dev/keys/get/${keyid}`).then(res => res.json())
 
         if (keydata.error) {
-            document.getElementById('ecokeylookupstatusplaceholder').replaceChildren(...parseHTML(`<p class='failure'>${keydata.error}</p>`))
+            document.getElementById('ecokeylookupstatusplaceholder').replaceChildren(MiniError('failure', keydata.error))
         } else {
             const userinfo = await fetch(`https://api.rotur.dev/profile?name=${activeacc.name}&include_posts=0`).then(res => res.json())
             const usercurrency = userinfo.currency
             document.getElementById('ecokeylookupplaceholder').style = 'border: 2px solid white;'
-            document.getElementById('ecokeylookupplaceholder').replaceChildren(...parseHTML(`
-            <h2>${keydata.name}</h2>
-            <div id='ecokeylookupinfo'>
-                <p>Price: ${keydata.price} RC</p>
-                <p>Type: ${keydata.type}</p>
-            </div>
-            <button id='ecokeybuy' data-name='${keydata.name}' data-keyid="${keydata.key}" data-currency='${usercurrency}' data-price='${keydata.price}'>Buy Key</button>
-            `))
+            const h2 = document.createElement('h2')
+            const ecokeylookupdiv = document.createElement('div')
+            const p1 = document.createElement('p')
+            const p2 = document.createElement('p')
+            const buybtn = document.createElement('button')
+
+            h2.textContent = keydata.name
+            ecokeylookupdiv.id = "ecokeylookupinfo"
+            buybtn.id = 'ecokeybuy'
+            buybtn.dataset.name = keydata.name
+            buybtn.dataset.keyid = keydata.key
+            buybtn.dataset.currency = usercurrency
+            buybtn.dataset.price = keydata.price
+            p1.textContent = `Type: ${keydata.type}`
+            p2.textContent = `Price: ${keydata.price} RC`
+            buybtn.textContent = "Buy Key"
+            ecokeylookupdiv.replaceChildren(...[p1, p2])
+            document.getElementById('ecokeylookupplaceholder').replaceChildren(...[h2, ecokeylookupdiv, buybtn])
         }
     })
 }
@@ -315,9 +339,9 @@ document.addEventListener('click', async function(e) {
             const newprice = document.getElementById(`key-${keyid}`).querySelector('[class="ecokeypriceupdate"]').value
             const savesuccess = await fetch(`https://api.rotur.dev/keys/update/${keyid}?auth=${activeacc.token}&key=price&data=${isNaN(newprice) ? 0 : newprice}`).then(res => res.json())
             if (savesuccess.error) {
-                document.getElementById(`key-${keyid}`).querySelector('[class="ecokeystatus"]').replaceChildren(...parseHTML(`<p class='failure'>${savesuccess.error}</p>`))
+                document.getElementById(`key-${keyid}`).querySelector('[class="ecokeystatus"]').replaceChildren(MiniError('failure', savesuccess.error))
             } else {
-                document.getElementById(`key-${keyid}`).querySelector('[class="ecokeystatus"]').replaceChildren(...parseHTML(`<p class='success'>Key price updated successfully!</p>`))
+                document.getElementById(`key-${keyid}`).querySelector('[class="ecokeystatus"]').replaceChildren(MiniError('success', `Key price updated successfully!`))
             }
             return;
         }
@@ -325,9 +349,9 @@ document.addEventListener('click', async function(e) {
             const newhook = document.getElementById(`key-${keyid}`).querySelector('[class="ecokeywebhook"]').value
             const savesuccess = await fetch(`https://api.rotur.dev/keys/update/${keyid}?auth=${activeacc.token}&key=webhook&data=${encodeURIComponent(newhook)}`).then(res => res.json())
             if (savesuccess.error) {
-                document.getElementById(`key-${keyid}`).querySelector('[class="ecokeystatus"]').replaceChildren(...parseHTML(`<p class='failure'>${savesuccess.error}</p>`))
+                document.getElementById(`key-${keyid}`).querySelector('[class="ecokeystatus"]').replaceChildren(MiniError('failure', savesuccess.error))
             } else {
-                document.getElementById(`key-${keyid}`).querySelector('[class="ecokeystatus"]').replaceChildren(...parseHTML(`<p class='success'>Key webhook updated successfully!</p>`))
+                document.getElementById(`key-${keyid}`).querySelector('[class="ecokeystatus"]').replaceChildren(MiniError('success', `Key webhook updated successfully!`))
             }  
             return;          
         }
@@ -335,10 +359,10 @@ document.addEventListener('click', async function(e) {
             const newname = document.getElementById(`key-${keyid}`).querySelector('[class="ecokeynameupdate"]').value
             const savesuccess = await fetch(`https://api.rotur.dev/keys/name/${keyid}?auth=${activeacc.token}&name=${newname}`).then(res => res.json())
             if (savesuccess.error) {
-                document.getElementById(`key-${keyid}`).querySelector('[class="ecokeystatus"]').replaceChildren(...parseHTML(`<p class='failure'>${savesuccess.error}</p>`))
+                document.getElementById(`key-${keyid}`).querySelector('[class="ecokeystatus"]').replaceChildren(MiniError('failure', savesuccess.error))
             } else {
-                document.getElementById(`key-${keyid}`).querySelector('[class="ecokeystatus"]').replaceChildren(...parseHTML(`<p class='success'>Key name updated successfully!</p>`))
-                document.getElementById(`key-${keyid}`).querySelector('[class="ecokeynameheader"]').replaceChildren(...parseHTML(newname))
+                document.getElementById(`key-${keyid}`).querySelector('[class="ecokeystatus"]').replaceChildren(MiniError('success', `Key name updated successfully!`))
+                document.getElementById(`key-${keyid}`).querySelector('[class="ecokeynameheader"]').textContent = newname
             }
             return;
         }
@@ -354,10 +378,10 @@ document.addEventListener('click', async function(e) {
     if (e.target.className == "ecokeycopy") {
         try {
             await navigator.clipboard.writeText(e.target.dataset.webhook);
-            document.getElementById(`key-${keyid}`).querySelector('[class="ecokeystatus"]').replaceChildren(...parseHTML(`<p class='success'>Copied URL to clipboard!</p>`))
+            document.getElementById(`key-${keyid}`).querySelector('[class="ecokeystatus"]').replaceChildren(MiniError('success', `Copied URL to clipboard!`))
         } catch (err) {
             console.error('Failed to copy: ', err);
-            document.getElementById(`key-${keyid}`).querySelector('[class="ecokeystatus"]').replaceChildren(...parseHTML(`<p class='failure'>Failed to copy webhook URL</p>`))
+            document.getElementById(`key-${keyid}`).querySelector('[class="ecokeystatus"]').replaceChildren(MiniError('failure', `Failed to copy webhook URL`))
         }
         return;
     }
@@ -370,13 +394,13 @@ document.addEventListener('click', async function(e) {
         if (user != '') {
             const addsuccess = await fetch(`https://api.rotur.dev/keys/admin_add/${keyid}?auth=${activeacc.token}&username=${user}`)
             if (addsuccess.error) {
-                document.getElementById(`key-${keyid}`).querySelector('[class="ecokeyadduserstatus"]').replaceChildren(...parseHTML(`<p class='failure'>${addsuccess.error}</p>`))
+                document.getElementById(`key-${keyid}`).querySelector('[class="ecokeyadduserstatus"]').replaceChildren(MiniError('failure', addsuccess.error))
             } else {
-                document.getElementById(`key-${keyid}`).querySelector('[class="ecokeyadduserstatus"]').replaceChildren(...parseHTML(`<p class='success'>Successfully added ${user} to ${keyname}</p>`))
+                document.getElementById(`key-${keyid}`).querySelector('[class="ecokeyadduserstatus"]').replaceChildren(MiniError('success', `Successfully added ${user} to ${keyname}`))
                 refreshUsers(keyid)
             }
         } else {
-            document.getElementById(`key-${keyid}`).querySelector('[class="ecokeyadduserstatus"]').replaceChildren(...parseHTML(`<p class='failure'>Please enter a valid username</p>` ))           
+            document.getElementById(`key-${keyid}`).querySelector('[class="ecokeyadduserstatus"]').replaceChildren(MiniError('failure', `Please enter a valid username`))
         }
         return;
     }
@@ -395,9 +419,9 @@ document.addEventListener('click', async function(e) {
         }
         const createsuccess = await fetch(`https://api.rotur.dev/keys/create?auth=${activeacc.token}&name=${newkeyname}&subscription=${isSubscription}${isSubscription ? `&period=${subfrequency}&frequency=${subperiod}` : ``}`).then(res => res.json())
         if (createsuccess.error) {
-            document.getElementById(`createkeystatusplaceholdereco`).replaceChildren(...parseHTML(`<p class='failure'>${createsuccess.error}</p>`))
+            document.getElementById(`createkeystatusplaceholdereco`).replaceChildren(MiniError('failure', createsuccess.error))
         } else {
-            document.getElementById(`createkeystatusplaceholdereco`).replaceChildren(...parseHTML(`<p class='success'>Key ${newkeyname} was created successfully!</p>`))
+            document.getElementById(`createkeystatusplaceholdereco`).replaceChildren(MiniError('success', `Key ${newkeyname} was created successfully!`))
             RenderKeys()
         }
         return;
@@ -407,9 +431,9 @@ document.addEventListener('click', async function(e) {
         closePopup()
         const deletesuccess = await fetch(`https://api.rotur.dev/keys/delete/${keyid}?auth=${activeacc.token}`).then(res => res.json())
         if (deletesuccess.error) {
-            document.getElementById(`createkeystatusplaceholdereco`).replaceChildren(...parseHTML(`<p class='failure'>${deletesuccess.error}</p>`))
+            document.getElementById(`createkeystatusplaceholdereco`).replaceChildren(MiniError('failure', deletesuccess.error))
         } else {
-            document.getElementById(`createkeystatusplaceholdereco`).replaceChildren(...parseHTML(`<p class='success'>Key ${keyname} was deleted successfully</p>`))
+            document.getElementById(`createkeystatusplaceholdereco`).replaceChildren(MiniError('success', `Key ${keyname} was deleted successfully`))
             RenderKeys()
         }
         return;
@@ -418,9 +442,9 @@ document.addEventListener('click', async function(e) {
         closePopup()
         const cancelsuccess = await fetch(`https://api.rotur.dev/keys/cancel/${keyid}?auth=${activeacc.token}`).then(res => res.json())
         if (cancelsuccess.error) {
-            document.getElementById(`key-${keyid}`).querySelector('[class="ecokeystatus"]').replaceChildren(...parseHTML(`<p class='failure'>${cancelsuccess.error}</p>`))
+            document.getElementById(`key-${keyid}`).querySelector('[class="ecokeystatus"]').replaceChildren(MiniError('failure', cancelsuccess.error))
         } else {
-            document.getElementById(`key-${keyid}`).querySelector('[class="ecokeystatus"]').replaceChildren(...parseHTML(`<p class='success'>Your subscription to ${keyname} will be cancelled on the next billing date. You won't be charged on that date. For now until the next billing date, you can continue to enjoy any benefits this key provides.</p>`))         
+            document.getElementById(`key-${keyid}`).querySelector('[class="ecokeystatus"]').replaceChildren(MiniError('success', `Your subscription to ${keyname} will be cancelled on the next billing date. You won't be charged on that date. For now until the next billing date, you can continue to enjoy any benefits this key provides.`))         
         }
         return;
     }
@@ -428,9 +452,9 @@ document.addEventListener('click', async function(e) {
         const revokesuccess = await fetch(`https://api.rotur.dev/keys/revoke/${keyid}?auth=${activeacc.token}`).then(res => res.json())
         closePopup()
         if (revokesuccess.error) {
-            document.getElementById(`key-${keyid}`).querySelector('[class="ecokeystatus"]').replaceChildren(...parseHTML(`<p class='failure'>${revokesuccess.error}</p>`))
+            document.getElementById(`key-${keyid}`).querySelector('[class="ecokeystatus"]').replaceChildren(MiniError('failure', revokesuccess.error))
         } else {
-            document.getElementById(`key-${keyid}`).querySelector('[class="ecokeystatus"]').replaceChildren(...parseHTML(`<p class='success'>Key successfully revoked from all users.</p>`))
+            document.getElementById(`key-${keyid}`).querySelector('[class="ecokeystatus"]').replaceChildren(MiniError('success', 'Key successfully revoked from all users.'))
             refreshUsers(keyid)
         }
         return;
@@ -440,9 +464,9 @@ document.addEventListener('click', async function(e) {
         const DoRefund = document.getElementById('ecokeyrefund') ? document.getElementById('ecokeyrefund').checked : false
         const refundamt = (parseFloat(e.target.dataset.refundamt) * 0.9).toFixed(2)
         closePopup()
-        const removesuccess = await fetch(`https://api.rotur.dev/keys/admin_remove/${keyid}?auth=${activeacc.token}&username=${user}`)
+        const removesuccess = await fetch(`https://api.rotur.dev/keys/admin_remove/${keyid}?auth=${activeacc.token}&username=${user}`).then(res => res.json())
         if (removesuccess.error) {
-            document.getElementById(`key-${keyid}`).querySelector('[class="ecokeyadduserstatus"]').replaceChildren(...parseHTML(`<p class='failure'>${removesuccess.error}</p>`))
+            document.getElementById(`key-${keyid}`).querySelector('[class="ecokeyadduserstatus"]').replaceChildren(MiniError('failure', removesuccess.error))
         } else {
             if (DoRefund && refundamt > 0) {
                 const refundsuccess = await fetch(`https://api.rotur.dev/me/transfer?auth=${activeacc.token}`, {
@@ -450,12 +474,12 @@ document.addEventListener('click', async function(e) {
                                             body: JSON.stringify({to: user, amount: refundamt, note: `(RA) Refund for your removal from ${keyname}`})
                                         }).then(res => res.json())
                 if (refundsuccess.error) {
-                    document.getElementById(`key-${keyid}`).querySelector('[class="ecokeyadduserstatus"]').replaceChildren(...parseHTML(`<p class='partialsuccess'>While ${user} was successfully removed from ${keyname}, the refund could not be processed. You may have to manually refund them instead.</p>`))
+                    document.getElementById(`key-${keyid}`).querySelector('[class="ecokeyadduserstatus"]').replaceChildren(MiniError('partialsuccess', `While ${user} was successfully removed from ${keyname}, the refund could not be processed. You may have to manually refund them instead.`))
                 } else {
-                    document.getElementById(`key-${keyid}`).querySelector('[class="ecokeyadduserstatus"]').replaceChildren(...parseHTML(`<p class='success'>Successfully removed ${user} from ${keyname}, refunding them ${refundamt} RC in the process.</p>`))
+                    document.getElementById(`key-${keyid}`).querySelector('[class="ecokeyadduserstatus"]').replaceChildren(MiniError('success', `Successfully removed ${user} from ${keyname}, refunding them ${refundamt} RC in the process.`))
                 }
             } else {
-                document.getElementById(`key-${keyid}`).querySelector('[class="ecokeyadduserstatus"]').replaceChildren(...parseHTML(`<p class='success'>Successfully removed ${user} from ${keyname}.</p>`))
+                document.getElementById(`key-${keyid}`).querySelector('[class="ecokeyadduserstatus"]').replaceChildren(MiniError('success', `Successfully removed ${user} from ${keyname}.`))
             }
             refreshUsers(keyid)
         }
@@ -464,11 +488,11 @@ document.addEventListener('click', async function(e) {
     // Lookup
     if (e.target.id == 'ecokeybuy') {
         if (parseFloat(e.target.dataset.price) > parseFloat(e.target.dataset.usercurrency)) {
-            document.getElementById('ecokeylookupstatusplaceholder').replaceChildren(...parseHTML(`<p class='failure'>You have insufficient funds to buy this key (${e.target.dataset.usercurrency})</p>`))
+            document.getElementById('ecokeylookupstatusplaceholder').replaceChildren(MiniError('failure', `You have insufficient funds to buy this key (${e.target.dataset.usercurrency})`))
         } else {
             const alreadyownskey = await fetch(`https://api.rotur.dev/keys/check/${activeacc.name}?key=${e.target.dataset.keyid}`).then(res => res.json())
             if (alreadyownskey.owned) {
-                document.getElementById('ecokeylookupstatusplaceholder').replaceChildren(...parseHTML(`<p class='failure'>You already own this key!</p>`))
+                document.getElementById('ecokeylookupstatusplaceholder').replaceChildren(MiniError('failure', 'You already own this key!'))
             } else {
                 openConfirmBuyPopup(e.target.dataset.keyid, e.target.dataset.name, e.target.dataset.price, e.target.dataset.currency)
             }
@@ -479,9 +503,9 @@ document.addEventListener('click', async function(e) {
     if (e.target.className == 'finalbuy') {
         const buysuccess = await fetch(`https://api.rotur.dev/keys/buy/${keyid}?auth=${activeacc.token}`)
         if (buysuccess.error) {
-            document.getElementById('ecokeylookupstatusplaceholder').replaceChildren(...parseHTML(`<p class='failure'>${buysuccess.error}</p>`))
+            document.getElementById('ecokeylookupstatusplaceholder').replaceChildren(MiniError('failure', buysuccess.error))
         } else {
-            document.getElementById('ecokeylookupstatusplaceholder').replaceChildren(...parseHTML(`<p class='success'>Purchase Successful!</p>`))
+            document.getElementById('ecokeylookupstatusplaceholder').replaceChildren(MiniError('success', 'Purchase Successful!'))
         }
         return;
     }

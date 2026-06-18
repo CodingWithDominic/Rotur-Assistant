@@ -1,14 +1,11 @@
-import { sanitize, formatDate, parseHTML, openErrorPopup, openSuccessPopup } from "../index.js"
-
-function desanitize(string) {
-    return string.replaceAll('&sol;','/').replaceAll('&lt;', '<').replaceAll('&gt;', '>').replaceAll('&lpar;', '(').replaceAll('&rpar;', ')').replaceAll("&equals;", "=").replaceAll(`&quot;`, `"`).replaceAll(`&#39;`, `'`).replaceAll('&amp;', '&') // Used for handling items since Rotur decided to use the direct item names as the IDs instead.
-}
+import { sanitize, formatDate, parseHTML, openErrorPopup, openSuccessPopup, FixDecimal, MiniError } from "../index.js"
 
 let last_sort = 'newest'
+let items_cache = ''
 
 const activeacc = await new Promise(resolve =>
-    chrome.storage.local.get('activeacc', data => resolve(data.activeacc || []))
-) ?? [];
+    chrome.storage.local.get('activeacc', data => resolve(data.activeacc || {}))
+) ?? {};
 
 const flagged = await new Promise(resolve =>
     chrome.storage.local.get('flagged', data => resolve(data.flagged || []))
@@ -67,8 +64,8 @@ function openConfirmPurchasePopup(senderdata, recipientdata, amt, itemname) {
             <button id="popup-x" class="closebtn">✕</button>
         </div>
         <p>Confirm purchase of the item ${itemname}?</p>
-        <p>Your Balance: ${senderdata.currency} -> ${senderdata.currency - amt}</p>
-        <p>${recipientdata.username}'s Balance: ${recipientdata.currency} -> ${recipientdata.currency + amt}</p>
+        <p>Your Balance: ${senderdata.currency} -> ${FixDecimal(senderdata.currency - amt)}</p>
+        <p>${recipientdata.username}'s Balance: ${recipientdata.currency} -> ${FixDecimal(recipientdata.currency + amt)}</p>
         <div id="popup-choices">
             <button id="cancel" class="closebtn">Cancel</button>
             <button class="finalitempurchase" data-itemname="${sanitize(itemname)}">Buy</button>
@@ -97,84 +94,101 @@ function switchTab(idx) {
 }
 
 function formatTransferHistory(transferdata) {
-    let transfer_html = ``
+    const transfer_html = []
+    const config = {
+        elements: ['p', 'img'],
+        attributes: ['src', 'width', 'height']
+    }
+    const sanitizer = new Sanitizer(config)
     transferdata.forEach(item => {
         if (!(item.from == null || item.from == "Null")) {
-            transfer_html += `<li>
-            <p>From: <img src='https://avatars.rotur.dev/${item.from}' width=20 height=20> ${item.from}</p>
-            <p>To:  <img src='https://avatars.rotur.dev/${item.to}' width=20 height=20> ${item.to}</p>
-            ${item.timestamp ? `<p>On: ${formatDate(item.timestamp * 1000)}</p>` : ''}
-            ${item.type ? `<p>Type: ${item.type}</p>` : ''}
-            </li>`
+            const li = document.createElement('li')
+            const p1 = document.createElement('p')
+            p1.setHTML(`From: <img src="https://avatars.rotur.dev/${item.from}" width=20 height=20> ${item.from}`, {sanitizer: sanitizer})
+            li.appendChild(p1)
+
+            const p2 = document.createElement('p')
+            p2.setHTML(`To: <img src="https://avatars.rotur.dev/${item.to}" width=20 height=20>  ${item.to}`, {sanitizer: sanitizer})
+            li.appendChild(p2)
+
+            if (item.timestamp) {
+                const p3 = document.createElement('p')
+                p3.textContent = `On: ${formatDate(item.timestamp * 1000)}`
+                li.appendChild(p3)
+            }
+            if (item.type) {
+                const p4 = document.createElement('p')
+                p4.textContent = `Type: ${item.type}`
+                li.appendChild(p4)
+            }
+            transfer_html.push(li)
         }
     })
-    if (transfer_html == ``) {
-        transfer_html = `<li><h2>No history yet</h2></li>`
+    if (transfer_html.length == 0) {
+        const li = document.createElement('li')
+        const h2 = document.createElement('h2')
+        h2.textContent = ('No history yet')
+        li.style = "border-top: none;"
+        li.appendChild(h2)
+        transfer_html.push(li)
     }
     return transfer_html;
 }
 
 async function getItems(user) {
-    const myitems = await fetch(`https://api.rotur.dev/items/list/${user}`).then(res => res.json())
-    let item_html = `<ul class='roturuseritemlist'>`
-    myitems.forEach(item => {
-        item_html += `<li class='roturitem' id='roturitem_${sanitize(item.name).replaceAll(' ', '~')}'>
-            <div class="itemnameheader">
-                <h2>${sanitize(item.name)}</h2>
-                <button class='itemdeletebtn' title="Delete Item" data-itemname="${sanitize(item.name)}"><img src='../images/misc_icons/delete.png' width=24 height=24></button>
-            </div>
-            <p class='roturitemauthor'>Creator: <img src='https://avatars.rotur.dev/${item.author}' width=20 height=20> ${item.author} | Current Owner: <img src='https://avatars.rotur.dev/${item.owner}' width=20 height=20> ${item.owner} </p>
-            <p class='roturitemdesc'>${sanitize(item.description)}</p>
-            <ul class='itemmetadatar1'>
-                <li>
-                    <h3>Price</h3>
-                    <p>${item.price} RC</p>
-                </li>
-                <li>
-                    <h3>Purchaseable</h3>
-                    <p class='isitempurchaseable'>${item.selling ? "Yes" : "No"}</p>
-                </li>
-            </ul>
-            <ul class='itemmetadatar2'>
-                <li>
-                    <h3>Created</h3>
-                    <p>${formatDate(item.created * 1000)}</p>
-                </li>
-                <li>
-                    <h3>Total Revenue</h3>
-                    <p>${item.total_income}</p>
-                </li>
-            </ul>
-            <label>
-                <input type='checkbox' class='isforsale' data-itemname="${sanitize(item.name)}" ${item.selling ? 'checked' : ''}>
-                For Sale
-            </label>
-            <label>
-                Price:
-                <input type='number' class='updateitemprice' placeholder='Price'>
-                <button class='updateitempricebtn' data-itemname="${sanitize(item.name)}">Update</button>
-            </label>
-            <label>
-                Transfer Ownership:
-                <input type='text' class='itemtransferownership' placeholder='Username'>
-                <button class='beginitemtransfer' data-itemname="${sanitize(item.name)}">Transfer</button>
-            </label>
-            <details class='itemtransferhistory'>
-                <summary>Transfer History</summary>
-                <ul class='transferhistory'>${formatTransferHistory(item.transfer_history)}</ul>
-            </details>
-        </li>`
+    const myitems = await fetch(`https://api.rotur.dev/items/list/${user}`).then(res => res.json()).catch(err => {
+        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+            <h1>Items</h1>
+            <h3>A communication error has occurred. If you're sure it's not your connection, then Rotur may be down right now.</h3>
+        `))
+        return;
     })
-    item_html += `</ul>`
+    myitems.reverse() // Newest to oldest
+    const itemgroup = document.createElement('ul')
+    itemgroup.className = 'roturuseritemlist'
+    const item_html = []
+    const config = {
+        elements: ['p', 'img'],
+        attributes: ['src', 'width', 'height']
+    }
+    const sanitizer = new Sanitizer(config)
+    myitems.forEach(item => {
+        const roturitem = document.getElementById('itemtemplate').content.cloneNode(true)
+        roturitem.querySelectorAll('[data-itemname]').forEach(itemcomponent => {
+            itemcomponent.dataset.itemname = item.name
+        })
+        roturitem.querySelector('li').id = `roturitem_${encodeURIComponent(item.name)}`
+        roturitem.querySelector('h2').textContent = item.name
+        roturitem.querySelector('.roturitemauthor').setHTML(`Creator: <img src='https://avatars.rotur.dev/${item.author}' width=20 height=20> ${item.author} | Current Owner: <img src='https://avatars.rotur.dev/${item.owner}' width=20 height=20> ${item.owner}`, {sanitizer: sanitizer})
+        roturitem.querySelector('.roturitemdesc').innerText = item.description
+
+        roturitem.querySelector('.roturitemprice').textContent = `${item.price} RC`
+        roturitem.querySelector('.isitempurchaseable').textContent = item.selling ? "Yes" : "No"
+        roturitem.querySelector('.roturitemcreationdate').textContent = formatDate(item.created * 1000)
+        roturitem.querySelector('.roturitemtotalrevenue').textContent = item.total_income
+
+        roturitem.querySelector('.buyitem').remove()
+        roturitem.querySelector('.updateitemprice').value = item.price
+
+        roturitem.querySelector('.transferhistory').replaceChildren(...formatTransferHistory(item.transfer_history))
+        item_html.push(roturitem)
+    })
+    
+    itemgroup.replaceChildren(...item_html)
     if (myitems.length == 0) {
-        document.getElementById('myitems').replaceChildren(...parseHTML(`<h2>You don't own any items yet. Try creating or buying one.</h2>`))
+        const h2 = document.createElement('h2')
+        h2.textContent = "You don't own any items yet. Try creating or buying one."
+        document.getElementById('myitems').replaceChildren(h2)
     } else {
-        document.getElementById('myitems').replaceChildren(...parseHTML(item_html))
+        document.getElementById('myitems').replaceChildren(itemgroup)
     }
 }
 
 async function getSellingItems(filter) {
-    const sellingitems = await fetch(`https://api.rotur.dev/items/selling`).then(res => res.json())
+    if (items_cache == '') {
+        items_cache = await fetch(`https://api.rotur.dev/items/selling`).then(res => res.json())
+    }
+    const sellingitems = [ ...items_cache ]
     if (filter == 'oldest') {
         sellingitems.reverse()
     }
@@ -184,41 +198,40 @@ async function getSellingItems(filter) {
     if (filter == 'high') {
         sellingitems.sort((a, b) => b.price - a.price)
     }
-    let item_html = `<ul class='roturuseritemlist'>`
+    const itemgroup = document.createElement('ul')
+    itemgroup.className = 'roturuseritemlist'
+    const item_html = []
+    const config = {
+        elements: ['p', 'img'],
+        attributes: ['src', 'width', 'height']
+    }
+    const sanitizer = new Sanitizer(config)
     sellingitems.forEach(item => {
-        item_html += `<li class='roturitem' id='roturitem_${sanitize(item.name).replaceAll(' ', '~')}'>
-            <h2>${sanitize(item.name)}</h2>
-            <p class='roturitemauthor'>Creator: <img src='https://avatars.rotur.dev/${item.author}' width=20 height=20> ${item.author} | Current Owner: <img src='https://avatars.rotur.dev/${item.owner}' width=20 height=20> ${item.owner} </p>
-            <p>${sanitize(item.description)}</p>
-            <ul class='itemmetadatar1'>
-                <li>
-                    <h3>Price</h3>
-                    <p>${item.price} RC</p>
-                </li>
-                <li>
-                    <h3>Purchaseable</h3>
-                    <p class='isitempurchaseable'>${item.selling ? "Yes" : "No"}</p>
-                </li>
-            </ul>
-            <ul class='itemmetadatar2'>
-                <li>
-                    <h3>Created</h3>
-                    <p>${formatDate(item.created * 1000)}</p>
-                </li>
-                <li>
-                    <h3>Total Revenue</h3>
-                    <p>${item.total_income}</p>
-                </li>
-            </ul>
-            <button class='buyitem' data-itemname='${sanitize(item.name)}' data-amt='${item.price}' data-owner='${item.owner}' ${item.owner == activeacc.name ? 'disabled' : ''}>Buy (${item.price} RC)</button>
-            <details class='itemtransferhistory'>
-                <summary>Transfer History</summary>
-                <ul class='transferhistory'>${formatTransferHistory(item.transfer_history)}</ul>
-            </details>
-        </li>`
+        const roturitem = document.getElementById('itemtemplate').content.cloneNode(true)
+        roturitem.querySelector('li').id = `roturitem_${encodeURIComponent(item.name)}`
+        roturitem.querySelector('h2').textContent = item.name
+        roturitem.querySelector('.roturitemauthor').setHTML(`Creator: <img src='https://avatars.rotur.dev/${item.author}' width=20 height=20> ${item.author} | Current Owner: <img src='https://avatars.rotur.dev/${item.owner}' width=20 height=20> ${item.owner}`, {sanitizer: sanitizer})
+        roturitem.querySelector('.roturitemdesc').innerText = item.description
+
+        roturitem.querySelector('.roturitemprice').textContent = `${item.price} RC`
+        roturitem.querySelector('.isitempurchaseable').textContent = item.selling ? "Yes" : "No"
+        roturitem.querySelector('.roturitemcreationdate').textContent = formatDate(item.created * 1000)
+        roturitem.querySelector('.roturitemtotalrevenue').textContent = item.total_income
+
+        roturitem.querySelector('.itemcontrols').remove()
+        roturitem.querySelector('.itemdeletebtn').remove()
+        const buybtn = roturitem.querySelector('.buyitem')
+        buybtn.dataset.itemname = item.name
+        buybtn.dataset.owner = item.owner
+        buybtn.dataset.amt = item.price
+        buybtn.textContent = `Buy (${item.price} RC)`
+        buybtn.disabled = ((!item.selling) || item.owner == activeacc.name)
+
+        roturitem.querySelector('.transferhistory').replaceChildren(...formatTransferHistory(item.transfer_history))
+        item_html.push(roturitem)
     })
-    item_html += `</ul>`
-    document.getElementById('itemmarketplaceplaceholder').replaceChildren(...parseHTML(item_html))
+    itemgroup.replaceChildren(...item_html)
+    document.getElementById('itemmarketplaceplaceholder').replaceChildren(itemgroup)
 }
 
 // Setup
@@ -256,7 +269,7 @@ if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
             openErrorPopup(itemcreatesuccess.error)
             return;
         } else {
-            openSuccessPopup(`Item ${sanitize(document.getElementById('createitemname').value)} was created successfully!`)
+            openSuccessPopup(`Item ${document.getElementById('createitemname').value} was created successfully!`)
             getItems(activeacc.name)
         }
         this.reset()
@@ -271,40 +284,36 @@ if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
         const itemquery = await fetch(`https://api.rotur.dev/items/get/${document.getElementById('itemsearchbar').value}`).then(res => res.json())
 
         if (itemquery.error) {
-            document.getElementById('itemlookupstatusplaceholder').replaceChildren(...parseHTML(`<p class='failure'>This item does not exist</p>`))
+            document.getElementById('itemlookupstatusplaceholder').replaceChildren(MiniError('failure', "This item does not exist"))
         } else {
             document.getElementById('itemlookupplaceholder').style = 'border: 2px solid white; border-radius: 5px'
-            document.getElementById('itemlookupplaceholder').replaceChildren(...parseHTML(`
-                <div class='roturitem'>
-                    <h2>${sanitize(itemquery.name)}</h2>
-                    <p class='roturitemauthor'>Creator: <img src='https://avatars.rotur.dev/${itemquery.author}' width=20 height=20> ${itemquery.author} | Current Owner: <img src='https://avatars.rotur.dev/${itemquery.owner}' width=20 height=20> ${itemquery.owner} </p>
-                    <p>${sanitize(itemquery.description)}</p>
-                    <ul class='itemmetadatar1'>
-                        <li>
-                            <h3>Price</h3>
-                            <p>${itemquery.price} RC</p>
-                        </li>
-                        <li>
-                            <h3>Purchaseable</h3>
-                            <p class='isitempurchaseable'>${itemquery.selling ? "Yes" : "No"}</p>
-                        </li>
-                    </ul>
-                    <ul class='itemmetadatar2'>
-                        <li>
-                            <h3>Created</h3>
-                            <p>${formatDate(itemquery.created * 1000)}</p>
-                        </li>
-                        <li>
-                            <h3>Total Revenue</h3>
-                            <p>${itemquery.total_income}</p>
-                        </li>
-                    </ul>
-                    <button class='buyitem' data-itemname='${sanitize(itemquery.name)}' data-amt='${itemquery.price}' data-owner='${itemquery.owner}' ${(itemquery.owner == activeacc.name || !itemquery.selling) ? 'disabled' : ''}>Buy (${itemquery.price} RC)</button>
-                    <details class='itemtransferhistory'>
-                        <summary>Transfer History</summary>
-                        <ul class='transferhistory'>${formatTransferHistory(itemquery.transfer_history)}</ul>
-                    </details>
-                </div>`))
+            const config = {
+            elements: ['p', 'img'],
+            attributes: ['src', 'width', 'height']
+            }
+            const sanitizer = new Sanitizer(config)
+            const roturitem = document.getElementById('itemtemplate').content.cloneNode(true)
+            roturitem.querySelector('li').id = `roturitem_${encodeURIComponent(itemquery.name)}`
+            roturitem.querySelector('h2').textContent = itemquery.name
+            roturitem.querySelector('.roturitemauthor').setHTML(`Creator: <img src='https://avatars.rotur.dev/${itemquery.author}' width=20 height=20> ${itemquery.author} | Current Owner: <img src='https://avatars.rotur.dev/${itemquery.owner}' width=20 height=20> ${itemquery.owner}`, {sanitizer: sanitizer})
+            roturitem.querySelector('.roturitemdesc').innerText = itemquery.description
+
+            roturitem.querySelector('.roturitemprice').textContent = `${itemquery.price} RC`
+            roturitem.querySelector('.isitempurchaseable').textContent = itemquery.selling ? "Yes" : "No"
+            roturitem.querySelector('.roturitemcreationdate').textContent = formatDate(itemquery.created * 1000)
+            roturitem.querySelector('.roturitemtotalrevenue').textContent = itemquery.total_income
+
+            roturitem.querySelector('.itemcontrols').remove()
+            roturitem.querySelector('.itemdeletebtn').remove()
+            const buybtn = roturitem.querySelector('.buyitem')
+            buybtn.dataset.itemname = itemquery.name
+            buybtn.dataset.owner = itemquery.owner
+            buybtn.dataset.amt = itemquery.price
+            buybtn.textContent = `Buy (${itemquery.price} RC)`
+            buybtn.disabled = ((!itemquery.selling) || itemquery.owner == activeacc.name)
+
+            roturitem.querySelector('.transferhistory').replaceChildren(...formatTransferHistory(itemquery.transfer_history))
+            document.getElementById('itemlookupplaceholder').replaceChildren(roturitem)
         }
     })
 
@@ -335,16 +344,16 @@ document.addEventListener('click', async function(e) {
         let itemsellstatus = ''
         try {
             if (target.checked) {
-                itemsellstatus = await fetch(`https://api.rotur.dev/items/sell/${encodeURIComponent(desanitize(target.dataset.itemname))}?auth=${activeacc.token}`).then(res => res.json())
+                itemsellstatus = await fetch(`https://api.rotur.dev/items/sell/${encodeURIComponent(target.dataset.itemname)}?auth=${activeacc.token}`).then(res => res.json())
             } else {
-                itemsellstatus = await fetch(`https://api.rotur.dev/items/stop_selling/${encodeURIComponent(desanitize(target.dataset.itemname))}?auth=${activeacc.token}`).then(res => res.json())
+                itemsellstatus = await fetch(`https://api.rotur.dev/items/stop_selling/${encodeURIComponent(target.dataset.itemname)}?auth=${activeacc.token}`).then(res => res.json())
             }
             getSellingItems(last_sort)
             if (itemsellstatus.error) {
                 openErrorPopup(itemsellstatus.error)
                 target.checked = !target.checked
             } else {
-                const p = document.getElementById(`roturitem_${target.dataset.itemname.replaceAll(' ', '~')}`).querySelector('[class="isitempurchaseable"]')
+                const p = document.getElementById(`roturitem_${encodeURIComponent(target.dataset.itemname)}`).querySelector('[class="isitempurchaseable"]')
                 p.innerText = target.checked ? "Yes" : "No"
             }
         } catch {
@@ -354,12 +363,12 @@ document.addEventListener('click', async function(e) {
         return;
     }
     if (e.target.className == 'updateitempricebtn') {
-        const newprice = document.getElementById(`roturitem_${e.target.dataset.itemname.replaceAll(' ', '~')}`).querySelector('[class="updateitemprice"]').value
+        const newprice = document.getElementById(`roturitem_${encodeURIComponent(e.target.dataset.itemname)}`).querySelector('[class="updateitemprice"]').value
         if (isNaN(parseFloat(newprice)) || parseFloat(newprice) < 0.01) {
             openErrorPopup('Invalid Number')
         } else {
             try {
-                const itemsellstatus = await fetch(`https://api.rotur.dev/items/set_price/${encodeURIComponent(desanitize(e.target.dataset.itemname))}?auth=${activeacc.token}&price=${newprice}`).then(res => res.json())
+                const itemsellstatus = await fetch(`https://api.rotur.dev/items/set_price/${encodeURIComponent(e.target.dataset.itemname)}?auth=${activeacc.token}&price=${newprice}`).then(res => res.json())
                 if (itemsellstatus.error) {
                     openErrorPopup(itemsellstatus.error)
                 } else {
@@ -374,9 +383,9 @@ document.addEventListener('click', async function(e) {
     }
     if (e.target.className == 'beginitemtransfer') {
         const target = e.target
-        const user = document.getElementById(`roturitem_${e.target.dataset.itemname.replaceAll(' ', '~')}`).querySelector('[class="itemtransferownership"]').value
-        const userdata = await fetch(`https://api.rotur.dev/profile?name=${user}`).then(res => res.json())
-        if (userdata.error) {
+        const user = document.getElementById(`roturitem_${encodeURIComponent(target.dataset.itemname)}`).querySelector('[class="itemtransferownership"]').value
+        const userdata = await fetch(`https://api.rotur.dev/exists?username=${user}`).then(res => res.json())
+        if (!userdata.exists || userdata.error) {
             openErrorPopup('This user does not exist')
         } else {
             openConfirmTransferPopup(user, target.dataset.itemname)
@@ -398,7 +407,7 @@ document.addEventListener('click', async function(e) {
     if (e.target.className == 'finaldelete') {
         closePopup()
         try {
-            const itemdeletestatus = await fetch(`https://api.rotur.dev/items/delete/${encodeURIComponent(desanitize(e.target.dataset.itemname))}?auth=${activeacc.token}`).then(res => res.json())
+            const itemdeletestatus = await fetch(`https://api.rotur.dev/items/delete/${encodeURIComponent(e.target.dataset.itemname)}?auth=${activeacc.token}`).then(res => res.json())
             if (itemdeletestatus.error) {
                 openErrorPopup(itemdeletestatus.error)
                 getItems(activeacc.name)
@@ -415,13 +424,15 @@ document.addEventListener('click', async function(e) {
         closePopup()
         const target = e.target
         try {
-            const itempurchasestatus = await fetch(`https://api.rotur.dev/items/buy/${encodeURIComponent(desanitize(target.dataset.itemname))}?auth=${activeacc.token}`).then(res => res.json())
+            const itempurchasestatus = await fetch(`https://api.rotur.dev/items/buy/${encodeURIComponent(target.dataset.itemname)}?auth=${activeacc.token}`).then(res => res.json())
             if (itempurchasestatus.error) {
                 openErrorPopup(itempurchasestatus.error)
             } else {
-                openSuccessPopup(`Successfully purchased ${sanitize(decodeURIComponent(target.dataset.itemname))}!`)
+                openSuccessPopup(`Successfully purchased ${target.dataset.itemname}!`)
                 getItems(activeacc.name)
-                getSellingItems(last_sort)
+                if (document.getElementById('lookup_item').style.display == 'none') {
+                    document.getElementById(`roturitem_${encodeURIComponent(target.dataset.itemname)}`).remove()
+                }
             }
         } catch {
             openErrorPopup('An error occurred while trying to buy this item.')
@@ -432,11 +443,11 @@ document.addEventListener('click', async function(e) {
         const target = e.target
         closePopup()
         try {
-            const itemtransferstatus = await fetch(`https://api.rotur.dev/items/transfer/${encodeURIComponent(desanitize(target.dataset.itemname))}?auth=${activeacc.token}&username=${target.dataset.name}`).then(res => res.json())
+            const itemtransferstatus = await fetch(`https://api.rotur.dev/items/transfer/${encodeURIComponent(target.dataset.itemname)}?auth=${activeacc.token}&username=${target.dataset.name}`).then(res => res.json())
             if (itemtransferstatus.error) {
                 openErrorPopup(itemtransferstatus.error)
             } else {
-                openSuccessPopup(`Successfully transferred ${sanitize(decodeURIComponent(target.dataset.itemname))} to ${target.dataset.name}.`)
+                openSuccessPopup(`Successfully transferred ${target.dataset.itemname} to ${target.dataset.name}.`)
                 getItems(activeacc.name)
             }
         } catch {

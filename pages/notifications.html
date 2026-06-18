@@ -8,20 +8,27 @@
         <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
     </head>
     <body>
-        <div id="header-placeholder"></div>
+        <header id="header-placeholder"></header>
         <script src="../header.js"></script>
         <div class="container">
             <h1>Notifications</h1>
             <p>Notifications that you may have received across different Rotur services.</p>
-            <hr>
+            <hr class="full-size">
             <div class="tabheader">
                 <button id='notifsfeed' class="tab">Notifications</button>
                 <button id='notifsettings' class="tab">Manage Sources</button>
                 <button id='notifendpoints' class="tab">Manage Endpoints</button>
             </div>
-            <ul id="notificationslist">
-                <li><h2>Loading...</h2></li>
-            </ul>
+            <div id="notificationslog">
+                <label title="Shows notifications from the https://api.rotur.dev/notifications endpoint, rather than the https://api.rotur.dev/notify/log endpoint." class="legacynotifsoption">
+                    <input type="checkbox" id="legacynotifs">
+                    Show legacy notifications
+                </label>
+                <button id="notifsreload" title="Refresh Notifications">⟳</button>
+                <ul id="notificationslist">
+                    <li><h2>Loading...</h2></li>
+                </ul>
+            </div>
             <div id="notificationsettings" style="display: none;">
                 <details id="notifsourcecreateribbon">
                     <summary style="margin: 0; margin-bottom: 3px;">Add Source</summary>
@@ -32,7 +39,7 @@
                         <div id="notifsourcestatus"></div>
                     </div>
                 </details>
-                <hr>
+                <hr class="full-size">
                 <h2>Manage notification sources</h2>
                 <ul id="notifsourcemanager">
                     <li><h2>Loading...</h2></li>
@@ -52,7 +59,7 @@
                         <div id="notifendpointstatus"></div>
                     </div>
                 </details>
-                <hr>
+                <hr class="full-size">
                 <h2>Manage notification endpoints</h2>
                 <ul id="notifendpointmanager">
                     <li><h2>Loading...</h2></li>
@@ -64,7 +71,71 @@
             </div>
         </div>
         <script type="module" src="../scripts/notifications.js"></script>
-        <div id="footer-placeholder"></div>
+        <footer id="footer-placeholder"></footer>
         <script src="../footer.js"></script>
+        <template id="notiftemplate">
+            <li>
+                <a class='notiftitlebar' href="lookup.html?user=User">
+                    <img src="https://avatars.rotur.dev/User" width="32" height="32">
+                    <div class="notifuserbar">
+                        <h2 class="notifsourcefineprint">User</h2>
+                        <p class="notifsourceusertext">Source: OriginChats</p>
+                    </div>
+                </a>
+                <h3>Title</h3>
+                <p class="notifbody">Body</p>
+                <p class='fineprint'>1/1/1970</p>
+            </li>
+        </template>
+        <template id="legacynotiftemplate">
+            <li>
+                <h2>Type</h2>
+                <ul class="legacynotifdetails"></ul>
+                <p class='fineprint'>ID: 123 &bull; Received: 1/1/1970</p>
+            </li>
+        </template>
+        <template id="legacynotiftemplate2">
+            <li>
+                <h2 class="notiftypetitle">Type</h2>
+                <hr class='full-size dotted_separator'>
+                <a class='notiftitlebar' href="lookup.html?user=User">
+                    <img src="https://avatars.rotur.dev/User" width="32" height="32">
+                    <div class="notifuserbar">
+                        <h2 class="notifsourcefineprint">User</h2>
+                        <p class="notifsourceusertext">Source: OriginChats</p>
+                    </div>
+                </a>
+                <h3>Title</h3>
+                <p class='fineprint'>Source: OriginChats &bull; 1/1/1970<br>ID: 123</p>
+            </li>
+        </template>
+        <template id="notifsourcetemplate">
+            <li id="sourcebody-sourcename" class='sourcedatabody'>
+                <h2>${sanitize(source)}</h2>
+                <hr class='dotted_separator'>
+                <button class='removesource' title="Delete Source" data-source='${sanitize(source)}'><img src='../images/misc_icons/delete.png' width=24 height=24></button>
+                <ul class='sourcelist'></ul>
+            </li>
+        </template>
+        <template id="notifendpointtemplate">
+            <li id="endpoint-${sanitize(endpoint.device_id)}" class='endpointdatabody'>
+                <h2>${sanitize(endpoint.source)}</h2>
+                <hr class='dotted_separator'>
+                <button class='removeendpoint' title="Delete Endpoint" data-endpoint='${endpoint.device_id}'><img src='../images/misc_icons/delete.png' width=24 height=24></button>
+                <ul class='endpointlist'></ul>
+            </li>
+        </template>
+        <template id="notifusertemplate">
+            <li id='sender-username' class='senderlistentry'>
+                <a href='lookup.html?user=${sender.username}'>
+                    <img src="https://avatars.rotur.dev/${sender.username}" width="32" height="32">
+                    <div class='sendertitle'>
+                        <h4>Username</h4>
+                        <p>Count: 0</p>
+                    </div>
+                </a>
+                <button class='removesender' title='Remove Sender' data-user='user' data-src='src'>✕</button>
+            </li>
+        </template>
     </body>
 </html>

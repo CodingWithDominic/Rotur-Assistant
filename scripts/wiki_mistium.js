@@ -7,6 +7,6 @@ function calculateTimePassed() {
     return yearsPassed;
 }
 
-let text = document.getElementById('mistiumageplaceholder').innerText
-text = text.replace('..', calculateTimePassed())
-document.getElementById('mistiumageplaceholder').innerText = text
+let text = document.getElementById('mistiumageplaceholder').innerHTML
+text = text.replace('??', calculateTimePassed())
+document.getElementById('mistiumageplaceholder').setHTML(text)

@@ -1,4 +1,4 @@
-import { sanitize, formatDate, parseHTML, openSuccessPopup } from "../index.js"
+import { sanitize, formatDate, parseHTML, openSuccessPopup, MiniError } from "../index.js"
 
 let systemcache = ''
 let tosrecentlyaccepted = false
@@ -13,7 +13,7 @@ function openPopup(keyname) {
         <p id="deleteconfirmdialogue">Really delete the key "${keyname}"?</p>
         <div id="popup-choices">
             <button id="cancel" class="closebtn">No</button>
-            <button class="finaldelete" data-keyname='${keyname}'>Yes</button>
+            <button class="finaldelete" data-keyname='${sanitize(keyname)}'>Yes</button>
         </div>
     `))
 }
@@ -25,7 +25,7 @@ function openSystemPopup(system_name, owner) {
             <h1>Confirm New System</h1>
             <button id="popup-x" class="closebtn">✕</button>
         </div>
-        <p id="deleteconfirmdialogue">Change your system to ${system_name}? This will give the owner of the system, <img src='https://avatars.rotur.dev/${owner}' width=16 height=16> ${owner}, elevated permissions over your Rotur account, including the ability to ban or delete your Rotur account. Do note that Mistium, being the owner of Rotur, has elevated permissions over all Rotur accounts, regardless of system. On top of that, each time you claim a daily credit, the system owner will get 0.25 credits. Only proceed with this action if you trust the system's owner.</p>
+        <p id="deleteconfirmdialogue">Change your system to ${sanitize(system_name)}? This will give the owner of the system, <img src='https://avatars.rotur.dev/${owner}' width=16 height=16"> ${owner}, elevated permissions over your Rotur account, including the ability to ban or delete your Rotur account, or modify potentially sensitive keys. Do note that Mistium, being the owner of Rotur, has elevated permissions over all Rotur accounts, regardless of system. On top of that, each time you claim a daily credit, the system owner will get 0.25 credits. Only proceed with this action if you trust the system's owner.</p>
         <div id="popup-choices">
             <button id="cancel" class="closebtn">Cancel</button>
             <button class="finalsystemconfirm" data-keyname='system'>Confirm</button>
@@ -42,13 +42,14 @@ function closePopup() {
 }
 
 const read_only_keys = ["discord_id", "key", "created", "max_size", "last_login"] // Non-sys keys that are still read-only
-const main_keys = ["bio", "pfp", "system", "pronouns", "private", "email", "username", "phone", "display_name", "banner", "banners"]
+const main_keys = ["bio", "pfp", "system", "pronouns", "private", "email", "username", "phone", "display_name", "banner", "banners", 'theme']
+const exempt_main_keys = ["theme", "private"] // Main keys that will still be checked for a JSON-friendly value
 
 let key_names = []
 
 const activeacc = await new Promise(resolve =>
-    chrome.storage.local.get('activeacc', data => resolve(data.activeacc || []))
-) ?? [];
+    chrome.storage.local.get('activeacc', data => resolve(data.activeacc || {}))
+) ?? {};
 
 const accounts = await new Promise(resolve =>
     chrome.storage.local.get('userdata', data => resolve(data.userdata || []))
@@ -58,18 +59,17 @@ const flagged = await new Promise(resolve =>
     chrome.storage.local.get('flagged', data => resolve(data.flagged || []))
 ) ?? [];
 
-async function getSystems(system) {
-    const systems = await fetch(`https://api.rotur.dev/systems`).then(res => res.json())
+function getSystems(system) {
+    const systems = systemcache
     const systemsarray = Object.keys(systems)
-
-    let systemoptions = `<option value="${system}">${system}</option>`
-
+    const systemoptions = []
     for (let i=0; i<systemsarray.length; i++) {
-        if (systemsarray[i].toLowerCase() != system.toLowerCase()) {
-            systemoptions += `<option value="${systemsarray[i]}">${systemsarray[i]}</option>`
-        }
+        const systemhtml = document.createElement('option')
+        systemhtml.value = systemsarray[i]
+        systemhtml.selected = (systemsarray[i].toLowerCase() == system.toLowerCase())
+        systemhtml.textContent = systemsarray[i]
+        systemoptions.push(systemhtml)
     }
-    systemcache = systems
     return systemoptions;
 }
 
@@ -78,7 +78,7 @@ function checkBlanks() {
         document.getElementById('mainkeys').style.border = 'none'
         const hr = document.createElement('hr')
         const h2 = document.createElement('h2')
-        h2.innerText = 'No keys exist in this section yet.'
+        h2.textContent = 'No keys exist in this section yet.'
         document.getElementById('mainkeys').appendChild(hr)
         document.getElementById('mainkeys').appendChild(h2)
     } else {
@@ -116,6 +116,45 @@ function checkBlanks() {
     }
 }
 
+function CreateKeyElement(key, value, system) {
+    const keybody = document.getElementById('keybodytemplate').content.cloneNode(true)
+    keybody.querySelector('li').id = `roturkey-${key.replaceAll(' ', '~')}`
+    keybody.querySelector('h4').textContent = key
+    keybody.querySelectorAll('[data-keyname]').forEach(btn => {
+        btn.dataset.keyname = key
+    })
+    keybody.querySelectorAll('.keymodifierbox').forEach(field => {
+        field.id = `modifier-${key.replaceAll(' ', '~')}`
+    })
+    if (key.startsWith('sys.') || read_only_keys.includes(key)) {
+        keybody.querySelector('.keysave').remove()
+        keybody.querySelector('.keydelete').remove()
+        keybody.querySelector('input').disabled = true
+    }
+    keybody.querySelector('input').value = value
+    if (key == "username" || key == "system") {
+        keybody.querySelector('.keydelete').remove()
+    }
+    if (key != "key") {
+        keybody.querySelector('.keyview').remove()
+    } else {
+        keybody.querySelector('input[type="text"]').type = 'password'
+    }
+    if (key == 'bio') {
+        keybody.querySelector('input').remove()
+        keybody.querySelector('select').remove()
+        keybody.querySelector('textarea').value = value
+    } else if (key == 'system') {
+        keybody.querySelector('input').remove()
+        keybody.querySelector('textarea').remove()
+        keybody.querySelector('select').replaceChildren(...getSystems(system))
+    } else {
+        keybody.querySelector('select').remove()
+        keybody.querySelector('textarea').remove()
+    }
+    return keybody
+}
+
 async function renderKeys() {
    if (!activeacc.uuid) {
         document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
@@ -143,7 +182,7 @@ async function renderKeys() {
             <hr>
             <h3>A communication error has occurred. If you're sure it's not your connection, then Rotur may be down right now.</h3>
         `))
-        return 0;
+        return;
     })
     if ((accdata.error && (accdata.error == 'Invalid authentication credentials') && !accdata.username) || (accdata['sys.banned'])) { // Extra check in place in case someone decides to set a key named "error" to "Invalid authentication credentials"
         flagged.push(activeacc.uuid)
@@ -152,7 +191,7 @@ async function renderKeys() {
             <h1>Key Manager (Account)</h1>
             <p>This page is for managing account keys. For the page that manages keys associated with purchases / subscriptions, see <a href="../pages/keymanager_eco.html">Key Manager (Purchases)</a></p>
             <hr>
-            <h2>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h2>
+            <h3>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h3>
         `))
         return;
     }
@@ -187,8 +226,7 @@ async function renderKeys() {
     }
 
     key_names = Object.keys(accdata)
-    const systemdata = await getSystems(accdata.system)
-
+    systemcache = await fetch(`https://api.rotur.dev/systems`).then(res => res.json())
     document.getElementById('mainkeys').replaceChildren()
     document.getElementById('readonlykeys').replaceChildren()
     document.getElementById('sys_keys').replaceChildren()
@@ -196,37 +234,10 @@ async function renderKeys() {
     for (let i=0; i<key_names.length; i++) {
         let keyname = key_names[i]
         let keyvalue = accdata[keyname]
-        let isReadOnly = (read_only_keys.includes(keyname) || keyname.startsWith('sys.'))
         if (typeof(keyvalue) == 'object') {
             keyvalue = JSON.stringify(keyvalue)
         }
-        let key_element = document.createElement('li')
-        key_element.className = 'keyelement'
-        key_element.id = `roturkey_${keyname.replace(' ', '~')}`
-        key_element.replaceChildren(...parseHTML(`
-        <ul class='keylistitem'>
-            <li class='keylistname'>
-                ${sanitize(keyname)}
-                <div class="keyactionbar">
-                    <button data-keyname="${keyname}" class="keynamecopy" title="Copy key name"><img src="../images/misc_icons/copy.png" width='16' height='16'> Name</button>
-                    <button data-keyname="${keyname}" class="keyvaluecopy" title="Copy key value"><img src="../images/misc_icons/copy.png" width='16' height='16'> Value</button>
-                    <button data-keyname="${keyname}" class="keysave" title="Save new key value" ${isReadOnly ? 'style="display: none;"' : ''}><img src='../images/misc_icons/save.png' width='20' height='20'></button>
-                    <button data-keyname="${keyname}" class="keydelete" title="Delete key" ${isReadOnly || ["system", "username"].includes(keyname) ? 'style="display: none;"' : ''}><img src='../images/misc_icons/delete.png' width='20' height='20'></button>
-                    ${keyname == 'key' ? `<button data-keyname="${keyname}" title="Toggle key visibility" data-visible="false" class="keyview"><img src='../images/misc_icons/invisible.png' width='20' height='20'></button>` : ''}
-                </div>
-            </li>
-            <li class='keylistvalue'>
-            ${keyname == "system" ? `
-                <select name="system" id='modifier-${keyname}' class='keymodifierbox'>
-                    ${systemdata}
-                </select>` : `
-            ${keyname == "bio" ? `
-                <textarea id='modifier-${keyname}' class='keymodifierbox' placeholder='Edit Key Value...'>${sanitize(String(keyvalue))}</textarea>               
-                ` : `
-                <input type=${keyname == 'key' ? 'password' : 'text'} id='modifier-${keyname}' class='keymodifierbox' value='${sanitize(String(keyvalue))}' placeholder='Edit Key Value...' ${isReadOnly ? 'disabled' : ''}></input>`}`}
-            </li>
-        </ul>`))
-
+        const key_element = CreateKeyElement(keyname, keyvalue, accdata.system)
         if (read_only_keys.includes(keyname)) {
             document.getElementById('readonlykeys').appendChild(key_element)
         } else if (main_keys.includes(keyname)) {
@@ -238,7 +249,6 @@ async function renderKeys() {
         }
     }
     checkBlanks()
-
 }
 
 renderKeys();
@@ -338,34 +348,34 @@ document.addEventListener('click', async function(e) {
         const keyvalue = (() => {
             const val = document.getElementById('createkeyvalue').value
             try {
-                return main_keys.includes(keyname) ? val : JSON.parse(val)
+                return (main_keys.includes(keyname) && !exempt_main_keys.includes(keyname)) ? val : JSON.parse(val)
             } catch {
                 return val
             }
         })();
         if (keyname == '') {
-            error_element.replaceChildren(...parseHTML(`<p class='failure'>You can't create a key with a blank name.</p>`))
+            error_element.replaceChildren(MiniError('failure', `You can't create a key with a blank name.`))
         } else if (key_names.includes(keyname)) {
-            error_element.replaceChildren(...parseHTML(`<p class='failure'>This key already exists. Try modifying it instead if you can.</p>`))
+            error_element.replaceChildren(MiniError('failure', `This key already exists. Try modifying it instead if you can.`))
         } else if (read_only_keys.includes(keyname.toLowerCase())) {
-            error_element.replaceChildren(...parseHTML(`<p class='failure'>This is a reserved key.</p>`))
+            error_element.replaceChildren(MiniError('failure', `This is a reserved key.`))
         } else if (keyname.toLowerCase().startsWith('sys.')) {
-            error_element.replaceChildren(...parseHTML(`<p class='failure'>Key name can't begin with "sys."</p>`))
+            error_element.replaceChildren(MiniError('failure', `Key name can't begin with "sys."`))
         } else if (keyname.toLowerCase() == "banner" || keyname.toLowerCase() == "banners") {
-            error_element.replaceChildren(...parseHTML(`<p class='failure'>Setting this key would normally cost you 10 credits. Try changing your banner through the account manager's profile editor instead.</p>`))
+            error_element.replaceChildren(MiniError('failure', `Setting this key would normally cost you 10 credits. Try changing your banner through the account manager's profile editor instead.`))
         } else if (keyname.toLowerCase() == "password") {
-            error_element.replaceChildren(...parseHTML(`<p class='failure'>To prevent issues with future logins, try changing your password through the profile editor instead.</p>`))
+            error_element.replaceChildren(MiniError('failure', `To prevent issues with future logins, try changing your password through the profile editor instead.`))
         } else {
             const keycreate = await fetch(`https://api.rotur.dev/users`,
                 {method: 'PATCH', body: JSON.stringify({auth: activeacc.token, key: keyname, value: keyvalue})}).then(res => res.json())
             if (keycreate.error) {
-                error_element.replaceChildren(...parseHTML(`<p class='failure'>${keycreate.error}</p>`))
+                error_element.replaceChildren(MiniError('failure', keycreate.error))
                 return;
             } else {
                 document.getElementById('createkeyname').value = ''
                 document.getElementById('createkeyvalue').value = ''
-                error_element.replaceChildren(...parseHTML(`<p class='success'>Key ${sanitize(keyname)} with value ${sanitize(String((typeof keyvalue == "object") ? JSON.stringify(keyvalue) : keyvalue))} was created successfully!</p>`))
-                renderKeys()
+                error_element.replaceChildren(MiniError('success', `Key ${keyname} with value ${String((typeof keyvalue == "object") ? JSON.stringify(keyvalue) : keyvalue)} was created successfully!`))
+                document.getElementById('otherkeys').appendChild(CreateKeyElement(keyname, keyvalue, "Rotur Assistant"))
                 return;
             }
         }
@@ -376,11 +386,16 @@ document.addEventListener('click', async function(e) {
     if (["keynamecopy", "keyvaluecopy", "keysave", "keydelete", "finaldelete", "finalsystemconfirm"].includes(e.target.className)) {
         const keyname = e.target.dataset.keyname
         const keyvalue = (() => {
-            const val = document.getElementById(`modifier-${keyname}`).value
-            try {
-                return main_keys.includes(keyname) ? val : JSON.parse(val)
-            } catch {
-                return val
+            const val = document.getElementById(`modifier-${keyname.replaceAll(' ', '~')}`).value
+            if ((keyname == 'system') && (val == 'PassNet') && (e.target.className == 'finalsystemconfirm')) {
+                return 'passNet'
+            }
+            else {
+                try {
+                    return (main_keys.includes(keyname) && !exempt_main_keys.includes(keyname)) ? val : JSON.parse(val)
+                } catch {
+                    return val
+                }
             }
         })();
         let error_element = ''
@@ -396,10 +411,10 @@ document.addEventListener('click', async function(e) {
         if (e.target.className == 'keynamecopy') {
             try {
                 await navigator.clipboard.writeText(keyname);
-                error_element.replaceChildren(...parseHTML(`<p class='success'>Copied key name to clipboard!</p>`))
+                error_element.replaceChildren(MiniError('success', `Copied key name to clipboard!`))
             } catch (err) {
                 console.error('Failed to copy: ', err);
-                error_element.replaceChildren(...parseHTML(`<p class='failure'>Failed to copy key name</p>`))
+                error_element.replaceChildren(MiniError('failure', `Failed to copy key name`))
             }
             setTimeout(function() { error_element.replaceChildren() }, 10000)
             return;
@@ -407,10 +422,10 @@ document.addEventListener('click', async function(e) {
         if (e.target.className == 'keyvaluecopy') {
             try {
                 await navigator.clipboard.writeText((typeof keyvalue == "object") ? JSON.stringify(keyvalue, null, '\t') : keyvalue);
-                error_element.replaceChildren(...parseHTML(`<p class='success'>Copied key value to clipboard!</p>`))
+                error_element.replaceChildren(MiniError('success', `Copied key value to clipboard!`))
             } catch (err) {
                 console.error('Failed to copy: ', err);
-                error_element.replaceChildren(...parseHTML(`<p class='failure'>Failed to copy key value</p>`))
+                error_element.replaceChildren(MiniError('failure', `Failed to copy key value`))
             }  
             setTimeout(function() { error_element.replaceChildren() }, 10000)
             return;     
@@ -422,16 +437,16 @@ document.addEventListener('click', async function(e) {
             if (keyname == 'system' && e.target.className == 'keysave') {
                 openSystemPopup(keyvalue, systemcache[keyvalue].owner.name)
             } else if (keyname == 'banner' || keyname == 'banners') {
-                error_element.replaceChildren(...parseHTML(`<p class='failure'>Setting this key would normally cost you 10 credits. Try changing your banner through the account manager's profile editor instead.</p>`))
+                error_element.replaceChildren(MiniError('failure', `Setting this key would normally cost you 10 credits. Try changing your banner through the account manager's profile editor instead.`))
             } else if (keyname == 'password') {
-                error_element.replaceChildren(...parseHTML(`<p class='failure'>To prevent issues with future logins, try changing your password through the profile editor instead.</p>`))
+                error_element.replaceChildren(MiniError('failure', `o prevent issues with future logins, try changing your password through the profile editor instead.`))
             } else {
                 const keyupdate = await fetch(`https://api.rotur.dev/users`,
                     {method: 'PATCH', body: JSON.stringify({auth: activeacc.token, key: keyname, value: keyvalue})}).then(res => res.json())
                 if (keyupdate.error) {
-                    error_element.replaceChildren(...parseHTML(`<p class='failure'>${keyupdate.error}</p>`))
+                    error_element.replaceChildren(MiniError('failure', keyupdate.error))
                 } else {
-                    error_element.replaceChildren(...parseHTML(`<p class='success'>Key ${keyname} updated successfully!</p>`))
+                    error_element.replaceChildren(MiniError('success', `Key ${keyname} updated successfully!`))
                     if (keyname == 'username') {
                         const old_name = activeacc.name
                         activeacc.name = keyvalue
@@ -462,14 +477,14 @@ document.addEventListener('click', async function(e) {
     
         if (e.target.className == 'finaldelete') {
             const deleted_key = e.target.dataset.keyname
+            closePopup()
             const keydelete = await fetch(`https://api.rotur.dev/me/delete?auth=${activeacc.token}`,
                 {method: 'DELETE', body: JSON.stringify({auth: activeacc.token, key: deleted_key})})
-            closePopup()
             if (keydelete.error) {
-                error_element.replaceChildren(...parseHTML(`<p class='failure'>${keydelete.error}</p>`))
+                error_element.replaceChildren(MiniError('failure', keydelete.error))
             } else {
-                error_element.replaceChildren(...parseHTML(`<p class='success'>Key ${deleted_key} deleted successfully!</p>`))
-                document.getElementById(`roturkey_${deleted_key.replace(' ', '~')}`)?.remove()
+                error_element.replaceChildren(MiniError('success', `Key ${deleted_key} deleted successfully!`))
+                document.getElementById(`roturkey-${deleted_key.replaceAll(' ', '~')}`).remove()
                 checkBlanks()
             }
             setTimeout(function() { error_element.replaceChildren() }, 10000)

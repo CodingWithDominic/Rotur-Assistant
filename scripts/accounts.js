@@ -4,7 +4,7 @@ const whitelisted_urls = ['https://apps.rotur.dev', 'https://origin.mistium.com'
                             'https://warptheme.mistium.com', 'https://notes.rotur.dev', 'https://devfund.rotur.dev', 'https://photos.rotur.dev',
                             'https://warpdrive.team', "https://rotur.dev/key-manager", "https://rotur.dev/inventory-manager", "https://graphite.flufi.uk",
                             "https://runnova.github.io/orion", "https://adthoughtsglobal.github.io/Orla", "https://antiviiris.github.io/originChats",
-                            'https://git.rotur.dev']
+                            'https://git.rotur.dev', 'https://authenticator.rotur.dev', 'https://gate.rotur.dev', 'https://rotur.dev']
                             
 const parser = new DOMParser();
 
@@ -13,6 +13,22 @@ let file_cache = ''
 let scrambledata = await new Promise(resolve =>
     chrome.storage.local.get('scrambledata', data => resolve(data.scrambledata || false))
 ) ?? false;
+
+const ui_mode = await new Promise(resolve =>
+    chrome.storage.local.get('ui_mode', data => resolve(data.ui_mode || 'popup'))
+) ?? 'popup';
+
+let accounts = await new Promise(resolve =>
+    chrome.storage.local.get('userdata', data => resolve(data.userdata || []))
+) ?? [];
+
+let activeacc = await new Promise(resolve =>
+    chrome.storage.local.get('activeacc', data => resolve(data.activeacc || {}))
+) ?? {};
+
+let flagged = await new Promise(resolve =>
+    chrome.storage.local.get('flagged', data => resolve(data.flagged || []))
+);
 
 document.getElementById('scramblesync').checked = scrambledata
 
@@ -46,6 +62,10 @@ function exportToJsonFile(jsonData, name) {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 }
+
+const roturstwarning = await new Promise(resolve =>
+    chrome.storage.session.get('roturstwarning', data => resolve(data.roturstwarning || false))
+) ?? false;
 
 // Popup code
 
@@ -160,18 +180,23 @@ function genURLs() {
     return urls_list;
 } // Make my life easier
 
-async function checkSwitcherEligibility() {
+async function checkSwitcherEligibility(url) {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    const responsedata = tab.url
 
-    const allowed_urls = whitelisted_urls.some(item => responsedata.includes(item))
+    const responsedata = url ?? tab.url ?? ''
+
+    const allowed_urls = (whitelisted_urls.some(item => responsedata.includes(item)) || responsedata.startsWith('https://rotur.dev'))
     let errormsg = "If this extension is open while you're on a supported Rotur-affiliated site, then this will automatically log you into the selected Rotur account on that site."
     if (!allowed_urls) {
         document.getElementById('switchaccbtn').disabled = true
         if (responsedata.includes('rotur') || responsedata.includes('origin') || responsedata.includes('mistium')) {
             errormsg += `<br>While you are (likely) on a rotur-affiliated site, this feature may not be supported for that particular service yet.`
         } else {
-            errormsg += `<br>You are not on a rotur-affiliated website. If you own a rotur-affiliated site and you want me to support your site, let me know on discord @dominic_the_gamer.`
+            errormsg += `<br>You are not on a rotur-affiliated website. If you own a Rotur-affiliated site and you want me to support your site, let me know on discord @dominic_the_gamer or on OriginChats.`
+        }
+    } else {
+        if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
+            document.getElementById('switchaccbtn').disabled = false
         }
     }
         const errorhtml = parser.parseFromString(`
@@ -184,57 +209,140 @@ async function checkSwitcherEligibility() {
         document.getElementById('disabledcontext').replaceChildren(...errorhtml2)
 }
 
+document.getElementById('account_list').addEventListener('dblclick', (event) => {
+    event.preventDefault()
+    if (event.target.className == 'acclistentry') {
+        if (!document.getElementById('switchaccbtn').disabled) {
+            document.getElementById('switchaccbtn').click()
+        }
+    }
+});
+
+async function EnableDragging() {
+    if (accounts.length < 2) {
+        return;
+    }
+    
+    const listContainer = document.getElementById('account_list').querySelector('form');
+    let draggedItem = null;
+
+    listContainer.addEventListener('dragstart', (e) => {
+        const handle = e.target.closest('.drag-handle');
+        if (!handle) {
+            e.preventDefault();
+            return;
+        }
+        
+        draggedItem = handle.closest('.acclistentry');
+        
+        if (draggedItem) {
+            setTimeout(() => draggedItem.classList.add('dragging'), 0);
+        }
+    });
+
+    listContainer.addEventListener('dragend', async (e) => {
+        if (draggedItem) {
+            draggedItem.classList.remove('dragging');
+            draggedItem = null;
+            const currentRows = Array.from(listContainer.querySelectorAll('.acclistentry'));
+                
+            const newaccorder = currentRows.map(row => row.dataset.name);
+                
+            accounts = newaccorder.map(name => {
+                return accounts.find(account => account.name === name);
+            });
+            chrome.storage.local.set({userdata: accounts})
+        }
+    });
+
+    listContainer.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        
+        const targetRow = e.target.closest('.acclistentry');
+        if (!targetRow || targetRow === draggedItem) {
+            return;
+        }
+
+        const positionComparison = draggedItem.compareDocumentPosition(targetRow);
+
+        if (positionComparison & Node.DOCUMENT_POSITION_FOLLOWING) {
+            targetRow.after(draggedItem);
+        } else if (positionComparison & Node.DOCUMENT_POSITION_PRECEDING) {
+            targetRow.before(draggedItem);
+        }
+    });
+}
+
 async function buildlist() {
-    const accounts = await new Promise(resolve =>
-        chrome.storage.local.get('userdata', data => resolve(data.userdata || []))
-    ) ?? [];
-
-    const activeacc = await new Promise(resolve =>
-        chrome.storage.local.get('activeacc', data => resolve(data.activeacc || []))
-    ) ?? [];
-
-    const flagged_accs = await new Promise(resolve =>
-        chrome.storage.local.get('flagged', data => resolve(data.flagged || []))
-    ) ?? [];
+    if (roturstwarning) {
+        chrome.storage.session.remove('roturstwarning')
+        openWarningPopup("You have granted Rotur Assistant a sub-token. Since Rotur Assistant was designed around the main token, some parts of Rotur Assistant may not work correctly with a sub-token.")
+        const newbtn = document.createElement('button')
+        newbtn.id = 'reauth'
+        newbtn.textContent = 'Reauthenticate'
+        document.getElementById('popup-choices').prepend(newbtn)
+    }
 
     let activeindex = accounts.findIndex(acc => acc.name === activeacc.name);
     if (activeindex == -1) {
         activeindex = 0
     }
 
-    let acc_html = ``
+    let acc_html = document.createElement('form')
 
     if (accounts.length == 0) {
-        acc_html += `
-        <h2 id='noaccsyet'>No saved accounts yet!</h2>
-        <a href="/pages/auth.html" class="addaccbtn">+ Add account</a>
-        `
+        acc_html = document.createElement('h2')
+        acc_html.id = 'noaccsyet'
+        acc_html.textContent = 'No saved accounts yet!'
         document.getElementById('switchaccbtn').disabled = true
     } else {
-        acc_html += `<form>`
+        for (let i=0; i<accounts.length; i++) {
+            const name = accounts[i].name
+            const addacctemplate = document.getElementById('acclistentrytemplate').content.cloneNode(true)
 
-        for (let i=0; i < accounts.length; i++) {
-            let name = accounts[i].name
-            acc_html += `
-            <label class='acclistentry'>
-                <input type="radio" name="account" value="${i}" ${i == activeindex ? 'checked' : ''} />
-                <img src="${'https://avatars.rotur.dev/' + name}" alt="${name}" class="acclistimage" />
-                <span ${name.length > 18 ? 'style="font-size: 12px;"' : ''}'>${name}</span>
-                <div class='accountpanel'>
-                    <button class='viewprofile' title='View Profile' data-name='${name}'><img src='../images/misc_icons/usericon.png' width=24 height=24></button>
-                    ${flagged_accs.includes(accounts[i].uuid) ? `<button class='accwarning' title='Issue Detected' data-name='${name}' data-id='${accounts[i].uuid}'><img src='../images/misc_icons/auth_warning.png' width=24 height=24></button>` : `<button class='editprofile' title='Edit Profile' data-name='${name}'><img src='../images/misc_icons/edit.png' width=24 height=24></button>`}
-                    <button class='removeacc' title='Remove Account' data-name='${name}' data-id='${accounts[i].uuid}'>✕</button>
-                </div>
-            </label>`
+            const radiobtn = addacctemplate.querySelector("[name='account']")
+            radiobtn.value = i
+            if (i == activeindex) {
+                radiobtn.checked = true
+            }
+            if (accounts.length < 2) {
+                addacctemplate.querySelector('.drag-handle').remove()
+            }
+            addacctemplate.querySelector(".acclistentry").dataset.name = name
+            addacctemplate.querySelector("[class='acclistimage']").src = `https://avatars.rotur.dev/${name}`
+            addacctemplate.querySelector("[class='acclistimage']").alt = name
+            addacctemplate.querySelector(".usernamespan").textContent = name
+            if (name.length > 16) {
+                addacctemplate.querySelector(".usernamespan").style = "font-size: 12px;"
+            }
+            addacctemplate.querySelector('[class="viewprofile"]').dataset.name = name
+            addacctemplate.querySelector('[class="editprofile"]').dataset.name = name
+            addacctemplate.querySelector('[class="removeacc"]').dataset.name = name
+            addacctemplate.querySelector('[class="removeacc"]').dataset.id = accounts[i].uuid
+            if (flagged.includes(accounts[i].uuid)) {
+                const edittowarning = addacctemplate.querySelector('[class="editprofile"]')
+                edittowarning.className = 'accwarning'
+                edittowarning.dataset.id = accounts[i].uuid
+                edittowarning.title = "Issue Detected"
+                const warningimg = document.createElement('img')
+                warningimg.src = '../images/misc_icons/auth_warning.png'
+                warningimg.width = 24
+                warningimg.height = 24
+                edittowarning.replaceChildren()
+                edittowarning.appendChild(warningimg)
+            }
+            acc_html.appendChild(addacctemplate)
         }
-        acc_html += `
-        </form>
-        <a href="/pages/auth.html" class="addaccbtn">+ Add account</a>
-        `
-        document.getElementById('switchaccbtn').disabled = flagged_accs.includes(activeacc.uuid)
+        document.getElementById('switchaccbtn').disabled = flagged.includes(activeacc.uuid)
     }
+    const addacc = document.createElement('a')
+    addacc.href = "/pages/auth.html"
+    addacc.className = 'addaccbtn'
+    addacc.textContent = '+ Add Account'
 
-    document.getElementById('account_list').replaceChildren(...parseHTML(acc_html))
+    document.getElementById('account_list').replaceChildren(acc_html)
+    document.getElementById('account_list').appendChild(addacc)
+    EnableDragging()
     await checkSwitcherEligibility()
     if (accounts.length == 0) {
         document.getElementById('disabledcontext').replaceChildren(...parseHTML('<p>You need at least one account added in order to use this feature.</p>'))
@@ -244,30 +352,22 @@ async function buildlist() {
 buildlist()
 
 async function switchAccount(idx) {
-    let accounts = await new Promise(resolve =>
-    chrome.storage.local.get('userdata', data => resolve(data.userdata || []))
-    ) ?? [];
-
-    const flagged_accs = await new Promise(resolve =>
-        chrome.storage.local.get('flagged', data => resolve(data.flagged || []))
-    ) ?? [];
-
-    let activeacc = {}
+    let activeacc2 = {}
     if (accounts.length != 0) {
-        activeacc = accounts[idx]
+        activeacc2 = accounts[idx]
     }
-
-    chrome.storage.local.set({activeacc: activeacc})
-    if (flagged_accs.includes(activeacc.uuid)) {
+    activeacc = activeacc2
+    chrome.storage.local.set({activeacc: activeacc2})
+    if (flagged.includes(activeacc2.uuid)) {
         document.getElementById('switchaccbtn').disabled = true
     } else {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        const responsedata = tab.url
-        if (whitelisted_urls.some(item => responsedata.includes(item))) {
+        const responsedata = tab.url ?? ''
+        if (whitelisted_urls.some(item => responsedata.includes(item)) || responsedata.startsWith('https://rotur.dev')) {
             document.getElementById('switchaccbtn').disabled = false
         }
     }
-    updateHeaderName(activeacc.name ?? "Not signed in")
+    updateHeaderName(activeacc2.name ?? "Not signed in")
 }
 
 document.addEventListener('change', async function(e) {
@@ -295,9 +395,6 @@ document.addEventListener('click', async function(e) {
         if (token == '') {
             openErrorPopup('No token was provided')
         } else {
-            let accounts = await new Promise(resolve =>
-                chrome.storage.local.get('userdata', data => resolve(data.userdata || []))
-            ) ?? [];
             const potentialuser = await fetch(`https://api.rotur.dev/get_user?auth=${token}`).then(res => res.json())
             let username = ''
             if (potentialuser.error && potentialuser.error == "Invalid authentication credentials" && !potentialuser.username) {
@@ -307,7 +404,9 @@ document.addEventListener('click', async function(e) {
             } else {
                 let uuid = ''
                 if (!potentialuser['sys.tos_accepted']) {
-                    let userdata2 = await fetch(`https://api.rotur.dev/profile?name=${potentialuser.username}`).then(res => res.json())
+                    let userdata2 = await fetch(`https://api.rotur.dev/profile?name=${potentialuser.username}`).then(res => res.json()).catch(err => {
+                        openErrorPopup("An unexpected error occurred. Either the token you provided was invalid, or Rotur's authentication servers aren currently down right now.")
+                    })
                     uuid = userdata2.id
                     openWarningPopup('While the provided token was valid, the account has not accepted the TOS yet. The account was successfully added, but it may have limited access to some apps until the TOS is accepted.')
                 } else {
@@ -323,6 +422,9 @@ document.addEventListener('click', async function(e) {
                 chrome.storage.local.set({activeacc: {name: potentialuser.username, token: token, uuid: uuid}})
                 updateHeaderName(potentialuser.username)
                 buildlist()
+                if (token.startsWith('rotur_st_')) {
+                    openWarningPopup("You have granted Rotur Assistant a sub-token. Since Rotur Assistant was designed around the main token, some parts of Rotur Assistant may not work correctly with a sub-token.")
+                }
             }
         }
     }
@@ -345,9 +447,6 @@ document.addEventListener('click', async function(e) {
     }
     if (e.target.className == 'finalrosterexport') {
         closePopup()
-        let accounts = await new Promise(resolve =>
-            chrome.storage.local.get('userdata', data => resolve(data.userdata || []))
-        );
         exportToJsonFile(accounts, document.getElementById('rostername').value)  
     }
     if (e.target.id == 'importroster') {
@@ -380,22 +479,16 @@ document.addEventListener('click', async function(e) {
 
         const IDToRemove = e.target.dataset.id;
 
-        let accounts = await new Promise(resolve =>
-            chrome.storage.local.get('userdata', data => resolve(data.userdata || []))
-        );
-        let flagged = await new Promise(resolve =>
-            chrome.storage.local.get('flagged', data => resolve(data.flagged || []))
-        );
-        let activeacc = await new Promise(resolve =>
-            chrome.storage.local.get('activeacc', data => resolve(data.activeacc || {}))
-        ) ?? {};
-
         accounts = accounts.filter(acc => acc.uuid !== IDToRemove);
         flagged = flagged.filter(id => id != IDToRemove)
         chrome.storage.local.set({flagged: flagged})
 
+        let rpcactive = await new Promise(resolve =>
+            chrome.storage.local.get('rpcactive', data => resolve(data.rpcactive || ''))
+        ) ?? '';
+
         await new Promise(resolve =>
-        chrome.storage.local.set({userdata: accounts}, resolve)
+            chrome.storage.local.set({userdata: accounts}, resolve)
         );
 
         if (activeacc.uuid == IDToRemove) {
@@ -406,9 +499,17 @@ document.addEventListener('click', async function(e) {
             }
         }
         chrome.storage.session.remove('sum_cache')
-        buildlist();
+        document.querySelector(`button[data-id="${IDToRemove}"]`).closest("[class='acclistentry']").remove()
+        if (accounts.length < 2) {
+            document.querySelector('.drag-handle')?.remove()
+        }
         if (accounts.length == 0) {
             updateHeaderName("Not signed in")
+            buildlist();
+        }
+        if (rpcactive == IDToRemove) {
+            rpcactive = ''
+            chrome.storage.local.set({rpcactive: rpcactive})
         }
         return;
     }
@@ -418,9 +519,6 @@ document.addEventListener('click', async function(e) {
         return;
     }
     if (e.target.id == 'switchaccbtn') {
-        let activeacc = await new Promise(resolve =>
-            chrome.storage.local.get('activeacc', data => resolve(data.activeacc || []))
-        ) ?? [];
         chrome.tabs.query({ active: true, currentWindow: true }, async function(tabs) {
             if (tabs[0].url.includes('https://warptheme.mistium.com')) {
                 await chrome.cookies.remove({url: 'https://warptheme.mistium.com', name: 'auth_token'}) // WarpTheme gets VIP treatment since I had to modify manifest.json to allow permissions to modify cookies
@@ -429,6 +527,10 @@ document.addEventListener('click', async function(e) {
                 await chrome.cookies.remove({url: 'https://git.rotur.dev', name: 'g_state'})
                 await chrome.cookies.remove({url: 'https://git.rotur.dev', name: 'session'}) // Same goes for roturGIT
                 await chrome.cookies.remove({url: 'https://git.rotur.dev', name: 'username'})
+            }
+            if (tabs[0].url.includes('https://authenticator.rotur.dev')) {
+                await chrome.cookies.remove({url: 'https://authenticator.rotur.dev', name: 'auth_token'}) // Same goes for roturGIT
+                await chrome.cookies.remove({url: 'https://authenticator.rotur.dev', name: 'username'})
             }
             chrome.tabs.sendMessage(tabs[0].id, { action: "switchacc", data: activeacc.token, datauser: activeacc.name });
         });
@@ -556,10 +658,13 @@ document.addEventListener('click', async function(e) {
         return;
     }
     if (e.target.className == "finalrosteroverwrite") {
+        accounts = file_cache
+        activeacc = file_cache[0]
         await chrome.storage.local.set({userdata: file_cache})
         await chrome.storage.local.set({activeacc: file_cache[0]})
         await chrome.storage.local.set({flagged: []})
         await chrome.storage.session.remove('sum_cache')
+        updateHeaderName(file_cache[0].name ?? "Not signed in")
         closePopup()
         buildlist()
     }
@@ -587,3 +692,15 @@ document.getElementById('importrosterbtn').addEventListener('change', (event) =>
 
     reader.readAsText(file);
 });
+
+if (ui_mode == 'sidebar') {
+    chrome.tabs.onActivated.addListener((activeInfo) => {
+        checkSwitcherEligibility()
+    });
+}
+
+chrome.runtime.onMessage.addListener((msg) => {
+    if (msg.type == 'New_site') {
+        checkSwitcherEligibility(msg.url)
+    }
+})

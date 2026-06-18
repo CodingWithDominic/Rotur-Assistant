@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="stylesheet" href="../style.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+    </head>
+    <body>
+        <header id="header-placeholder"></header>
+        <script src="../header.js"></script>
+        <div class="container">
+            <h1>Rotur RPC</h1>
+            <p>Manage your Rotur RPC here</p>
+            <hr class="full-size">
+            <div class="rpcheadersettings">
+                <div class="rpcenabledlabel">
+                    <input type="checkbox" id="rpcenabled">
+                    <label for="rpcenabled" title="Due to limitations, this feature can only be active on one Rotur account at a time.">RPC Enabled</label>
+                    <button id="refreshrpc" title="RPC not showing up? Reload it here" disabled>⟳</button>
+                </div>
+                <label class="rpctypeoptions">
+                    <form id="rpctype" title='The dependency for the "Auto" setting is not finished yet. I hope to add this later though.' disabled>
+                        <label>
+                            <input type="radio" name="rpcsetting" value="custom" disabled checked>
+                            Custom
+                        </label>
+                        <label>
+                            <input type="radio" name="rpcsetting" value="auto" disabled>
+                            Auto
+                        </label>
+                    </form>
+                </label>
+            </div>
+            <ul id="rpc_modals">
+                <h2>No modals yet</h2>
+            </ul>
+            <button id="addmodalbtn">+ Add Modal</button>
+        </div>
+        <div class="overlay" id="overlay">
+            <div class="popup"></div>
+        </div>
+        <script type="module" src="../scripts/rpc.js"></script>
+        <footer id="footer-placeholder"></footer>
+        <script src="../footer.js"></script>
+        <template id="rpcmodaltemplate">
+            <li class="customrpccontrolpanel" id="modal-date">
+                <div class="rpc_modal_container">
+                    <div class="rpc_image_container">
+                        <img src="https://avatars.rotur.dev/.template" class="rpcimg">
+                        <button class="uploadrpcimg hoverexempt" data-id="modalid">Upload</button>
+                        <input type="file" accept="image/*" name="rpcimage" class="rpcimgfield" style="display: none;">
+                    </div>
+                    <div class="rpc_fields">
+                        <div class="rpcnamecontainer">
+                            <input type="text" placeholder="Name" name="rpcname" class="rpcnamefield">
+                            <button class='removemodal' title='Remove Modal' data-id='uuid'>✕</button>
+                        </div>
+                        <input type="text" name="rpctitle" placeholder="Title" class="rpctitlefield">
+                        <input type="text" name="rpcdesc2" placeholder="On: (Description 1)" class="rpcdescfield2">
+                        <input type="text" name="rpcdesc1" placeholder="By: (Description 2)" class="rpcdescfield1">
+                    </div>
+                </div>
+                <button class="rpcsavebtn" data-id="modalid">Save</button>
+                <div class="modalerrorplaceholder"></div>
+            </li>
+        </template>
+    </body>
+</html>

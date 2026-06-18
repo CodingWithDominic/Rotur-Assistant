@@ -8,10 +8,11 @@
         <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
     </head>
     <body>
-        <div id="header-placeholder"></div>
+        <header id="header-placeholder"></header>
         <script src="../header.js"></script>
         <div class="container">
-            <h1>Item Manager</h1>
+            <h1 style="margin-bottom: 0;">Item Manager</h1>
+            <hr class="full-size" style="margin-bottom: 0;">
             <div id="itemmanagerheader">
                 <button class="itemmantab" id="items_mine" style="border-bottom: 2px solid white;" data-tabidx="0">Mine</button>
                 <button class="itemmantab" id="items_selling" data-tabidx="1">Selling</button>
@@ -65,7 +66,58 @@
             <div class="popup"></div>
         </div>
         <script type="module" src="../scripts/items.js"></script>
-        <div id="footer-placeholder"></div>
+        <footer id="footer-placeholder"></footer>
         <script src="../footer.js"></script>
+        <template id="itemtemplate">
+            <li class='roturitem' id='roturitem_rotur_item'>
+                <div class="itemnameheader">
+                    <h2>Rotur Item</h2>
+                    <button class="itemdeletebtn" title="Delete Item" data-itemname="itemname"><img src="../images/misc_icons/delete.png" width="24" height="24"></button>
+                </div>
+                <p class='roturitemauthor'>Creator: <img src='https://avatars.rotur.dev/author' width=20 height=20> author | Current Owner: <img src='https://avatars.rotur.dev/owner' width=20 height=20> owner</p>
+                <p class="roturitemdesc">itemdesc</p>
+                <ul class='itemmetadatar1'>
+                    <li>
+                        <h3>Price</h3>
+                        <p class="roturitemprice">1 RC</p>
+                    </li>
+                    <li>
+                        <h3>Purchaseable</h3>
+                        <p class='isitempurchaseable'>Yes</p>
+                    </li>
+                </ul>
+                <ul class='itemmetadatar2'>
+                    <li>
+                        <h3>Created</h3>
+                        <p class="roturitemcreationdate">1/1/1970</p>
+                    </li>
+                    <li>
+                        <h3>Total Revenue</h3>
+                        <p class="roturitemtotalrevenue">0</p>
+                    </li>
+                </ul>
+                <button class='buyitem' data-itemname='itemname' data-amt='price' data-owner='user'>Buy (0 RC)</button>
+                <div class="itemcontrols">
+                    <label>
+                        <input type='checkbox' class='isforsale' data-itemname="itemname">
+                        For Sale
+                    </label>
+                    <label>
+                        Price:
+                        <input type='number' class='updateitemprice' placeholder='Price' name='itempricefield'>
+                        <button class='updateitempricebtn' data-itemname="itemname">Update</button>
+                    </label>
+                    <label>
+                        Transfer Ownership:
+                        <input type='text' class='itemtransferownership' placeholder='Username' name='potentialnewitemownerfield'>
+                        <button class='beginitemtransfer' data-itemname="itemname">Transfer</button>
+                    </label>
+                </div>
+                <details class='itemtransferhistory'>
+                    <summary>Transfer History</summary>
+                    <ul class='transferhistory'></ul>
+                </details>
+            </li>
+        </template>
     </body>
 </html>

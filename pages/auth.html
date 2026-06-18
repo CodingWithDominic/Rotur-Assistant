@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Rotur Iframe Auth Example</title>
+    <title>Rotur Assistant Iframe Auth</title>
     <meta charset="UTF-8" />
     <link rel="stylesheet" href="../style.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div id="header-placeholder"></div>
+    <header id="header-placeholder"></header>
     <script src="../header.js"></script>
     <div id="systemselector">
         <label>
@@ -19,6 +19,9 @@
         </label>
     </div>
     <script type="module" src="../scripts/auth-systems.js"></script>
+    <div class="requiredpermsbtncontainer">
+        <button id="requiredperms">See Rotur Assistant's required permissions</button>
+    </div>
     <div id="auth-container">
         <iframe id="auth-iframe" src="https://rotur.dev/auth?system=Rotur%20Assistant" style="display: none;"></iframe>
         <div id="loading">Loading authentication...</div>
@@ -27,8 +30,11 @@
             <p>Token: <span id="token-display"></span></p>
         </div>
     </div>
+    <div id="overlay" class="overlay">
+        <div class="popup"></div>
+    </div>
     <script type="module" src="../scripts/auth.js"></script>
-    <div id="footer-placeholder"></div>
+    <footer id="footer-placeholder"></footer>
     <script src="../footer.js"></script>
 </body>
 </html>

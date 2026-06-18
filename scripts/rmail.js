@@ -1,4 +1,10 @@
-import { sanitize, formatDate, parseHTML, openErrorPopup, openSuccessPopup } from "../index.js"
+import { sanitize, formatDate, openErrorPopup, openSuccessPopup, CreateEmptyPlaceholder, UploadImage } from "../index.js"
+
+const config = {
+    elements: ['p', 'img', 'div', 'h1', 'h2', 'h3', 'h4', 'button', 'ul', 'li', 'select', 'option', 'input', 'hr', 'a'],
+    attributes: ['src', 'alt', 'href', 'width', 'height', 'id', 'class', 'data', 'value', 'title', 'disabled', 'type', 'placeholder', 'step']
+}
+const sanitizer = new Sanitizer(config)
 
 function toSuperscript(text) {
     const map = {
@@ -33,23 +39,24 @@ function incrementSuperscriptChain(text) {
 }
 
 const activeacc = await new Promise(resolve =>
-    chrome.storage.local.get('activeacc', data => resolve(data.activeacc || []))
-) ?? [];
+    chrome.storage.local.get('activeacc', data => resolve(data.activeacc || {}))
+) ?? {};
 
 const flagged = await new Promise(resolve =>
     chrome.storage.local.get('flagged', data => resolve(data.flagged || []))
 ) ?? [];
 
 if (!activeacc.uuid) {
-    document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(
+    document.getElementsByClassName('container')[0].setHTML(
         `<h1>Rmail</h1>
-        <h3>You are not signed in! Please sign in using the account manager to access this page.</h3>`
-    ))
+        <h3>You are not signed in! Please sign in using the account manager to access this page.</h3>`,
+        {sanitizer: sanitizer})
 } else if (flagged.includes(activeacc.uuid)) {
-    document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(
+    document.getElementsByClassName('container')[0].setHTML(
         `<h1>Rmail</h1>
-        <h3>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h3>`
-    ))
+        <h3>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h3>`,
+        {sanitizer: sanitizer}
+    )
 } else {
 
     const clientid = `ast-RtrAstUsr_${Date.now()}`
@@ -58,7 +65,7 @@ if (!activeacc.uuid) {
 
     function openDeletePopup(idx) {
         document.getElementById('overlay').style.display = 'flex';
-        document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+        document.getElementsByClassName('popup')[0].setHTML(`
             <div id="popup-header">
                 <h1>Delete Rmail</h1>
                 <button id="popup-x" class="closebtn">✕</button>
@@ -68,71 +75,73 @@ if (!activeacc.uuid) {
                 <button id="cancel" class="closebtn">No</button>
                 <button class="finaldelete" data-payloadidx='${idx}'>Yes</button>
             </div>
-        `))
+        `, {sanitizer: sanitizer})
     }
 
     function closePopup() {
         document.getElementById('overlay').style.display = 'none';
     }
 
-    function parseImage(content) {
-        return content.split('[RAIMG]')[1].split('[/RAIMG]')[0]
+    function parseImages(content) {
+        const regex = /\[RAIMG\](.*?)\[\/RAIMG\]/g;
+        return Array.from(content.matchAll(regex), match => match[1]);
     }
 
     function parseImage2(content) {
-        return content.split('[RAIMG]')[0]
+        const regex = /\[RAIMG\][\s\S]*?\[\/RAIMG\]/g
+        return content.replace(regex, "")
     }
 
-    function filterRmails(data){
-        let sent_html = ``
-        let received_html = ``
-        let current_html = ``
+    function filterRmails(data) {
+        const sent_html = []
+        const received_html = []
         let idx = 1;
-        let duplicates = []
+        const duplicates = []
         data.forEach(rmail => {
-            current_html = `<li class='rmailpreview' data-payloadidx='${idx}'>
-                <div class='rmailauthorheader'>
-                    <img src='https://avatars.rotur.dev/${rmail.from || "Spectator"}' width=40 height=40 alt='${rmail.from || "Spectator"}'>
-                    <h2>${(rmail.from || "Unknown User").replace(/^./, char => char.toUpperCase())}</h2>
-                    <div class='rmailtorecipient'>
-                        <p>To: </p>
-                        <img src='https://avatars.rotur.dev/${rmail.recipient || "Spectator"}' width=24 height=24 alt='${rmail.recipient || "Spectator"}'>
-                        <p>${(rmail.recipient || "Unknown User").replace(/^./, char => char.toUpperCase())}</p>
-                    </div>
-                </div>
-                <div class='rmailpreviewbody'>
-                    <h3>${sanitize(rmail.title)}</h3>
-                </div>
-                <div class='rmailactionbuttons'>
-                    <button class='rmailreply' title="Reply to Rmail" data-payloadidx='${idx}' data-rmailtitle='${rmail.title}' data-rmailauthor='${rmail.from.replace(/^./, char => char.toUpperCase())}'>&larrhk;</button>
-                    <button class='rmaildelete' title="Delete Rmail from feed" data-payloadidx='${idx}'><img src='../images/misc_icons/delete.png' width=24 height=24></button>
-                </div>
-                <p class='rmailpreviewtimestamp'>${formatDate(rmail.timestamp)}</p>
-            </li>`
+            const rmailcard = document.getElementById('rmailcard').content.cloneNode(true)
+            rmailcard.querySelectorAll('[data-payloadidx]').forEach(card => {
+                card.dataset.payloadidx = idx
+            })
+            rmailcard.querySelector('h2').textContent = (rmail.from.replace(/^./, char => char.toUpperCase()) || "Unknown User")
+            rmailcard.querySelector('.authorpfp').src = `https://avatars.rotur.dev/${rmail.from || "Spectator"}`
+            rmailcard.querySelector('.authorpfp').alt = (rmail.from || "Spectator").replace(/^./, char => char.toUpperCase())
+
+            rmailcard.querySelector('.recipientpfp').src = `https://avatars.rotur.dev/${rmail.recipient || "Spectator"}`
+            rmailcard.querySelector('.recipientpfp').alt = (rmail.recipient || "Spectator").replace(/^./, char => char.toUpperCase())
+
+            rmailcard.querySelector('.rmailto').textContent = (rmail.recipient.replace(/^./, char => char.toUpperCase()) || "Unknown User")
+            
+            rmailcard.querySelector('.rmailpreviewbody').querySelector('h3').textContent = rmail.title
+            rmailcard.querySelector('.rmailreply').dataset.rmailtitle = rmail.title
+            rmailcard.querySelector('.rmailreply').dataset.rmailauthor = (rmail.from.replace(/^./, char => char.toUpperCase()) || "Spectator")
+            rmailcard.querySelector('.rmailpreviewtimestamp').textContent = formatDate(rmail.timestamp)
             if (rmail.recipient.toLowerCase() == activeacc.name.toLowerCase()) {
                 if (rmail.recipient == rmail.from && duplicates.includes(rmail.timestamp)) {
-                    sent_html += current_html // If you send an rmail to yourself, you get 2 instances of that rmail next time you load your feed. To handle this, the 2 get split across each tab (1 each)
+                    sent_html.push(rmailcard) // If you send an rmail to yourself, you get 2 instances of that rmail next time you load your feed. To handle this, the 2 get split across each tab (1 each)
                 } else {
-                    received_html += current_html
+                    received_html.push(rmailcard)
                 }
             } else {
-                sent_html += current_html
+                sent_html.push(rmailcard)
             }
             duplicates.push(rmail.timestamp)
             idx += 1
         })
-        if (sent_html == ``) {
-            document.getElementById('sentrmailslist').replaceChildren(...parseHTML(`<h2>You have not sent any rmails yet.`))
+        document.getElementById('rmail_sent').textContent = `Sent (${sent_html.length})`
+        document.getElementById('rmail_received').textContent = `Received (${received_html.length})`
+        const h2 = ``
+        if (sent_html.length == 0) {
+            document.getElementById('sentrmailslist').replaceChildren(CreateEmptyPlaceholder(`You have not sent any rmails yet.`, true))
             document.getElementById('sentrmailslist').style = 'border: none;'
         } else {
-            document.getElementById('sentrmailslist').replaceChildren(...parseHTML(sent_html))
+            document.getElementById('sentrmailslist').replaceChildren(...sent_html)
             document.getElementById('sentrmailslist').style = "border: 2px solid white;"
         }
-        if (received_html == ``) {
-            document.getElementById('receivedrmailslist').replaceChildren(...parseHTML(`<h2>You have not received any rmails yet.`))
+        if (received_html.length == 0) {
+            document.getElementById('receivedrmailslist').replaceChildren(CreateEmptyPlaceholder(`You have not received any rmails yet.`, true))
             document.getElementById('receivedrmailslist').style = 'border: none;'
         } else {
-            document.getElementById('receivedrmailslist').replaceChildren(...parseHTML(received_html))
+            document.getElementById('receivedrmailslist').replaceChildren(...received_html)
             document.getElementById('receivedrmailslist').style = 'border: 2px solid white;'
         }
     }
@@ -168,7 +177,7 @@ if (!activeacc.uuid) {
             rmail.send(JSON.stringify({
             "cmd": "link",
             "val":[
-                "roturTW" // the room to link to
+                "roturTW"
             ],
             "listener":"link"
             }))
@@ -202,7 +211,7 @@ if (!activeacc.uuid) {
             document.getElementById('author_href').href = "lookup.html?user=" + (maildata.info.from || "Spectator")
             document.getElementById('viewrmailreply').dataset.payloadidx = String(data.val.payload[0])
             document.getElementById('viewrmailreply').dataset.rmailtitle = maildata.info.title
-            document.getElementById('viewrmailreply').dataset.rmailauthor = (maildata.info.from || "Unknown User").replace(/^./, char => char.toUpperCase())
+            document.getElementById('viewrmailreply').dataset.rmailauthor = (maildata.info.from || "Spectator").replace(/^./, char => char.toUpperCase())
             document.getElementById('viewrmaildelete').dataset.payloadidx = String(data.val.payload[0])
             document.getElementById('viewrmailauthortext').textContent = (maildata.info.from || "Unknown User").replace(/^./, char => char.toUpperCase())
             document.getElementById('viewrmailtimestamp').textContent = formatDate(maildata.info.timestamp)
@@ -210,16 +219,19 @@ if (!activeacc.uuid) {
             document.getElementById('viewrmailrecipientpfp').src = `https://avatars.rotur.dev/${maildata.info.recipient || "Spectator"}`
             document.getElementById('viewrmailrecipientpfp').alt = maildata.info.recipient || "Spectator"
             document.getElementById('recipient_href').href = "lookup.html?user=" + (maildata.info.recipient || "Spectator")
-            document.getElementById('viewrmailrecipient').textContent = maildata.info.recipient.replace(/^./, char => char.toUpperCase())
+            document.getElementById('viewrmailrecipient').textContent = (maildata.info.recipient || "Unknown User").replace(/^./, char => char.toUpperCase())
             document.getElementById('viewrmailbodytext').innerText = maildata.body.includes('[RAIMG]') ? parseImage2(maildata.body) : maildata.body
             document.getElementById('rmailimageplaceholder').replaceChildren()
-            if (maildata.body.includes('[RAIMG]')) {
-                document.getElementById('rmailimageplaceholder').style.display = 'block'
-                const img = document.createElement('img')
-                img.src = parseImage(maildata.body)
-                document.getElementById('rmailimageplaceholder').appendChild(img)
-            } else {
+            const images = parseImages(maildata.body)
+            if (images.length == 0) {
                 document.getElementById('rmailimageplaceholder').style.display = 'none'
+            } else {
+                document.getElementById('rmailimageplaceholder').style.display = 'block'
+                images.forEach(image => {
+                    const img = document.createElement('img')
+                    img.src = image
+                    document.getElementById('rmailimageplaceholder').appendChild(img)
+                })
             }
             document.getElementById('rmailpage2').style.display = 'block'
         }
@@ -266,13 +278,18 @@ if (!activeacc.uuid) {
                 openErrorPopup('An Unknown error occurred while trying to delete this Rmail.')
             }
         }
+        if (data.listener == 'ping') {
+            rmail.send(JSON.stringify({
+                cmd: 'pong'
+            }))
+        }
     }
 
     rmail.onerror = (error) => {
-        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(
+        document.getElementsByClassName('container')[0].setHTML(
             `<h1>Rmail</h1>
-            <h3>A communication error has occurred. If you're sure it's not your connection, then this part of Rotur may be down right now.</h3>`
-        ))
+            <h3>A communication error has occurred. If you're sure it's not your connection, then this part of Rotur may be down right now.</h3>`,
+        {sanitizer: sanitizer})
     }
 
     // Document Code
@@ -303,6 +320,7 @@ if (!activeacc.uuid) {
                     }
                 }
             } catch (err) {
+                console.error(err)
                 openErrorPopup('No image was detected on your clipboard.')
             }
         }
@@ -356,7 +374,7 @@ if (!activeacc.uuid) {
             const re_count = potentialrmailtitle.split('(Re: ').length - 1
             const originaltitle = potentialrmailtitle.split('(Re: ')[re_count].slice(0, (-1 * re_count))
             document.getElementById('rmail_comp_title').value = hasSuperscript(e.target.dataset.rmailtitle) ? incrementSuperscriptChain(e.target.dataset.rmailtitle) : (re_count > 1 ? `(Re${toSuperscript(String(re_count))}: ${originaltitle})` : potentialrmailtitle)
-            document.getElementById('rmail_comp_body').value = ''
+            document.getElementById('rmail_comp_body').value = (e.target.dataset.rmailauthor == 'Spectator') ? 'While this Rmail will be seen by the owner of the "Spectator" account, do keep in mind that you\'re seeing this because you tried replying to a user that no longer exists.' : ''
             document.getElementById('rmailpage1').style.display = 'none'
             document.getElementById('rmailpage2').style.display = 'none'
             document.getElementById('rmailpage3').style.display = 'block'
@@ -392,80 +410,62 @@ if (!activeacc.uuid) {
         } else if (title == '') {
             openErrorPopup('Please enter a Title.')
             return;
-        } else if (body == '') {
+        } else if (body == '' && !document.getElementById('rmailimage').files) {
             openErrorPopup("You can't send a blank rmail.")
             return;
+        } else if (title.length > 100) {
+            openErrorPopup('Title cannot exceed 100 characters')
+        } else if (body.length > 20000){
+            openErrorPopup('Body cannot exceed 20,000 characters (Rmail has a packet limit of 50 KB)')
         }
         postbutton.disabled = true
         postbutton.textContent = 'Sending...'
-        const recipient_exists = await fetch('https://api.rotur.dev/profile?name=' + recipient).then(res => res.json())
-        if (!recipient_exists.error) {
-            if (title.length < 101) {
-                if (body.length < 20001) {
-                    // Image Code
+        const recipient_exists = await fetch('https://api.rotur.dev/exists?username=' + recipient).then(res => res.json())
+        if (recipient_exists.exists && !recipient_exists.error) {
+            let potentialattachment = []
+            let attachment_cache = ''
+            const postbutton = document.getElementById('send_rmail')
+            document.getElementById('clearattachment').disabled = true
 
-                    let potentialattachment = ''
-                    const postbutton = document.getElementById('send_rmail')
-                    document.getElementById('clearattachment').disabled = true
+            const attachments = document.getElementById('rmailimage').files
 
-                    const attachment = document.getElementById('rmailimage').files[0]
-
-                    if (attachment) {
-                        const reader = new FileReader();
-
-                        reader.onloadend = () => {
-                            potentialattachment = reader.result
-                        };
-
-                        reader.readAsDataURL(attachment);
-                        const response = await fetch('https://roturcdn.milosantos.com/api/image/upload?public=true', {
-                            method: 'POST',
-                            body: attachment
-                        }).then(res => res.json());
-
-                        potentialattachment = `https://roturcdn.milosantos.com/${response.id}`;
-                        if (potentialattachment.includes('undefined')) {
-                            openErrorPopup('Attachment failed to upload')
-                            postbutton.disabled = false
-                            postbutton.textContent = 'Send →'
-                            return;
-                        }
+            if (attachments.length > 0) {
+                for (let i=0; i<attachments.length; i++) {
+                    const newimg = await UploadImage(attachments[i])
+                    if (!newimg) {
+                        openErrorPopup('One of your attachments failed to upload')
+                        postbutton.disabled = false
+                        postbutton.textContent = 'Send →'
+                        return;
+                    } else {
+                        potentialattachment.push(`[RAIMG]${newimg}[/RAIMG]`)
                     }
-
-                    // End of Image Code
-                    rmail.send(JSON.stringify({
-                        "cmd": "pmsg",
-                        "val": {
-                            "command": "omail_send",
-                            "client": clientid,
-                            "id":"Rotur_Assistant_Mail",
-                            "payload": {
-                                title: title,
-                                body: body.replaceAll('[RAIMG]', '').replaceAll('[/RAIMG]', '') + (potentialattachment ? `
-                                    [RAIMG]${potentialattachment}[/RAIMG]` : ''),
-                                recipient: recipient
-                            }
-                        }, 
-                        "id":"sys-rotur"
-                    }))
-                } else {
-                    openErrorPopup('Body cannot exceed 20,000 characters (Rmail has a packet limit of 50 KB)')
-                    postbutton.disabled = false
-                    postbutton.textContent = 'Send →'
                 }
-            } else {
-                openErrorPopup('Title cannot exceed 100 characters')
-                postbutton.disabled = false
-                postbutton.textContent = 'Send →'
             }
+            // End of Image Code
+            
+            rmail.send(JSON.stringify({
+                "cmd": "pmsg",
+                "val": {
+                    "command": "omail_send",
+                    "client": clientid,
+                    "id":"Rotur_Assistant_Mail",
+                    "payload": {
+                        title: title,
+                        body: body.replaceAll('[RAIMG]', '').replaceAll('[/RAIMG]', '') + (potentialattachment.length > 0 ? potentialattachment.join('') : ''),
+                        recipient: recipient
+                    }
+                }, 
+                "id":"sys-rotur"
+            }))
+                
         } else {
             openErrorPopup('Recipient does not exist')
-            postbutton.disabled = false
-            postbutton.textContent = 'Send →'
         }
+        postbutton.disabled = false
+        postbutton.textContent = 'Send →'
     })
 }
-
 if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
     document.getElementById('rmailimage').addEventListener('change', async function(e) {
         document.getElementById('clearattachment').style.display = 'flex'

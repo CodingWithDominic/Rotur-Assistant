@@ -1,11 +1,11 @@
-import { sanitize, formatDate, parseHTML } from "../index.js"
+import { sanitize, formatDate, CreateEmptyPlaceholder, MiniError } from "../index.js"
 
 const accounts = await new Promise(resolve =>
     chrome.storage.local.get('userdata', data => resolve(data.userdata || []))
 ) ?? [];
 const activeacc = await new Promise(resolve =>
-    chrome.storage.local.get('activeacc', data => resolve(data.activeacc || []))
-) ?? [];
+    chrome.storage.local.get('activeacc', data => resolve(data.activeacc || {}))
+) ?? {};
 
 const flagged = await new Promise(resolve =>
     chrome.storage.local.get('flagged', data => resolve(data.flagged || []))
@@ -14,9 +14,15 @@ const flagged = await new Promise(resolve =>
 let giftdata_cache = ''
 let filter_cache = 'all'
 
+const config = {
+    elements: ['p', 'img', 'div', 'h1', 'h2', 'h3', 'h4', 'button', 'ul', 'li', 'select', 'option'],
+    attributes: ['src', 'alt', 'href', 'width', 'height', 'id', 'class', 'data', 'value', 'title', 'disabled']
+}
+const sanitizer = new Sanitizer(config)
+
 function openPopup(amt, note) {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Confirm Gift</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -25,12 +31,12 @@ function openPopup(amt, note) {
         <p id="giftpopupamt">Amount: ${amt}</p>
         <p id="giftpopuptax">Tax: ${(amt / 100).toFixed(2)}</p>
         <p id="giftpopuptotal">Total Payment: ${(amt * 1.01).toFixed(2)}</p>
-        ${note ? `<p id="giftpopupnote">Note: ${note}</p>` : ``}
+        ${note ? `<p id="giftpopupnote">Note: ${sanitize(note)}</p>` : ``}
         <div id="popup-choices">
             <button id="cancel" class="closebtn">Cancel</button>
             <button id="finalcreate">Confirm & Create</button>
         </div>
-    `))
+    `, {sanitizer: sanitizer})
 }
 
 function closePopup() {
@@ -48,75 +54,83 @@ function renderGifts(filter) {
     if (filter == 'unclaimed') {
         giftsArray = giftsArray.filter(gift => !gift.claimed_by)
     }
-    document.getElementById('giftmanagerheader').replaceChildren(...parseHTML(`<h2>Manage Existing Gifts (${giftsArray.length})</h2>`))
-    let giftlisthtml = `<ul>`
+    document.getElementById('giftmanagerheader').replaceChildren(CreateEmptyPlaceholder(`Manage Existing Gifts (${giftsArray.length})`, true))
+    let giftlisthtml = document.createElement('ul')
     if (giftsArray.length == 0) {
+        giftlisthtml = document.createElement('h3')
         if (gift_count == 0) {
-            giftlisthtml = `<h3>You have not created any gifts yet</h3>`
+            giftlisthtml.textContent = `You have not created any gifts yet`
         } else {
-            giftlisthtml = `<h3>No gifts were found that match this filter</h3>`
+            giftlisthtml.textContent = `No gifts were found that match this filter`
         }
     } else {
-    for (let i=0; i<giftsArray.length; i++) {
-        let gift_snippet = giftsArray[i]
-        giftlisthtml += `
-        <li>
-            <h2>Gift created on ${formatDate(gift_snippet.created_at)}</h2>
-            <p>Amount: ${gift_snippet.amount} RC</p>
-            ${gift_snippet.note ? `<p class='giftnote'>Note: ${sanitize(gift_snippet.note)}</p>` : ``}
-            ${gift_snippet.expires_at ? `<p>Expires: ${formatDate(gift_snippet.expires_at)}</p>` : `<p>Expires: Never</p>`}
-            <p>Code: ${gift_snippet.code}</p>
-            <p>ID: ${gift_snippet.id}</p>
-            <p class="giftfineprint">*The code, not the ID, is what appears in gift URLs, and what the claiming API looks for when it receives a request to claim a gift.</p>
-            ${gift_snippet.claimed_at ? `
-                <p class='claim_user'>Claimed by:  <a href="lookup.html?user=${gift_snippet.claimed_by}" style="text-decoration: none;"><img src='https://avatars.rotur.dev/${gift_snippet.claimed_by}' width="24" height="24"> ${gift_snippet.claimed_by}</a></p>
-                <p>Claimed on: ${formatDate(gift_snippet.claimed_at)}</p>
-                ` : `
-                <div id="giftcontrolbuttons_${gift_snippet.code}">
-                    <button class="copyURL" id='${gift_snippet.code}'>Copy URL</button>
-                    <button class="revoke" id='${gift_snippet.code}' data-giftamt='${gift_snippet.amount}' ${accounts.length < 2 ? 'disabled' : ''}>Revoke Gift</button>
-                </div>
-                ${accounts.length < 2 ? `<p class="giftfineprint">*Due to API limitations, You need at least 2 accounts added in the account manager in order to revoke gifts</p>` : ``}
-                <div id='giftrevokestatus_${gift_snippet.code}'></div>
-                `}
-        </li>`
-    }
-        giftlisthtml += `</ul>`
+        giftsArray.forEach(gift_snippet => {
+            const giftcard = document.getElementById('giftcardtemplate').content.cloneNode(true)
+            giftcard.querySelector('.gifttitle').textContent = `Gift created on ${formatDate(gift_snippet.created_at)}`
+            giftcard.querySelector('.giftamount').textContent = `Amount: ${gift_snippet.amount} RC`
+            gift_snippet.note ? (giftcard.querySelector('.giftnote').innerText = `Note: ${gift_snippet.note}`) : giftcard.querySelector('.giftnote').remove()
+            giftcard.querySelector('.giftexpirationdate').textContent = ("Expires: " + (gift_snippet.expires_at ? formatDate(gift_snippet.expires_at) : "Never"))
+            giftcard.querySelector('.giftcode').textContent = ("Code: " + gift_snippet.code)
+            giftcard.querySelector('.giftid').textContent = ("ID: " + gift_snippet.id)
+            gift_snippet.claimed_by ? giftcard.querySelector('.claim_user').setHTML(`Claimed by: <a href="lookup.html?user=${gift_snippet.claimed_by}" style="text-decoration: none;"><img src='https://avatars.rotur.dev/${gift_snippet.claimed_by}' width="24" height="24"> ${gift_snippet.claimed_by}</a>`, {sanitizer: sanitizer}) : giftcard.querySelector('.claim_user').remove()
+            gift_snippet.claimed_at ? giftcard.querySelector('.claimdate').textContent = formatDate(gift_snippet.claimed_at) : giftcard.querySelector('.claimdate').remove()
+            if (!gift_snippet.claimed_at) {
+                giftcard.querySelector('.copyurl').dataset.giftid = gift_snippet.code
+                giftcard.querySelector('.revoke').dataset.giftid = gift_snippet.code
+                giftcard.querySelector('.revoke').title = "While you will be refunded the gift's main value, you will not be refunded the tax spent when you initially created the gift."
+                giftcard.querySelector('.revoke').dataset.giftid2 = gift_snippet.id
+                giftcard.querySelector('.revoke').dataset.giftamt = gift_snippet.amount
+                giftcard.querySelector('.giftcardrevokestatus').id = `giftrevokestatus_${gift_snippet.code}`
+                giftcard.querySelector('.giftcontrolpanel').id = `giftcontrolbuttons_${gift_snippet.code}`
+            } else {
+                giftcard.querySelector('.giftcontrolpanel').remove()
+                giftcard.querySelector('.giftcardrevokestatus').remove()
+            }
+            giftlisthtml.appendChild(giftcard)
+        })
     }
 
-    document.getElementById('giftsplaceholder').replaceChildren(...parseHTML(giftlisthtml))
+    document.getElementById('giftsplaceholder').replaceChildren(giftlisthtml)
 }
 
 async function getGifts(filter) {
     if (accounts.length == 0) {
-        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(
+        document.getElementsByClassName('container')[0].setHTML(
             `<h1>Gift Manager</h1>
-            <h3>You are not signed in! Please head over to the account manager to add an account first.</h3>`))
+            <h3>You are not signed in! Please head over to the account manager to add an account first.</h3>`, {sanitizer: sanitizer})
         return;
     }
     if (flagged.includes(activeacc.uuid)) {
-        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+        document.getElementsByClassName('container')[0].setHTML(`
             <h1>Gift Manager</h1>
             <h3>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h3>
-        `))
+        `, {sanitizer: sanitizer})
         return;
     }
     if (giftdata_cache == '') {
         giftdata_cache = await fetch(`https://api.rotur.dev/gifts/mine?auth=${activeacc.token}`).then(res => res.json()).catch(err => {
-            document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+            document.getElementsByClassName('container')[0].setHTML(`
                 <h1>Gift Manager</h1>
                 <h3>A communication error has occurred. If you're sure it's not your connection, then Rotur may be down right now.</h3>
-            `))
+            `, {sanitizer: sanitizer})
             return;
         })
-        if (giftdata_cache.error && giftdata_cache.error == "Invalid authentication key") {
-            flagged.push(activeacc.uuid)
-            chrome.storage.local.set({flagged: flagged})
-            document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
-                <h1>Gift Manager</h1>
-                <h3>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h3>
-            `))
-            return;
+        if (giftdata_cache.error) {
+            if (giftdata_cache.error == "Invalid authentication key") {
+                flagged.push(activeacc.uuid)
+                chrome.storage.local.set({flagged: flagged})
+                document.getElementsByClassName('container')[0].setHTML(`
+                    <h1>Gift Manager</h1>
+                    <h3>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h3>
+                `, {sanitizer: sanitizer})
+                return;
+            } else {
+                document.getElementsByClassName('container')[0].setHTML(`
+                    <h1>Gift Manager</h1>
+                    <h3>The sub-token you have granted for your current account does not allow you to view this page. To resolve this issue, please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> and reauthenticate.</h3>
+                `, {sanitizer: sanitizer})
+                return;
+            }
         }
         giftdata_cache.gifts = giftdata_cache.gifts.reverse()
     }
@@ -133,20 +147,23 @@ async function performGiftSearch(query) {
     giftdata = await fetch(`https://api.rotur.dev/gifts/${query}`).then(res => res.json())
 
     if (giftdata.error) {
-        document.getElementById('giftlookupplaceholder').replaceChildren(...parseHTML(`<p class='failure'>${giftdata.error}</p>`))
+        document.getElementById('giftlookupplaceholder').replaceChildren(MiniError('failure', giftdata.error))
         return;
     } else {
         giftdata = giftdata.gift
+        const lookupcard = document.getElementById('giftlookuptemplate').content.cloneNode(true)
+        lookupcard.querySelector('h2').setHTML(`Gift by <img src='https://avatars.rotur.dev/${giftdata.creator_id}' alt='${giftdata.creator_id}' width='24' height='24'> ${giftdata.creator_id}`, {sanitizer: sanitizer}) // setHTML is a safer alternative to innerHTML / parseHTML
+        lookupcard.querySelector('.giftcardamt').textContent = `Amount: ${giftdata.amount} RC`
+        giftdata.note ? lookupcard.querySelector('.giftcardnote').innerText = `Note: ${giftdata.note}` : lookupcard.querySelector('.giftcardnote').remove()
+        lookupcard.querySelector('.giftcarddate').textContent = `Expires: ${giftdata.expires_at ? formatDate(giftdata.expires_at) : `Never`}`
+        if (giftdata.creator_id == activeacc.name) {
+            lookupcard.querySelector('.claimgiftbtn').disabled = true
+        } else {
+            lookupcard.querySelector('.giftfineprint').remove()
+            lookupcard.querySelector('.claimgiftbtn').dataset.giftid = query
+        }
+        document.getElementById('giftlookupplaceholder').replaceChildren(lookupcard)
         document.getElementById('giftlookupplaceholder').style = `border: 2px solid white; padding: 8px;`
-        document.getElementById('giftlookupplaceholder').replaceChildren(...parseHTML(`
-        <h2>Gift by <img src='https://avatars.rotur.dev/${giftdata.creator_id}' alt='${giftdata.creator_id}' width='24' height='24'> ${giftdata.creator_id}</h2>
-        <p>Amount: ${giftdata.amount} RC</p>
-        ${giftdata.note ? `<p>Note: ${sanitize(giftdata.note)}</p>` : ``}
-        ${giftdata.expires_at ? `<p>${formatDate(giftdata.expires_at)}</p>` : ``}
-        <button id=${query} class='claimgiftbtn' ${giftdata.creator_id == activeacc.name ? `disabled` : ``}>Claim Gift</button>
-        ${giftdata.creator_id == activeacc.name ? `<p class='giftfineprint'>Unfortunately, the Rotur API won't allow you to claim your own gift.</p>` : ``}
-        <div id="giftclaimstatusplaceholder"></div>
-        `)) 
     }
 }
 
@@ -166,7 +183,7 @@ document.addEventListener('input', async function (e) {
         if (isNaN(amt)) {
             document.getElementById('taxamt').replaceChildren()
         } else {
-            document.getElementById('taxamt').replaceChildren(...parseHTML(`<p>Estimated Tax: ${(amt / 100).toFixed(2)}</p>`))
+            document.getElementById('taxamt').setHTML(`<p>Estimated Tax: ${(amt / 100).toFixed(2)}</p>`, {sanitizer: sanitizer})
         }
     }
 })
@@ -176,14 +193,15 @@ document.addEventListener('click', async function(e) {
         const accdata = await fetch(`https://api.rotur.dev/profile?name=${activeacc.name}`).then(res => res.json())
         const amt = parseFloat(document.getElementById('giftamount').value)
         if (isNaN(amt)) {
-            document.getElementById('giftcreatestatusplaceholder').replaceChildren(...parseHTML(`<p class='failure'>Please enter a valid amount</p>`))
+            document.getElementById('giftcreatestatusplaceholder').replaceChildren(MiniError('failure', "Please enter a valid amount"))
+            setTimeout(function() { document.getElementById('giftcreatestatusplaceholder').replaceChildren() }, 10000)
         } else if (accdata.currency < (amt * 1.01).toFixed(2)) {
-            document.getElementById('giftcreatestatusplaceholder').replaceChildren(...parseHTML(`<p class='failure'>Insufficient Funds</p>`))
+            document.getElementById('giftcreatestatusplaceholder').replaceChildren(MiniError('failure', "Insufficient Funds"))
+            setTimeout(function() { document.getElementById('giftcreatestatusplaceholder').replaceChildren() }, 10000)
         } else {
             const note = document.getElementById('giftnote').value
             openPopup(amt, note)
         }
-        setTimeout(function() { document.getElementById('giftcreatestatusplaceholder').replaceChildren() }, 10000)
         return;
     }
     if (e.target.id == 'cancel' || e.target.id == 'popup-x') {
@@ -206,7 +224,7 @@ document.addEventListener('click', async function(e) {
         const amt = parseFloat(document.getElementById('giftamount').value)
         const note = document.getElementById('giftnote').value
         if (isNaN(amt)) {
-            document.getElementById('giftcreatestatusplaceholder').replaceChildren(...parseHTML(`<p class='failure'>An unknown error occurred</p>`))
+            document.getElementById('giftcreatestatusplaceholder').replaceChildren(MiniError('failure', "An unknown error occurred"))
             setTimeout(function() { document.getElementById('giftcreatestatusplaceholder').replaceChildren() }, 10000)
             closePopup()
             return;
@@ -216,10 +234,10 @@ document.addEventListener('click', async function(e) {
                                 body: JSON.stringify({amount: amt, note: note, expires_in_hrs: 0, auth: activeacc.token})
                             }).then(res => res.json())
         if (gift.error) {
-            document.getElementById('giftcreatestatusplaceholder').replaceChildren(...parseHTML(`<p class='failure'>An unknown error occurred</p>`))
+            document.getElementById('giftcreatestatusplaceholder').replaceChildren(MiniError('failure', "An unknown error occurred"))
             setTimeout(function() { document.getElementById('giftcreatestatusplaceholder').replaceChildren() }, 10000)
         } else {
-            document.getElementById('giftcreatestatusplaceholder').replaceChildren(...parseHTML(`<p class='success'>Gift created successfully! Link: ${gift.claim_url} <button class='copyURL2' id=${gift.code}>Copy URL</button></p>`))
+            document.getElementById('giftcreatestatusplaceholder').setHTML(`<p class='success'>Gift created successfully! Link: ${gift.claim_url} <button class='copyurl2' data-giftid='${gift.code}'>Copy URL</button></p>`, {sanitizer: sanitizer})
             document.getElementById('giftamount').value = ''
             document.getElementById('giftnote').value = ''
             document.getElementById('taxamt').value = ''
@@ -229,55 +247,38 @@ document.addEventListener('click', async function(e) {
         return;
     }
 
-    const giftstatus = document.getElementById(`giftrevokestatus_${e.target.id}`)
-    if (e.target.className == 'copyURL') {
+    const giftstatus = document.getElementById(`giftrevokestatus_${e.target.dataset.giftid}`)
+    if (e.target.className == 'copyurl') {
         try {
-            await navigator.clipboard.writeText(`https://rotur.dev/gift?code=${e.target.id}`);
-            giftstatus.replaceChildren(...parseHTML(`<p class='success'>Copied URL to clipboard!</p>`))
+            await navigator.clipboard.writeText(`https://rotur.dev/gift?code=${e.target.dataset.giftid}`);
+            giftstatus.replaceChildren(MiniError('success', "Copied URL to clipboard!"))
         } catch (err) {
             console.error('Failed to copy: ', err);
-            giftstatus.replaceChildren(...parseHTML(`<p class='failure'>Failed to copy gift URL</p>`))
+            giftstatus.replaceChildren(MiniError('failure', "Failed to copy gift URL"))
         }
     }
     if (e.target.className == 'copyURL2') {
         try {
-            await navigator.clipboard.writeText(`https://rotur.dev/gift?code=${e.target.id}`);
-            document.getElementById('giftcreatestatusplaceholder2').replaceChildren(...parseHTML(`<p class='success'>Copied URL to clipboard!</p>`))
+            await navigator.clipboard.writeText(`https://rotur.dev/gift?code=${e.target.dataset.giftid}`);
+            document.getElementById('giftcreatestatusplaceholder2').replaceChildren(MiniError('success', "Copied URL to clipboard!"))
         } catch (err) {
             console.error('Failed to copy: ', err);
-            document.getElementById('giftcreatestatusplaceholder2').replaceChildren(...parseHTML(`<p class='failure'>Failed to copy gift URL</p>`))
+            document.getElementById('giftcreatestatusplaceholder2').replaceChildren(MiniError('failure', "Failed to copy gift URL"))
         }
         setTimeout(function() { document.getElementById('giftcreatestatusplaceholder2').replaceChildren() }, 10000)
     }
     if (e.target.className == 'revoke') {
-        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms)); // To reduce the risk of failure between claiming the gift
-        if (accounts.length < 2) {
-            console.error('This action cannot be performed with less than 2 accounts due to Rotur API limitations. This action has automatically been aborted.')
-            giftstatus.replaceChildren(...parseHTML(`<p class='failure'>You need at least 2 accounts to perform this action</p>`))
+        const revokebtn = e.target
+        revokebtn.disabled = true
+        revokebtn.textContent = 'Revoking...'
+        const revokesuccess = await fetch(`https://api.rotur.dev/gifts/cancel/${e.target.dataset.giftid2}?auth=${activeacc.token}`, {method: 'POST'}).then(res => res.json())
+        if (revokesuccess.error) {
+            giftstatus.replaceChildren(MiniError('failure', "Failed to revoke gift. This gift may have been revoked in the past."))
+            revokebtn.disabled = false
+            revokebtn.textContent = 'Revoke Gift'            
         } else {
-            const revokebtn = e.target
-            revokebtn.disabled = true
-            revokebtn.textContent = 'Revoking...'
-            const token = accounts[1 - (activeacc.name == accounts[1].name)].token
-            const revokesuccess = await fetch(`https://api.rotur.dev/gifts/claim/${e.target.id}?auth=${token}`, {method: 'POST'}).then(res => res.json())
-            if (revokesuccess.error) {
-                giftstatus.replaceChildren(...parseHTML(`<p class='failure'>Failed to revoke gift</p>`))
-                revokebtn.disabled = false
-                revokebtn.textContent = 'Revoke Gift'
-            } else {
-                await delay(250)
-                const refundsuccess = await fetch(`https://api.rotur.dev/me/transfer?auth=${token}`, {
-                                            method: "POST",
-                                            body: JSON.stringify({to: activeacc.name, amount: parseFloat(e.target.dataset.giftamt), note: "Gift Revoked"})
-                                        })
-                if (refundsuccess.error) {
-                    giftstatus.replaceChildren(...parseHTML(`<p class='partialsuccess'>While the alt account (${accounts[1 - (activeacc.name == accounts[1].name)].name}) successfully claimed the gift, something went wrong with refunding the amount back to the active account (${activeacc.name})</p>`))
-                } else {
-                    giftstatus.replaceChildren(...parseHTML(`<p class='success'>Gift successfully revoked and refunded (excluding tax, sadly)</p>`))
-                }
-                document.getElementById(`giftcontrolbuttons_${e.target.id}`).replaceChildren()
-            }
-
+            giftstatus.replaceChildren(MiniError('success', "Gift successfully revoked and refunded (excluding tax, sadly)"))
+            document.getElementById(`giftcontrolbuttons_${e.target.dataset.giftid}`).replaceChildren()
         }
     }
 
@@ -285,12 +286,12 @@ document.addEventListener('click', async function(e) {
         const giftbtn = e.target
         giftbtn.disabled = true
         giftbtn.textContent = 'Claiming...'
-        const giftclaimsuccess = await fetch(`https://api.rotur.dev/gifts/claim/${e.target.id}?auth=${activeacc.token}`, {method: 'POST'}).then(res => res.json())
+        const giftclaimsuccess = await fetch(`https://api.rotur.dev/gifts/claim/${e.target.dataset.giftid}?auth=${activeacc.token}`, {method: 'POST'}).then(res => res.json())
         if (giftclaimsuccess.error) {
-            document.getElementById('giftclaimstatusplaceholder').replaceChildren(...parseHTML(`<p class='failure'>${giftclaimsuccess.error}</p>`))
+            document.getElementById('giftclaimstatusplaceholder').replaceChildren(MiniError('failure', giftclaimsuccess.error))
         } else {
             document.getElementsByClassName('claimgiftbtn')[0].remove()
-            document.getElementById('giftclaimstatusplaceholder').replaceChildren(...parseHTML(`<p class='success'>Gift claimed successfully!</p>`))
+            document.getElementById('giftclaimstatusplaceholder').replaceChildren(MiniError('success', "Gift claimed successfully!"))
         }
 
         if (document.getElementsByClassName('claimgiftbtn')[0]) {

@@ -1,6 +1,7 @@
 console.log('[Rotur Assistant] Rotur account switcher active') // This has to exist or else the switcher won't work
 
 window.onload = async () => {
+    chrome.runtime.sendMessage({ type: "NewSite", url: window.location.href });
     if (window.location.href.includes('https://rotur.dev/terms-of-service')) {
         const acceptinprogress = await new Promise(resolve =>
             chrome.storage.session.get('acceptinprogress', data => resolve(data.acceptinprogress || null))
@@ -12,11 +13,15 @@ window.onload = async () => {
         return;
     }
     if (window.location.href.includes('https://rotur.dev/auth')) {
-        const acceptinprogress = await new Promise(resolve =>
-            chrome.storage.session.get('acceptinprogress', data => resolve(data.acceptinprogress || null))
-        ) ?? null;
-        if (acceptinprogress) {
-            chrome.runtime.sendMessage({status: 'accepted'})
+        try {
+            const acceptinprogress = await new Promise(resolve =>
+                chrome.storage.session.get('acceptinprogress', data => resolve(data.acceptinprogress || null))
+            ) ?? null;
+            if (acceptinprogress) {
+                chrome.runtime.sendMessage({status: 'accepted'})
+            }
+        } catch {
+            return;
         }
         return;
     }
@@ -52,6 +57,11 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
         return;
     }
     const url = window.location.href
+    if (!url) {
+        console.error('To prevent risking corrupting login information, this action has been aborted.')
+        sendResponse({ result: "Action aborted" });
+        return;
+    }
     if (url.includes('https://originchats.mistium.com')) {
         localStorage.setItem('originchats_token', message.data)
         updateToken('originchats', 'session', message.data)
@@ -114,6 +124,11 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
         sendResponse({ result: "done" });
         return;
     }
+    if (url.includes('https://gate.rotur.dev')) {
+        window.location.href = `https://gate.rotur.dev/auth?token=${message.data}`
+        sendResponse({ result: "done" });
+        return;
+    }
     if (url.includes('https://devfund.rotur.dev')) {
         window.location.href = `https://devfund.rotur.dev/auth?token=${message.data}`
         sendResponse({ result: "done" });
@@ -121,6 +136,11 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     }
     if (url.includes('https://warptheme.mistium.com')) {
         window.location.href = `https://warptheme.mistium.com/auth?token=${message.data}`
+        sendResponse({ result: "done" });
+        return;
+    }
+    if (url.includes('https://authenticator.rotur.dev')) {
+        window.location.href = `https://authenticator.rotur.dev/auth?token=${message.data}`
         sendResponse({ result: "done" });
         return;
     }
@@ -156,6 +176,13 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     if (url.includes('https://antiviiris.github.io/originChats')) {
         localStorage.setItem('rotur_auth_token', message.data)
         localStorage.removeItem('validator')
+        window.location.reload()
+        sendResponse({ result: "done" });
+        return;
+    }
+    if (url.startsWith('https://rotur.dev')) {
+        localStorage.setItem('rotur_token', message.data)
+        localStorage.setItem('rotur_username', message.datauser)
         window.location.reload()
         sendResponse({ result: "done" });
         return;

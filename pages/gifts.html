@@ -8,11 +8,12 @@
         <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
     </head>
     <body>
-        <div id="header-placeholder"></div>
+        <header id="header-placeholder"></header>
         <script src="../header.js"></script>
         <div class="container">
             <h1>Gift Manager</h1>
             <p>Create, lookup, or manage gifts</p>
+            <hr class="full-size">
             <h2>Create gift</h2>
             <div class="giftcreatepanel">
                 <input type="number" placeholder="Amount" id="giftamount">
@@ -65,7 +66,34 @@
             </div>
         </div>
         <script type="module" src="../scripts/gifts.js"></script>
-        <div id="footer-placeholder"></div>
+        <footer id="footer-placeholder"></footer>
         <script src="../footer.js"></script>
+        <template id="giftcardtemplate">
+            <li>
+                <h2 class="gifttitle">Gift created on Date</h2>
+                <p class="giftamount">Amount: 1 RC</p>
+                <p class='giftnote'>Note: Optional</p>
+                <p class="giftexpirationdate">Expires: ???</p>
+                <p class="giftcode">Code: 321</p>
+                <p class="giftid">ID: 123</p>
+                <p class="giftfineprint">*The code, not the ID, is what appears in gift URLs, and what the claiming API looks for when it receives a request to claim a gift.</p>
+                <p class='claim_user'>Claimed by: <a class='giftclaimhreflink' href="lookup.html?user=Claimer" style="text-decoration: none;"><img src='https://avatars.rotur.dev/Claimer' width="24" height="24"> Claimer</a></p>
+                <p class="claimdate">Claimed on: May the 5th</p>
+                <div id="giftcontrolbuttons_giftcode" class="giftcontrolpanel">
+                    <button class="copyurl" data-giftid='giftcode'>Copy URL</button>
+                    <button class="revoke" data-giftid='giftcode' data-giftamt='1'>Revoke Gift</button>
+                </div>
+                <div id='giftrevokestatus_giftcode' class="giftcardrevokestatus"></div>
+            </li>
+        </template>
+        <template id="giftlookuptemplate">
+            <h2>Gift by <img src='https://avatars.rotur.dev/${giftdata.creator_id}' alt='${giftdata.creator_id}' width='24' height='24'> User</h2>
+            <p class="giftcardamt">Amount: 1 RC</p>
+            <p class="giftcardnote">Note: Hi</p>
+            <p class="giftcarddate">1/1/1970</p>
+            <button data-giftid="giftquery" class='claimgiftbtn'>Claim Gift</button>
+            <p class='giftfineprint'>Unfortunately, the Rotur API won't allow you to claim your own gift.</p>
+            <div id="giftclaimstatusplaceholder"></div>
+        </template>
     </body>
 </html>

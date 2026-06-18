@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="stylesheet" href="../style.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+    </head>
+    <body>
+        <header id="header-placeholder"></header>
+        <script src="../header.js"></script>
+        <div class="container">
+            <h1>Cosmetics</h1>
+            <p style="margin-bottom: 4px;">Manage your cosmetics and shop for new ones</p>
+            <label class="cosmeticavatarpreviewsettings">
+                Avatar preview: 
+                <form id="preview1">
+                    <label>
+                        <input type="radio" name="overlaypreviewsetting" value="circle" checked>
+                        Circular
+                    </label>
+                    <label>
+                        <input type="radio" name="overlaypreviewsetting" value="square">
+                        Square
+                    </label>
+                </form>
+            </label>
+            <hr class="full-size">
+            <div class="tabheader">
+                <button id='mycosmeticstab' class="tab">Owned</button>
+                <button id='shopcosmeticstab' class="tab">Shop</button>
+                <button id='createcosmeticstab' class="tab">Create</button>
+            </div>
+            <div id="mycosmetics">
+                <h2>Owned Cosmetics</h2>
+                <ul id="cosmeticlist">
+                    <h3>Loading...</h3>
+                </ul>
+            </div>
+            <div id="shopcosmetics" style="display: none;">
+                <h2>Cosmetic Shop</h2>
+                <div id="cosmeticviewoptions" style="display: none;">
+                    <label id="cosmeticsortlabel">
+                        Sort by: 
+                        <select id="cosmeticsortselect">
+                            <option value="newest" selected>Newest to Oldest</option>
+                            <option value="oldest">Oldest to Newest</option>
+                            <option value="low">Price: Lowest to Highest</option>
+                            <option value="high">Price: Highest to Lowest</option>
+                            <option value="popular">Most Popular</option>
+                            <option value="obscure">Least Popular</option>
+                        </select>
+                    </label>
+                    <label id="unownedonlylabel">
+                        <input type="checkbox" id="onlyshowunowned">
+                        Only show unowned cosmetics
+                    </label>
+                </div>
+                <ul id="cosmeticshoplist">
+                    <h3>Loading...</h3>
+                </ul>
+            </div>
+            <div id="createcosmetics" style="display: none;">
+                <h2>Create Cosmetic</h2>
+                <hr class="full-size">
+                <div class="tabheader">
+                    <button id='createabouttab' class="tab2">About</button>
+                    <button id='createtemplatestab' class="tab2">Templates</button>
+                    <button id='createpreviewtab' class="tab2">Preview</button>
+                </div>
+                <div id="createabout" >
+                    <p>As of now, cosmetics can only be directly uploaded by Mistium herself. This is likely done to ensure cosmetic quality stays at least acceptable, and the price of a given cosmetic at least somewhat matches its quality.<br><br>While Rotur Assistant doesn't provide the tools to submit or upload a cosmetic, it will at least provide a guide and a starting point on creating one.<br><br>Right now, Rotur Assistant only provides the tools for creating avatar overlay cosmetics. Rotur Assistant plans to support more types once they are added.</p>
+                </div>
+                <div id="createtemplates" style="display: none;">
+                    <p>Below is an overlay template to get you started on creating an overlay. You will need some form of image editing software that (ideally and preferrably) supports transparency. The software recommend by the developer of Rotur Assistant is <a href="https://paint.net/" target="_blank" rel="noopener noreferrer">paint.net</a> (and also <a href="https://ezgif.com/" target="_blank" rel="noopener noreferrer">ezgif</a> if you're making an animated cosmetic). The avatar area within the template has a diameter of 240px (contrary to Rotur avatars being 256x256), while the template itself is 288x288. The scale factor of the overlay compared to the PFP is 1.2x appearance-wise, and 1.125x size-wise.</p>
+                    <hr class="dotted_separator">
+                    <img src="../images/misc_assets/overlay_template.png">
+                    <div id="templatedownloadbuttons">
+                        <a href="../images/misc_assets/overlay_template.png" download="Avatar_Template.png" id="overlaypngdownload">Download PNG</a>
+                        <a href="../images/misc_assets/overlay_template.pdn" download="Avatar_Template.pdn" id="overlaypdndownload">Download Layered PDN</a>
+                    </div>
+                </div>
+                <div id="createpreview" style="display: none;">
+                    <p>Upload your cosmetic here to see how it looks on your avatar, as well as how it fits different avatar shapes. While Rotur Assistant will automatically fit the image for the preview, the final overlay must be 288x288.</p>
+                    <hr class="full-size">
+                    <input type="file" id="overlaypreviewselector" accept="image/*">
+                    <div id='overlaypreviewcontainer' class='overlaycontainer' style="display: none;">
+                        <img src="https://avatars.rotur.dev/.template" alt="User" class='useravataroverlaypreview' width='240' height='240' id="useravataroverlaypfp">
+                        <img src="https://avatars.rotur.dev/.template" alt=".template" class="overlaytemplatepreview" width='240' height='240' id="useravataroverlaytemplate">
+                        <img src="https://avatars.rotur.dev/.template" alt="cosmeticname" width='288' height='288' class='shopoverlayimg'>
+                    </div>
+                    <label for="overlaypreviewopacity" id="overlayopacitylabel" style="display: none;">Overlay Opacity: 
+                        <input type="range" id="overlaypreviewopacity" name="opacity" min="0" max="100" value="100" step="1">
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div id="overlay" class="overlay">
+            <div class="popup"></div>
+        </div>
+        <script type="module" src="../scripts/cosmetics.js"></script>
+        <footer id="footer-placeholder"></footer>
+        <script src="../footer.js"></script>
+        <template id="overlaytemplate">
+            <li class='cosmeticitem' id="cosmetic.id">
+                <div class='overlaycontainer'>
+                    <img src="user_url" alt="User" class='useravataroverlaypreview' width='90' height='90'>
+                    <img src="https://avatars.rotur.dev/.template" alt=".template" class="overlaytemplatepreview" width='90' height='90'>
+                    <img src="cosmeticurl" alt="cosmeticname" width='108' height='108' class='shopoverlayimg'>
+                </div>
+                <h3 class="overlayname">Cosmetic Name</h3>
+                <p class="overlaytype">Overlay</p>
+                <p class="overlaycreator">By: <img class='creatorpfp' src='https://avatars.rotur.dev/${cosmetic.creator}' alt='${cosmetic.creator}' width='16' height='16'> Creator</p>
+                <div class='cosmeticbuybar'>
+                    <button class='buyoverlay' data-cosmeticid='${sanitize(cosmetic.id)}'>Buy</button>
+                    <button class='equipoverlay' data-cosmeticid='${sanitize(cosmetic.id)}'>Equip</button>
+                    <button class='viewoverlayinfo' data-cosmeticid='${sanitize(cosmetic.id)}'>&#9432;</button>
+                </div>
+            </li>
+        </template>
+    </body>
+</html>

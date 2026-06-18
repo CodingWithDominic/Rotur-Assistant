@@ -27,7 +27,7 @@ document.getElementById('header-placeholder').innerHTML = `
                 <li data-ref='keymanager_eco'>Key Manager (Eco)</li>
                 <li data-ref='items'>Item Manager</li>
                 <li data-ref='gifts'>Gift Manager</li>
-                <li data-ref='notifications'>Notifications</li>
+                <li data-ref='icn'>ICN Editor</li>
             </ul>
         </div>
         <div id='socialflyout' class='headerflyout' style="display: none;">
@@ -35,6 +35,9 @@ document.getElementById('header-placeholder').innerHTML = `
                 <li data-ref='lookup'>Lookup</li>
                 <li data-ref='claw'>Claw</li>
                 <li data-ref='rmail'>Rmail</li>
+                <li data-ref='cosmetics'>Cosmetics</li>
+                <li data-ref='notifications'>Notifications</li>
+                <li data-ref='rpc'>Rotur RPC</li>
             </ul>
         </div>
         <div id='otherflyout' class='headerflyout' style="display: none;">
@@ -54,13 +57,12 @@ document.getElementById('header-placeholder').innerHTML = `
             <li>Getting accounts...</li>
             </ul>
         </div>
-    </nav>
-    `; // Switched from div to nav to better follow coding practices. I may rewrite some other stuff later to also better follow coding practices.
+    </nav>`
 
 async function checkSignin() {
     const activeacc = await new Promise(resolve =>
-            chrome.storage.local.get('activeacc', data => resolve(data.activeacc || []))
-        ) ?? [];
+            chrome.storage.local.get('activeacc', data => resolve(data.activeacc || {}))
+        ) ?? {};
         const p = document.createElement('p')
         p.id = "headeractiveacc"
         p.textContent = activeacc.name ? `Active: ${activeacc.name}` : 'Not signed in'
@@ -74,11 +76,11 @@ async function checkanchor() {
     const settings = await new Promise(resolve =>
     chrome.storage.local.get('settings', data => resolve(data.settings || "00000000"))
     ) ?? "00000000";
-    if (settings[2] == '1') {
+    if (settings[2] == '1' && !location.href.includes('/auth.html')) {
         document.getElementsByClassName('container')[0].style = ('margin-top: 40px;' + (settings[3] == '1' ? ' padding-bottom: 105px;' : ''))
         document.getElementById('header-placeholder').style = 'position: fixed; z-index: 4500;'
     }
-    if (settings[3] == '1') {
+    if (settings[3] == '1' && !location.href.includes('/auth.html')) {
         document.getElementsByClassName('container')[0].style = ('padding-bottom: 105px;' + (settings[2] == '1' ? ' margin-top: 40px;' : ''))
         document.getElementById('footer-placeholder').style = 'position: fixed; bottom: 0; z-index: 4400;'
     }
@@ -168,4 +170,14 @@ async function updateTheme() {
     }
 }
 
+async function updatePFPs() {
+    const settings = await new Promise(resolve =>
+            chrome.storage.local.get('settings', data => resolve(data.settings?.padEnd(8, "0") || "00000000"))
+        ) ?? "00000000";
+    if (settings[5] == '1') {
+        document.body.classList.toggle('make-circular');
+    }
+}
+
 updateTheme()
+updatePFPs()

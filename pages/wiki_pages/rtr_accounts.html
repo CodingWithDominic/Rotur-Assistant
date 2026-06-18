@@ -8,7 +8,7 @@
         <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
     </head>
     <body>
-        <div id="header-placeholder"></div>
+        <header id="header-placeholder"></header>
         <script src="../../header.js"></script>
         <div class="container">
             <div class="wiki-container">
@@ -17,7 +17,7 @@
                 <h2>Overview</h2>
                 <p>Rotur Accounts are accounts you use to interact with Rotur, its many services, and anything Rotur-based (such as Rotur Assistant!). A Rotur Account can have a username between 3 and 20 characters, only using alphanumeric symbols, dashes (-), and underscores (_). However, there are accounts that exist that don't follow these rules. By default, users can follow each other, friend each other, block each other using accounts, and even message each other through rmail and other communication services. Some people have more than one Rotur account, whether it's for namesniping, testing, or as a tie-in for any service they may be working on (example: The "<a href='../../lookup.html?user=bank'>bank</a>" account being used for orion's bank system). By default, each account comes with up to 5 MB of storage. This storage is upgradeable by <a href="subscription.html">subscribing</a>. This storage is most commonly used by <a href="origin.html">originOS</a>'s file system, but stuff like account keys also use this space.</p>
                 <h2>Account Keys</h2>
-                <p>Account keys are what Rotur and some services/systems use to keep track of data. For example, your username, pronouns, bio, UUID, or the amount of credits you have. You can also create any key you want with any value you want (except for creating sys. keys). While there is no limit to the number of keys you can have, key values are usually limited to 1,000 characters. Some keys, such as all sys. keys, are exempt from the 1,000 character limit. While most keys can be modified, some keys are read-only. The keys that are read-only are:</p>
+                <p>Account keys are what Rotur and some services/systems use to keep track of data. For example, your username, pronouns, bio, UUID, or the amount of credits you have. You can also create a key with any name you want (except for names starting with "sys." and some other reserved names) alongside any value you want. While there is no limit to the number of keys you can have, key values are usually limited to 1,000 characters, with the entire user object being limited to a maximum of 25,000 characters. Some keys, such as all the sys. keys, are exempt from the 1,000 character limit. While most keys can be modified without the help of Mistium or your system's owner, some keys are read-only. The keys that are read-only are:</p>
                 <ul>
                     <li>created</li>
                     <li>max_size</li>
@@ -26,7 +26,7 @@
                     <li>last_login</li>
                     <li>Any key beginning with "sys."</li>
                 </ul>
-                <p>As a consequence of sys. keys being read-only, sys. keys that are associated with abandoned, deprecated, or discontinued Rotur features, will continue taking up space in your Rotur account, effectively being dead weight. More info about this can be found on <a href="discontinued.html">Discontinued Features</a>. While your system's owner can modify most of your sys. keys for you, some keys can only be modified by Mistium herself. Those keys are:</p>
+                <p>As a consequence of sys. keys being read-only, sys. keys that are associated with abandoned, deprecated, or discontinued Rotur features will continue taking up space in your Rotur account, effectively being dead weight. More info about this can be found on <a href="discontinued.html">Discontinued Features</a>. While your system's owner can modify most of your sys. keys for you, some keys can only be modified by Mistium herself. Those keys are:</p>
                 <ul>
                     <li>username*</li>
                     <li>max_size</li>
@@ -39,14 +39,16 @@
                     <li>key</li>
                 </ul>
                 <p class="fineprint">Keys with a * next to it means you can modify this key yourself, but not your system's owner.</p>
-                <h2>Possible punishments</h2>
-                <p>If an account is seen breaking the TOS or committing other immoral acts, then that account may be banned, deleted, or warned/suspended. The possible punishments are:</p>
-                <h3>Account ban</h3>
-                <p>Mistium or your system's owner has the ability to ban your account. As of now, there is no way to unban an account once a ban has been issued. Because of this, an account ban is essentially the same as an account deletion, except that the username isn't freed up afterwards. This also means that all bans are effectively final, no matter what. This is most commonly used when an account has an inappropriate name, someone has too much fun with an alt account, or the account impersonates something like a company or nation name.</p>
-                <h3>Account deletion</h3>
-                <p>Mistium or your system's owner has the ability to delete your account. This is most often used when requested by the account holder of an account created for testing, or when someone decides to step away from the Rotur ecosystem. Before banning and the standing system was implemented, this was the only punishment an account could receive.</p>
-                <h3>Standing system</h3>
-                <p>For lighter offenses, such as TOS violations, an account may be "warned" or "suspended". A warn basically restricts some features, such as being able to claim daily credits or make claw posts, while a suspension restricts even more features, such as being able to claim Rotur gifts. The standing system has a "banned" tier; however, the other ban system (often done through !roturacc [name] ban by Mistium or system owners on Discord or OriginChats) is preferred. As of today, the standing system has not been seen in action yet. Unlike system owners being able to ban or delete Rotur accounts under their system, only Mistium has the power to modify standing statuses, regardless of system.</p>
+                <section id="accpunishments">
+                    <h2>Possible punishments</h2>
+                    <p>If an account is seen breaking the TOS or committing other immoral or questionable acts, then that account may be banned, deleted, or warned/suspended. The possible punishments are:</p>
+                    <h3>Account ban</h3>
+                    <p>Mistium or your system's owner has the ability to ban your account. As of now, there is no way to unban an account once a ban has been issued. Because of this, an account ban is essentially the same as an account deletion, except that the username isn't freed up afterwards. This also means that all bans are effectively final, no matter what. This is most commonly used when an account has an inappropriate name, someone has too much fun with an alt account, or the account impersonates something like a company or nation name.</p>
+                    <h3>Account deletion</h3>
+                    <p>Mistium or your system's owner has the ability to delete your account. This is most often used when requested by the account holder of an account created for testing, or when someone decides to step away from the Rotur ecosystem. Before banning and the standing system was implemented, this was the only punishment an account could receive.</p>
+                    <h3>Standing system</h3>
+                    <p>For lighter offenses, such as TOS violations, an account may be "warned" or "suspended". A warn basically restricts some features, such as being able to claim daily credits or make claw posts, while a suspension restricts even more features, such as being able to claim Rotur gifts. The standing system also has a "banned" tier; however, the other ban system (often done through !roturacc [name] ban by Mistium or system owners on Discord or OriginChats) is preferred. As of today, the standing system has not been seen in action yet. Unlike system owners being able to ban or delete Rotur accounts under their system, only Mistium has the power to modify standing statuses, regardless of system.</p>
+                </section>
                 <h2>Trivia</h2>
                 <p>There is a 1-character Rotur account for every letter in the alphabet, except for the letter 'u'.</p>
                 <p>Similarly, there is a 1-character Rotur account for each number, except '0'.</p>
@@ -54,7 +56,7 @@
                 <p>The highest number of alt accounts someone had was 215 accounts. For reference, that's more accounts than the number of fighters featured in Super Smash Bros. Ultimate (89), around two times over in fact! A lot of the accounts were company names (ex. Nintendo), random names (ex. doabarrelroll), nation names (ex. Germany), or names of notable users (ex. Cubester). All accounts were basically namesnipe accounts, with no bio, banner, or even PFP. All of them were eventually deleted since they were basically spam accounts.<br>Fun fact: "Dominic" was one of those 215 accounts, though some time after the account was deleted in the deletion wave, I decided to create "<a href="../lookup.html?user=Dominic">Dominic</a>" for myself, and have it be my new main (My former main was <a href="../lookup.html?user=OriginAndChill4">OriginAndChill4</a>). The same was true for the account <a href="../lookup.html?user=Dav">Dav</a>.</p>
             </div>
         </div>
-        <div id="footer-placeholder"></div>
+        <footer id="footer-placeholder"></footer>
         <script src="../../footer.js"></script>
     </body>
 </html>

@@ -8,12 +8,12 @@
         <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
     </head>
     <body>
-        <div id="header-placeholder"></div>
+        <header id="header-placeholder"></header>
         <script src="../header.js"></script>
         <div class="container">
             <h1>Key Manager (Account)</h1>
             <p id="keyfineprint">This page is for managing account keys. For the page that manages keys associated with purchases / subscriptions, see <a href="../pages/keymanager_eco.html">Key Manager (Economy)</a></p>
-            <hr>
+            <hr class="full-size">
             <div class="tabheader keystabheader">
                 <button id='maintab' class="tab">Main</button>
                 <button id='systab' class="tab">System</button>
@@ -67,7 +67,28 @@
             <div class="popup"></div>
         </div>
         <script type="module" src="../scripts/keys_acc.js"></script>
-        <div id="footer-placeholder"></div>
+        <footer id="footer-placeholder"></footer>
         <script src="../footer.js"></script>
+        <template id="keybodytemplate">
+            <li class="keyelement">
+                <ul class='keylistitem'>
+                    <li class='keylistname'>
+                        <h4 class="keynamelabel">Keyname</h4>
+                        <div class="keyactionbar">
+                            <button data-keyname="keyname" class="keynamecopy" title="Copy key name"><img src="../images/misc_icons/copy.png" width='16' height='16'> Name</button>
+                            <button data-keyname="keyname" class="keyvaluecopy" title="Copy key value"><img src="../images/misc_icons/copy.png" width='16' height='16'> Value</button>
+                            <button data-keyname="keyname" class="keysave" title="Save new key value"><img src='../images/misc_icons/save.png' width='20' height='20'></button>
+                            <button data-keyname="keyname" class="keydelete" title="Delete key"><img src='../images/misc_icons/delete.png' width='20' height='20'></button>
+                            <button data-keyname="keyname" class="keyview" title="Toggle key visibility" data-visible="false"><img src='../images/misc_icons/invisible.png' width='20' height='20'></button>
+                        </div>
+                    </li>
+                    <li class='keylistvalue'>
+                        <select name="system" id='modifier-keyname1' class='keymodifierbox'></select>
+                        <textarea id='modifier-keyname2' class='keymodifierbox' placeholder='Edit Key Value...'>Bio</textarea>               
+                        <input type='text' id='modifier-keyname3' class='keymodifierbox' value='Key Value' placeholder='Edit Key Value...'>
+                    </li>
+                </ul>
+            </li>
+        </template>
     </body>
 </html>

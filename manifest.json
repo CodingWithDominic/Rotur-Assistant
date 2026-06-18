@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Rotur Assistant",
-    "version": "1.1",
+    "version": "1.2",
     "description": "Manage and keep up with most of your Rotur things in one place. Anywhere on the web, anytime.",
     "browser_specific_settings": {
         "gecko": {
@@ -20,15 +20,10 @@
         "clipboardRead",
         "notifications",
         "alarms",
-        "declarativeNetRequest"
+        "declarativeNetRequest",
+        "sidePanel"
     ],
-    "declarative_net_request": {
-        "rule_resources": [{
-        "id": "ruleset_1",
-        "enabled": false,
-        "path": "rules.json"
-    }]
-    },
+    "side_panel": { "default_path": "index.html" },
     "host_permissions": ["https://*.mistium.com/*", "https://*.rotur.dev/*", "https://graphite.flufi.uk/*", "https://adthoughtsglobal.github.io/*", "https://runnova.github.io/*", "https://warpdrive.team/*", "https://antiviiris.github.io/originChats/*"],
     "content_scripts": [
     {
@@ -43,6 +38,7 @@
     },
     "action": {
         "default_popup": "index.html",
+        "default_title": "Rotur Assistant",
         "default_icon": {
         "16": "images/icon16.png",
         "32": "images/icon32.png",

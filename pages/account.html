@@ -8,26 +8,352 @@
         <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
     </head>
     <body>
-        <div id="header-placeholder"></div>
+        <header id="header-placeholder"></header>
         <script src="../header.js"></script>
         <div class="container">
-            <div id="lookupplaceholder"></div>
-            <script type="module" src="../scripts/profile.js"></script>
-        </div>
-        <div class="overlay" id="overlay">
-            <div class="popup">
-                <div id="popup-header">
-                    <h1>Private Profile</h1>
-                    <button id="popup-x" class="closebtn">✕</button>
+            <h2 id="profileloadingscreen">Loading...</h2>
+            <div id="lookupplaceholder" style="display: none;">
+                <div class='userbanner'>
+                    <img class='userbanneredit' id='userbannerimg' src="https://avatars.rotur.dev/.banners/name" alt="name's Banner">
+                    <button id='changebannerbtn' title="Shift-click to paste image instead">Change... (-10 RC)</button>
                 </div>
-                <h2>This user's private setting is set to "true". View anyways?</h2>
-                <div id="popup-choices">
-                    <button id="cancel" class="closebtn">No</button>
-                    <button id="viewanyway">Yes</button>
+                <input type="file" id="changebannerfilebtn" accept="image/*" style="display: none;">
+                <div class='useravatar'>
+                    <img class='useravataredit' id='useravatarimg' src="https://avatars.rotur.dev/.template" alt="Template's Avatar">
+                    <img class='useravataroverlay' src="https://avatars.rotur.dev/.overlay/.template" alt="Template's Avatar Decoration">
+                    <div class="statusicon"></div>
+                    <button id='changeavatarbtn' title="Shift-click to paste image instead">Change...</button>
+                </div>
+                <input type="file" id="changeavatarfilebtn" accept="image/*" style="display: none;">
+                <div class="userinfoedit">
+                    <button id='toggleprofileview' title="Profile View (Changes will not be saved)"><img src='../images/misc_icons/usericon.png' width=24 height=24></button>
+                    <button id='profilereloadedit' title="Refresh Profile">⟳</button>
+                    <div id='editusername'>
+                        <label for='usernamebox'>Name: </label>
+                        <input type='text' class='profileeditinput' id='usernamebox' value='Template' placeholder='Username'>
+                        <button class='profilesavebtn' title='Save Username' id='savename'><img src='../images/misc_icons/save.png' width=24 height=24></button>
+                    </div>
+                    <div id='editpronouns'>
+                        <label for='pronounsbox'>Pronouns: </label>
+                        <input type='text' class='profileeditinput' id='pronounsbox' value='' placeholder='Pronouns'>
+                        <button class='profilesavebtn' title='Save Pronouns' id='savepronouns'><img src='../images/misc_icons/save.png' width=24 height=24></button>
+                    </div>
+                    <div id="pronounsandbadges">
+                        <label for='badges' class='badgelabel'>Badges: <ul id="badges"></ul></label>
+                    </div>
+                    <div id='editbio'>
+                        <label for='biobox'>Bio: </label>
+                        <textarea id='biobox' placeholder='Bio'></textarea>
+                        <button title='Save Bio' id='savebio'><img src='../images/misc_icons/save.png' width=24 height=24> Save Bio</button>
+                        <p id="profilebiocharlimit" style="color: white;">0/200</p>
+                    </div>
+                    <div id="editstatus">
+                        <label for='statusselector' id="statusselectorlabel">Status: 
+                            <select id="statusselector">
+                                <option value="online">Online</option>
+                                <option value="idle">Idle</option>
+                                <option value="dnd">Do Not Disturb (DnD)</option>
+                                <option value="invisible">Invisible (Offline)</option>
+                            </select>
+                        </label>
+                        <input type="text" id="statustextbox" placeholder="Status text...">
+                        <button title='Save Status' id='savestatus'><img src='../images/misc_icons/save.png' width=24 height=24> Save Status</button>
+                    </div>
+                </div>
+                <div class="userinfoedit2">
+                    <p class="joindate">Member since: 1/1/1970</p>
+                    <hr class="dotted_separator">
+                    <div class='editwidgets'>
+                        <div class='editdisplayname'>
+                            <label for='displaynamebox'>Display Name¹: </label>
+                            <input type='text' class='profileeditinput' id='displaynamebox' value='' placeholder='Display Name'>
+                            <button class='profilesavebtn' title='Save Display Name' id='savedisplayname'><img src='../images/misc_icons/save.png' width=24 height=24></button>
+                        </div>
+                        <div class='editemail'>
+                            <label for='emailbox'>E-mail: </label>
+                            <input type='text' class='profileeditinput' id='emailbox' value='' placeholder='E-mail' autocomplete="email">
+                            <button class='profilesavebtn' title='Save E-mail' id='saveemail'><img src='../images/misc_icons/save.png' width=24 height=24></button>
+                        </div>
+                        <div class='editphone'>
+                            <label for='phonebox'>Phone #¹: </label>
+                            <input type='text' class='profileeditinput' id='phonebox' value='' placeholder='Phone'>
+                            <button class='profilesavebtn' title='Save Phone' id='savephone'><img src='../images/misc_icons/save.png' width=24 height=24></button>
+                        </div>
+                        <div class='systemsedit'>
+                            <label for='profileselectsystem'>System: </label>
+                            <select class='systemoptions' id='profileselectsystem'>
+                                <option>Rotur Assistant</option>
+                            </select>
+                            <button class='profilesavebtn' title='Save System' id='savesystem'><img src='../images/misc_icons/save.png' width=24 height=24></button>
+                        </div>
+                        <div class='privateacc'>
+                            <input type='checkbox' id='privateacc'>
+                            <label for='privateacc'>Private Account²</label>
+                            <button class='profilesavebtn' title='Save Private Status' id='saveprivate'><img src='../images/misc_icons/save.png' width=24 height=24></button>
+                        </div>
+                        <div class='saveallbtncontainer'>
+                            <button id='profilesaveall' title='Save All'><img src='../images/misc_icons/save.png' width=24 height=24> Save All</button>
+                        </div>
+                        <p class=profilefineprint>¹Display Name and Phone are unused so far. These fields mainly exist here for parity with https://rotur.dev/me/</p>
+                        <p class=profilefineprint>²Setting your account to private does not stop any information, such as your balance, from being truly private, as it will still be available in the API.</p>
+                    </div>
+                    <ul id="morebasicinfo">
+                        <li>
+                            <h3 class="infolabel">Balance</h3>
+                            <p class='supplementaryinfo' id="balanceinfo">0</p>
+                        </li>
+                        <li>
+                            <h3 class="infolabel">System</h3>
+                            <p class='supplementaryinfo' id="systeminfo">Rotur Assistant</p>
+                        </li>
+                        <li>
+                            <h3 class="infolabel">Subscription</h3>
+                            <p class='supplementaryinfo' id="subinfo">Free</p>
+                        </li>
+                    </ul>
+                    <ul id="evenmorebasicinfo">
+                        <li>
+                            <h3 class="infolabel">Account Index</h3>
+                            <p class='supplementaryinfo' id="accidx">2026</p>
+                        </li>
+                        <li>
+                            <h3 class="infolabel">Group Tag</h3>
+                            <p class='supplementaryinfo' id="grouptagstatus">None</p>
+                        </li>
+                        <li>
+                            <h3 class="infolabel">Standing</h3>
+                            <p class='supplementaryinfo' id="standingstatus">Good</p>
+                        </li>
+                    </ul>
+                    <h3 class="infolabel">Rotur UUID</h3>
+                    <p class='supplementaryinfo' id="roturuuidinfo">1234wjfowe-fej53ioe-fe54op-few8</p>
+                    <div id="discordidcontainer">
+                        <hr>
+                        <h3 class="infolabel">Discord ID</h3>
+                        <p class='supplementaryinfo' id="discordidinfo">1234567887656432</p>
+                    </div>
+                    <hr>
+                </div>
+                <div class="userinfo3">
+                    <details class="followingpanel">
+                        <summary id='overlayssummary'>Overlays (0)</summary>
+                        <ul id="profileoverlays"><li><h2>You don't own any overlays yet!</h2></li></ul>
+                    </details>
+                    <hr>
+                    <details class="followingpanel">
+                        <summary id='friendssummary'>Friends (0)</summary>
+                        <ul class='followuserlist' id="friendslist"><li><h2>You have not befriended any users yet.</h2></li></ul>
+                    </details>
+                    <hr class="dotted_separator">
+                    <details class="followingpanel">
+                        <summary id='requestssummary'>Incoming Requests (0)</summary>
+                        <ul class='followuserlist' id="requestslist"><li><h2>You have no incoming friend requests.</h2></li></ul>
+                    </details>
+                    <hr class="dotted_separator">
+                    <details class="followingpanel">
+                        <summary id='outgoingsummary'>Outgoing Requests (0)</summary>
+                        <ul class='followuserlist' id="outgoinglist"><li><h2>You have no outgoing friend requests.</h2></li></ul>
+                    </details>
+                    <hr class="dotted_separator">
+                    <details class="followingpanel">
+                        <summary id='followingsummary'>Following (0)</summary>
+                        <ul class='followuserlist' id="followinglist"><li><h2>You have not followed any users yet.</h2></li></ul>
+                    </details>
+                    <hr class="dotted_separator">
+                    <details class="followingpanel">
+                        <summary id='followerssummary'>Followers (0)</summary>
+                        <ul class='followuserlist' id="followerslist"><li><h2>You have no followers yet.</h2></li></ul>
+                    </details>
+                    <hr class="dotted_separator">
+                    <details class="followingpanel">
+                        <summary id='blockedsummary'>Blocked (0)</summary>
+                        <ul class='followuserlist' id="blockedlist"><li><h2>You have not blocked any users yet.</h2></li></ul>
+                    </details>
+                    <hr>
+                    <details id="userclawposts">
+                        <summary id='clawpostssummary'>Claw Posts (0)</summary>
+                        <ul id="clawpostslist"><h2>You have not created any claw posts yet.</h2></ul>
+                    </details>
+                    <hr class="dotted_separator">
+                    <details id="useritems">
+                        <summary id="useritemssummary">Items (0)</summary>
+                        <ul class="roturuseritemlist" id="profileitemlist"><h2>You do not own any items yet.</h2></ul>
+                    </details>
+                    <hr class="dotted_separator">
+                    <details id="economicstats">
+                        <summary>Economic Info</summary>
+                        <div id="economicplaceholder"></div>
+                    </details>
+                    <hr>
+                    <details id="loginhistory">
+                        <summary id="recentloginssummary">Recent Logins</summary>
+                        <h3 class="loginstats" title="This number increases every time the /get_user endpoint is called on your behalf. If your number is high, it's likely because some platforms that you use, such as this one, call that endpoint very frequently, since it's the most reliable way of fetching your user data, and unlike the /profile endpoint, is not prone to rate-limits.">You have "logged in" a total of ???? times</h3>
+                        <ul id="loginsplaceholder"></ul>
+                    </details>
+                    <hr class="dotted_separator">
+                    <details id="blacklisted_ips">
+                        <summary id="blacklisted_ips_summary">Blocked IPs (0)</summary>
+                        <details class="ip_disclaimer">
+                            <summary>Disclaimer</summary>
+                            <p>Make sure you don't accidentally add your own IP address to this list. The developers of Rotur Assistant won't be responsible if you get locked out of your account because of it.<br><br>Furthermore, if your account details have been compromised (example: someone has your password or account token), then it is recommended to instead change your password and/or refresh your token in the section below this one, rather than relying on this. It is easy to get around blocked IPs using a VPN, if the hacker knows what they are doing. Long-story short: IP blocking is a band-aid solution at best when dealing with hackers.</p>
+                            <hr>
+                        </details>
+                        <ul id="blacklistedipslist">
+                            <h2>You have not blocked any IPs yet.</h2>
+                        </ul>
+                        <form class="blockipfield">
+                            <input type="text" placeholder="Enter IP Address..." id="iptoblock">
+                            <button id="blockipbtn">+</button>
+                        </form>
+                    </details>
+                    <hr style="margin-bottom: 0;">
+                    <details id="dangerousoptionscontainer" style="margin-top: 0; padding-top: 5px;">
+                        <summary>Danger Zone</summary>
+                        <p class='dangerzonefineprint'>Make sure you absolutely know what you're doing when messing with these settings. The developers of Rotur Assistant won't be responsible for loss of access to your account, or even worse: Account deletion.</p>
+                        <button id='changepass'><img src='../images/misc_icons/switch.png' width=24 height=24>&MediumSpace;Change Password</button>
+                        <button id='copytoken'><img src='../images/misc_icons/copy.png' width=24 height=24>Copy Account Token</button>
+                        <button id='accrefreshtoken'>⟳ Refresh Account Token</button>
+                        <button id='deleteacc_verydangerous'><img src='../images/misc_icons/delete.png' width=24 height=24>Delete Account</button>
+                    </details>
                 </div>
             </div>
         </div>
-        <div id="footer-placeholder"></div>
+        <div class="overlay" id="overlay">
+            <div class="popup"></div>
+        </div>
+        <script type="module" src="../scripts/profile.js"></script>
+        <footer id="footer-placeholder"></footer>
         <script src="../footer.js"></script>
+        <template id="listusertemplate">
+            <li class='listuser' data-user='user'>
+                <a href='../pages/lookup.html?user=user'>
+                    <img src='https://avatars.rotur.dev/user' alt='user' width='40' height='40'>
+                    <p>User</p>
+                    <button class='profileeditremoveuser' title="Remove" data-user="Name" data-action='action'>✕</button>
+                </a>
+            </li>
+        </template>
+        <template id="friendrequestbuttons">
+            <div class='profilerequestactions'>
+                <button class='profileacceptreq' title="Accept Friend Request" data-user="user" data-action='acceptreq'>✓</button>
+                <button class='profiledeclinereq' title="Decline Friend Request" data-user="user" data-action='declinereq'>✕</button>
+            </div>
+        </template>
+        <template id="clawposttemplate">
+            <li id="post-postid" class="clawpostbody">
+                <span class="pinnedpostlabel"><img src='../images/misc_icons/pin.png' width='12' height='12'> Pinned</span>
+                <div class='postauthor'>
+                    <a href='../pages/lookup.html?user=user'>
+                        <img class='clawpfp' src='user' href='../pages/lookup.html?user=user' alt='user' width='32' height='32'>
+                        <h2 class="clawpostauthortitle">User</h2>
+                    </a>
+                    <div class="clawpostactionbar">
+                        <button class='repostbtn' title="Repost Post" data-postid='postid'><img src='../images/misc_icons/repost.png' width='24' height='24'></button>
+                        <button class='pinbtn' title="Pin Post" data-postid='postid'><img src='../images/misc_icons/pin.png' width='24' height='24'></button>
+                        <button class='deletebtn' title="Delete Post" data-postid='postid'><img src='../images/misc_icons/delete.png' width='24' height='24'></button>
+                    </div>
+                </div>
+                <p class='postcontent'>Hello, claw!</p>
+                <img class='clawattachment' src=''>
+                <p class='postmetadata'>Posted from Rotur Assistant on 1/1/1970</p>
+                <div class='feedbackbar'>
+                    <button class='likebutton' data-postid='postid'>Like</button>
+                    <button class='viewlikes' data-postid='postid'>View Likes</button>
+                    <button class='copypostid' data-postid='postid'>Copy Post ID</button>
+                </div>
+                <details class='repliesbtn' data-postid='postid'>
+                <summary class='replydropdownlabel'>View Replies (0)</summary>
+                    <div class='repliesplaceholder'>
+                        <ul class='reply' id='replies-postid'></ul>
+                    </div>
+                    <div class='replyboxplaceholder'>
+                        <textarea class='replybox' data-postid='postid' placeholder='Add a reply for User' name='userclawpostreplybox'></textarea>
+                        <p class="postcharlimit" id="limit-id">0/300</p>
+                        <button class='sendreply' data-postid='postid'>Send</button>
+                        <h2>Sign in to add a reply</h2>
+                    </div>
+                    <div class='replyerrorplaceholder'></div>
+                </details>
+            </li>
+        </template>
+        <template id="clawreplytemplate">
+            <li>
+                <div class='postauthor'>
+                    <a href='../pages/lookup.html?user=User'>
+                        <img class='clawpfp' src='https://avatars.rotur.dev/User' alt='User' width='32' height='32'>
+                        <h2 class="clawreplyauthor"></h2>
+                    </a>
+                    <button class='copypostid' data-postid='replyid'>Copy Reply ID</button>
+                </div>
+                <p class='postcontent'>Hello User!</p>
+                <img class='clawattachment' src=''>
+                <p class='postmetadata'>Posted on 1/1/1970</p>
+            </li>
+        </template>
+        <template id="roturitemtemplate">
+            <li class='roturitem' id='roturitem_rotur_item'>
+                <h2>Rotur Item</h2>
+                <p class='roturitemauthor'>Creator: <img src='https://avatars.rotur.dev/author' width=20 height=20> author | Current Owner: <img src='https://avatars.rotur.dev/owner' width=20 height=20> owner </p>
+                <p class="roturitemdesc">itemdesc</p>
+                <ul class='itemmetadatar1'>
+                    <li>
+                        <h3>Price</h3>
+                        <p class="roturitemprice">1 RC</p>
+                    </li>
+                    <li>
+                        <h3>Purchaseable</h3>
+                        <p class='isitempurchaseable'>Yes</p>
+                    </li>
+                </ul>
+                <ul class='itemmetadatar2'>
+                    <li>
+                        <h3>Created</h3>
+                        <p class="roturitemcreationdate">1/1/1970</p>
+                    </li>
+                    <li>
+                        <h3>Total Revenue</h3>
+                        <p class="roturitemtotalrevenue">0</p>
+                    </li>
+                </ul>
+                <details class='itemtransferhistory'>
+                    <summary>Transfer History</summary>
+                    <ul class='transferhistory'></ul>
+                </details>
+            </li>
+        </template>
+        <template id="iptemplate">
+            <li class='listip' data-ip='ip'>
+                <p>000.000.000.000</p>
+                <button class='profileeditremoveip' title="Remove IP Address" data-ip="ip">✕</button>
+            </li>
+        </template>
+        <template id="loginhistorycard">
+            <li>
+                <h2 id="logindate">1/1/1970</h2>
+                <p id="loginorigin">Origin: Unknown</p>
+                <p id="logindevice">Device: Desktop</p>
+                <p id="loginagent">User Agent: Mizilla/Chrome/Whatnot</p>
+                <p id="loginhash">IP (Hashed): 123</p>
+                <p id="logincountry">Country: US</p>
+                <p id="loginsrc">Message: Successful login</p>
+            </li>
+        </template>
+        <template id="overlaytemplate">
+            <li class='cosmeticitem' id="cosmetic.id">
+                <div class='overlaycontainer'>
+                    <img src="user_url" alt="User" class='useravataroverlaypreview' width='90' height='90'>
+                    <img src="https://avatars.rotur.dev/.template" alt=".template" class="overlaytemplatepreview" width='90' height='90'>
+                    <img src="cosmeticurl" alt="cosmeticname" width='108' height='108' class='shopoverlayimg'>
+                </div>
+                <h3 class="overlayname">Cosmetic Name</h3>
+                <p class="overlaytype">Overlay</p>
+                <p class="overlaycreator">By: <img class='creatorpfp' src='https://avatars.rotur.dev/${cosmetic.creator}' alt='${cosmetic.creator}' width='16' height='16'> Creator</p>
+                <div class='cosmeticbuybar'>
+                    <button class='buyoverlay' data-cosmeticid='${sanitize(cosmetic.id)}'>Buy</button>
+                    <button class='equipoverlay' data-cosmeticid='${sanitize(cosmetic.id)}'>Equip</button>
+                    <button class='viewoverlayinfo' data-cosmeticid='${sanitize(cosmetic.id)}'>&#9432;</button>
+                </div>
+            </li>
+        </template>
     </body>
 </html>

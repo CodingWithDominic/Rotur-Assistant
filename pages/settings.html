@@ -8,11 +8,12 @@
         <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
     </head>
     <body>
-        <div id="header-placeholder"></div>
+        <header id="header-placeholder"></header>
         <script src="../header.js"></script>
         <div class="container">
             <h1>Settings</h1>
             <p>Customize your Rotur Assistant experience</p>
+            <hr class="full-size">
             <div class="tabheader">
                 <button id='settingsgentab' class="tab">General</button>
                 <button id='settingsthemetab' class="tab">Themes</button>
@@ -41,10 +42,68 @@
                         <input type="checkbox" id="24h">
                         Use 24-hour time
                     </label>
+                    <label title="Toggles circular PFPs across Rotur Assistant, providing parity with a lot of other Rotur services">
+                        <input type="checkbox" id="circular">
+                        Use circular PFPs
+                    </label>
+                    <label title="This will only affect the circular status icon in the bottom-right corner of PFPs. Status text (if any) will not be affected.">
+                        <input type="checkbox" id="showstatusicons">
+                        Don't show status icons on profiles
+                    </label>
+                    <label id="preferredcdnlabel">
+                        Preferred CDN:
+                        <select id="preferredcdnoptions">
+                            <option name='cdnoption' value="roturcdn">RoturCDN</option>
+                            <option name='cdnoption' value="fluficdn">Flufi's CDN*</option>
+                            <option name='cdnoption' value="mistiums3">Mistium's S3</option>
+                            <!-- The API for this became a lot more locked down before 1.2 hit production
+                            <option name='cdnoption' value="roturphotos">Rotur Photos**</option>
+                            -->
+                        </select>
+                    </label>
+                    <p class="fineprint" id='fluficdnwarning' style="display: none; text-align: left;">*GIFs and transparent images may not work with this CDN (this CDN converts all uploaded images to jpegs).</p>
+                    <p class="fineprint" id='roturphotoswarning' style="display: none; text-align: left;">**Unlike all the other CDNs listed, Rotur Photos has a limited capacity of 10 MB across all photos you upload to it. The developer of Rotur Assistant would recommend only using this as a last resort if none of the other listed CDNs aren't working.</p>
                 </div>
+                <hr class="full-size">
+                <form id="popupsidebaroptions" title="These settings will apply next time you open Rotur Assistant">
+                    <h3 style="text-align: left;">Open Rotur Assistant as:</h3>
+                    <label>
+                        <input type="radio" name="ra_displayoption" value="popup">
+                        Pop-up
+                    </label>
+                    <label>
+                        <input type="radio" name="ra_displayoption" value="sidebar">
+                        Sidebar
+                    </label>
+                </form>
+                <hr class="full-size">
+                <h3 style="text-align: left;">Customize App Layout</h3> <!-- You're welcome, DarkDot. I'll probably improve this in a later update. -->
+                <label class="approwlabel">
+                    Apps per row:
+                    <input id="approwinput" type="range" min="2" max="4" value="3">
+                    <span id="approwlabel">3</span>
+                </label>
+                <span style="text-align: left;">This applies on both the home page and the wiki page</span>
+                <hr class="full-size dotted_separator">
+                <label for="showcategories" title="The settings app itself will be exempt from this setting, so that you can easily reconfigure this later. Header and footer navigation won't be affected." style="text-align: left;">Show apps from these categories:</label>
+                <form id="showcategories" title="The settings app itself will be exempt from this setting, so that you can easily reconfigure this later. Header and footer navigation won't be affected.">
+                    <label>
+                        <input type="checkbox" name="appcategorysetting" id="showutils" checked>
+                        Utility Apps
+                    </label>
+                    <label>
+                        <input type="checkbox" name="appcategorysetting" id="showsocial" checked>
+                        Social Apps
+                    </label>
+                    <label>
+                        <input type="checkbox" name="appcategorysetting" id="showmisc" checked>
+                        Miscellaneous Apps
+                    </label>
+                </form>
+                <hr class="full-size">
+                <button id="clearcache">Clear Cache</button>
             </div>
             <div id="themessect" style="display: none;">
-                <h2>Themes</h2>
                 <h3>Select which theme you want to display across Rotur Assistant.</h3>
                 <form id="themepicker">
                     <label>
@@ -85,13 +144,11 @@
                 </form>
             </div>
             <div id="notemanager" style="display: none;">
-                <h2>Manage User Notes</h2>
-                <p>Manage user notes here. Only you can see user notes. To get around needing a Rotur subscription, Rotur Assistant uses its own notes system, stored in the extension's sync storage.</p>
-                <hr>
+                <p>Manage user notes here. Only you can see user notes. To get around needing a Rotur subscription, Rotur Assistant uses its own notes system, stored in the extension's sync storage. Unlike Rotur's notes, you are also not limited to friends either.</p>
+                <hr class="full-size">
                 <ul id="usernotelist">
                     <li><h3>Loading Notes...</h3></li>
                 </ul>
-                <hr>
                 <div id="createnotesect">
                     <h3>Create Note</h3>
                     <input type="text" id="createusernoteuser" placeholder="Username">
@@ -106,7 +163,25 @@
             <div class="popup"></div>
         </div>
         <script type="module" src="../scripts/settings.js"></script>
-        <div id="footer-placeholder"></div>
+        <footer id="footer-placeholder"></footer>
         <script src="../footer.js"></script>
+        <template id="notecardtemplate">
+            <li id="notepanel-user">
+                <ul>
+                    <li>
+                        <div class='notemanuserbar' data-user='user'>
+                            <img src='https://avatars.rotur.dev/user' alt='user' width='32' height='32'>
+                            <h3>User</h3>
+                        </div>
+                        <button class='notemansavebtn' data-user='user'><img src='../images/misc_icons/save.png' width=24 height=24> Save Note</button>
+                        <button class='notemandelbtn' data-user='user'><img src='../images/misc_icons/delete.png' width=24 height=24> Delete Note</button>
+                    </li>
+                    <li>
+                        <textarea id='noteman-user' class='notemantextbox' placeholder='Edit User Note...' data-user='user'>Note</textarea>
+                        <p class='notemancharlimit' id="limit-user">0/300</p>
+                    </li>
+                </ul>
+            </li>            
+        </template>
     </body>
 </html>

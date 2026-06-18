@@ -8,7 +8,7 @@
         <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
     </head>
     <body>
-        <div id="header-placeholder"></div>
+        <header id="header-placeholder"></header>
         <script src="../header.js"></script>
         <div class="container">
             <div id="wallet-container">
@@ -17,21 +17,25 @@
                     <h2>Active Account Balance: ...</h2>
                     <h2 id="totalsumofaccs">Total Balance (Sum of all accounts): ...</h2>
                 </div>
-                <button id="dailyclaim">Claim Daily Credit</button>
-                <div id="claimcountdown"></div>
-                <div id="claimstatusplaceholder"></div>
-                <label id="dailycreditnotifsect">
-                    <input type="checkbox" id="dailycreditnotif">
-                    Send notification when daily credit becomes available
-                </label>
+                <div id="dailyclaimwindow">
+                    <button id="dailyclaim" disabled>Claim Daily Credit</button>
+                    <div id="claimcountdown"></div>
+                    <div id="claimstatusplaceholder"></div>
+                    <label id="dailycreditnotifsect">
+                        <input type="checkbox" id="dailycreditnotif">
+                        Send notification when daily credit becomes available
+                    </label>
+                </div>
                 <div id="claimfineprint"></div>
+                <hr class="full-size" style="margin-bottom: 0;">
                 <div class="tabheader">
                     <button id='transfertab' class="tab">Transfer</button>
                     <button id='historytab' class="tab">History</button>
                     <button id='statstab' class="tab">Stats</button>
+                    <button id='breakdowntab' class="tab">Breakdown</button>
                 </div>
                 <div id="transferwindow">
-                    <label>Make transfer</label>
+                    <h2>Make transfer</h2>
                     <div id="transfersubwindow">
                         <input type="text" id="transferuser" placeholder="Username">
                         <input type="number" step=0.01 id="amount" placeholder="Amount">
@@ -48,6 +52,25 @@
                 <div id="statspanel" style="display: none;">
                     <button id="statsreload" title="Refresh Statistics">⟳</button>
                     <div id="statslist"></div>
+                </div>
+                <div id="breakdownwindow" style="display: none;">
+                    <div id="breakdownoptions" style="display: none;">
+                        <label for="sortbreakdown">Sort by: 
+                            <select id="sortbreakdown">
+                                <option value="roster" selected>Account Roster Order</option>
+                                <option value="roster-r">Account Roster Order (Reversed)</option>
+                                <option value="highest">Balance: Highest to Lowest</option>
+                                <option value="lowest">Balance: Lowest to Highest</option>
+                            </select>
+                        </label>
+                        <label for="excludenobals">
+                            <input id='excludenobals' type="checkbox">
+                            Don't show accounts with a balance of 0
+                        </label>
+                    </div>
+                    <ul id="accountsbysum">
+                        <h3>Calculating...</h3>
+                    </ul>
                 </div>
                 <script type="module" src="../scripts/wallet.js"></script>
             </div>
@@ -67,7 +90,30 @@
                 </div>
             </div>
         </div>
-        <div id="footer-placeholder"></div>
+        <footer id="footer-placeholder"></footer>
         <script src="../footer.js"></script>
+        <template id="transactiontemplate">
+            <li>
+                <div class='transactionentry'>
+                    <a class='transactionhrefimg' href='../pages/lookup.html?user=user'><img src='https://avatars.rotur.dev/user' alt='user'></a>
+                    <h1>${type}</h1>
+                </div>
+                <p class="transferuserlabel">User involved: <a class="transferuserhref" href='../pages/lookup.html?user=${user_avatar}'>${user_name}</a></p>
+                <p class="amtinvolved">Amount involved: 1</p>
+                <p class="potentialnote">With Note: Hi</p>
+                <p class="newtotal">New Total: 2</p>
+                <p class="transactiondate">Date: 1/1/1970</p>
+            </li>
+        </template>
+        <template id="breakdownusertemplate">
+            <li>
+                <img src="https://avatars.rotur.dev/User" alt="user" width="40" height="40">
+                <h4>User</h4>
+                <div>
+                    <hr>
+                    <p>Balance: 0</p>
+                </div>
+            </li>
+        </template>
     </body>
 </html>

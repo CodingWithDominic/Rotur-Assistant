@@ -1,8 +1,14 @@
-import { sanitize, parseHTML, formatDate, openErrorPopup, openSuccessPopup } from "../index.js"
+import { sanitize, formatDate, openErrorPopup, openSuccessPopup, MiniError } from "../index.js"
 
 function desanitize(string) {
     return string.replaceAll('&sol;','/').replaceAll('&lt;', '<').replaceAll('&gt;', '>').replaceAll('&lpar;', '(').replaceAll('&rpar;', ')').replaceAll("&equals;", "=").replaceAll(`&quot;`, `"`).replaceAll(`&#39;`, `'`).replaceAll('&amp;', '&') // Used for handling items since Rotur decided to use the direct item names as the IDs instead.
 }
+
+const config = {
+    elements: ['p', 'img', 'div', 'h1', 'h2', 'h3', 'h4', 'button', 'ul', 'li', 'select', 'option', 'input', 'hr', 'a', 'label'],
+    attributes: ['src', 'alt', 'href', 'width', 'height', 'id', 'class', 'data', 'value', 'title', 'disabled', 'type', 'placeholder', 'step']
+}
+const sanitizer = new Sanitizer(config)
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -13,33 +19,50 @@ function updatebuttonstates(tf) {
 }
 
 const activeacc = await new Promise(resolve =>
-    chrome.storage.local.get('activeacc', data => resolve(data.activeacc || []))
-) ?? [];
+    chrome.storage.local.get('activeacc', data => resolve(data.activeacc || {}))
+) ?? {};
+
+const legacynotifs = await new Promise(resolve =>
+    chrome.storage.local.get('legacynotifs', data => resolve(data.legacynotifs || false))
+) ?? false;
 
 const flagged = await new Promise(resolve =>
     chrome.storage.local.get('flagged', data => resolve(data.flagged || []))
 ) ?? [];
 
+const type_lookup = {
+    reply: 'Someone replied to your claw post',
+    follow: 'You gained a new follower!',
+    item_purchased: 'You bought an item',
+    item_sold: 'Someone bought your item!',
+    notification: 'Non-legacy Notification',
+    item_received: 'Someone gave you an item',
+    repost: "Someone reposted your claw post!"
+}
+
 if (!activeacc.uuid) {
-    document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(
+    document.getElementsByClassName('container')[0].setHTML(
         `<h1>Notifications</h1>
         <p>Notifications that you may have received across different Rotur services.</p>
         <hr>
-        <h3>You are not signed in! Please head over to the account manager to add an account first.</h3>`
-    ))
+        <h3>You are not signed in! Please head over to the account manager to add an account first.</h3>`,
+        {sanitizer: sanitizer}
+    )
 }
 if (flagged.includes(activeacc.uuid)) {
-    document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('container')[0].setHTML(`
         <h1>Notifications</h1>
         <p>Notifications that you may have received across different Rotur services.</p>
         <hr>
         <h3>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h3>
-    `))
+    `, {sanitizer: sanitizer})
 }
+
+document.getElementById('legacynotifs').checked = legacynotifs
 
 function openDeleteUserPopup(user, source) {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Remove User</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -53,12 +76,12 @@ function openDeleteUserPopup(user, source) {
             <input type='checkbox' id='globalremoveuser'>
             Remove ${user} from all sources
         </label>
-    `))
+    `, {sanitizer: sanitizer})
 }
 
 function openDeleteSourcePopup(source) {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Delete Source</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -68,11 +91,11 @@ function openDeleteSourcePopup(source) {
             <button id="cancel" class="closebtn">Cancel</button>
             <button class="finaldeletesource" data-source='${sanitize(source)}'>Delete</button>
         </div>
-    `))
+    `, {sanitizer: sanitizer})
 }
 function openDeleteEndpointPopup(endpoint) {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Delete Endpoint</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -82,7 +105,7 @@ function openDeleteEndpointPopup(endpoint) {
             <button id="cancel" class="closebtn">Cancel</button>
             <button class="finaldeleteendpoint" data-endpoint='${sanitize(endpoint)}'>Delete</button>
         </div>
-    `))
+    `, {sanitizer: sanitizer})
 }
 
 function closePopup() {
@@ -93,62 +116,183 @@ let notifications_cache = ''
 let senders_cache = ''
 let endpoints_cache = ''
 
+function appendSenders(data, src) {
+    const sender_html = []
+    let idx = 0
+    data.forEach(sender => {
+        sender_html.push(CreateSenderElement(data[idx], src))
+        idx += 1
+    })
+    if (sender_html == '') {
+        const li = document.createElement('li')
+        const h4 = document.createElement('h4')
+        h4.textContent = "There are no permitted users under this source"
+        li.appendChild(h4)
+        sender_html.push(li)
+    }
+    return sender_html
+}
+
+function CreateSenderElement(data, src, nameoverride) {
+    const username = (((data && data.username) ? data.username : nameoverride) ?? "Spectator")
+    const sender = document.getElementById('notifusertemplate').content.cloneNode(true)
+    sender.querySelector('li').id = `sender-${username.replaceAll(' ', '#')}`
+    sender.querySelector('a').href = `lookup.html?user=${username}`
+    sender.querySelector('img').src = `https://avatars.rotur.dev/${username}`
+    sender.querySelector('img').alt = username
+    sender.querySelector('h4').textContent = username
+    sender.querySelector('p').textContent = `Notification Count: ${(data ? data.count : 0) ?? 0}`
+    sender.querySelector('button').dataset.user = username
+    sender.querySelector('button').dataset.src = src
+    return sender;
+}
+
+function CreateSourceElement(data) {
+    const source = document.getElementById('notifsourcetemplate').content.cloneNode(true)
+    source.querySelector('li').id = `sourcebody-${data.replaceAll(' ', '^')}`
+    source.querySelector('h2').textContent = data
+    source.querySelector('button').dataset.source = data
+    source.querySelector('.sourcelist').replaceChildren(...appendSenders(senders_cache[data].senders, data))
+    return source;
+}
+
+function CreateEndpointElement(data) {
+    const endpoint = document.getElementById('notifendpointtemplate').content.cloneNode(true)
+    endpoint.querySelector('li').id = `endpoint-${data.device_id}`
+    endpoint.querySelector('h2').textContent = data.source
+    endpoint.querySelector('.removeendpoint').dataset.endpoint = data.device_id
+    const endpointdata = endpoint.querySelector('.endpointlist')
+    const li1 = document.createElement('li')
+    const li2 = document.createElement('li')
+    const li3 = document.createElement('li')
+    const li4 = document.createElement('li')
+    const li5 = document.createElement('li')
+    li1.textContent = `ID: ${data.device_id ?? "Unknown"}`
+    li2.textContent = `Endpoint URL: ${data.endpoint ?? "Unknown"}`
+    li3.textContent = `P256 Key: ${data.p256dh ?? "Unknown"}`
+    li4.textContent = `Auth Key: ${data.auth ?? "Unknown"}`
+    li5.textContent = `Created: ${formatDate(data.created_at ?? 0)}`
+    endpointdata.replaceChildren(...[li1, li2, li3, li4, li5])
+    return endpoint;
+}
+
+// End of rewrite
+
+function appendBasedOnType(notif) {
+    const ul = []
+    const li1 = document.createElement('li')
+    const li2 = document.createElement('li')
+    const li3 = document.createElement('li')
+    switch (notif.type) {
+        case 'item_sold': {
+            li1.textContent = `Name: ${notif.item_name}`
+            li2.textContent = `Buyer: ${notif.buyer}`
+            li3.textContent = `Sold for: ${notif.price} RC`
+            ul.push(li1)
+            ul.push(li2)
+            ul.push(li3)
+            break
+        }
+        case 'item_purchased': {
+            li1.textContent = `Item Name: ${notif.item_name}`
+            li2.textContent = `Bought for: ${notif.price} RC`
+            ul.push(li1)
+            ul.push(li2)
+            break
+        }
+        case 'item_received': {
+            li1.textContent = `Item Name: ${notif.item_name}`
+            li2.textContent = `From: ${notif.from}`
+            ul.push(li1)
+            ul.push(li2)
+            break
+        }
+        case 'reply': {
+            li1.textContent = `Content: ${notif.content}`
+            li2.textContent = `Reply ID: ${notif.reply_id}`
+            li3.textContent =
+            ul.push(li1)
+            ul.push(li2)
+            break
+        }
+        default: {
+            return []
+        }
+    }
+    return ul
+}
+
 async function getNotifications() {
+    const legacy = document.getElementById('legacynotifs').checked
     if (notifications_cache == '') {
-        notifications_cache = await fetch(`https://api.rotur.dev/notify/log?auth=${activeacc.token}`).then(res => res.json())
+        notifications_cache = await fetch(`https://api.rotur.dev/${legacy ? `notifications` : `notify/log`}?auth=${activeacc.token}&after=9999`).then(res => res.json())
         if ((notifications_cache.error && (notifications_cache.error == 'Invalid authentication key'))) {
             flagged.push(activeacc.uuid)
             chrome.storage.local.set({flagged: flagged})
-            document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+            document.getElementsByClassName('container')[0].setHTML(`
                 <h1>Notifications</h1>
                 <p>Notifications that you may have received across different Rotur services.</p>
                 <hr>
                 <h3>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h3>
-            `))
+            `, {sanitizer: sanitizer})
             return;
         }
-        notifications_cache.log = notifications_cache.log.reverse() // API returns oldest to newest; I want newest to oldest
+        if (!legacy) {
+            notifications_cache.log = notifications_cache.log.reverse() // API returns oldest to newest; I want newest to oldest
+        }
     }
-    const notifs = notifications_cache.log
-    let notifs_html = ``
+    const notifs = legacy ? notifications_cache : notifications_cache.log
+    const notifs_html = []
     if (notifs.length == 0) {
-        document.getElementById('notificationslist').replaceChildren(...parseHTML(`<li><h2>You don't have any notifications yet!</h2></li>`))
+        const li = document.createElement('li')
+        const h2 = document.createElement('h2')
+        h2.textContent = `You don't have any notifications yet!`
+        li.appendChild(h2)
+        document.getElementById('notificationslist').replaceChildren(li)
     } else {
-        notifs.forEach(notif => {
-            notifs_html += `<li>
-                <a class='notiftitlebar' href="lookup.html?user=${notif.from}">
-                    <img src="https://avatars.rotur.dev/${notif.from || "Spectator"}" width="32" height="32">
-                    <h2>${notif.from || "Unknown User"}</h2>
-                </a>
-                <h3>${sanitize(notif.title ?? "Unknown Title")}</h3>
-                <p>${sanitize(notif.body ?? "Unknown Content")}</p>
-                <p class='fineprint'>Source: ${sanitize(notif.source ?? "Unknown Source")} &bull; ${formatDate(notif.at ?? 0)}</p>
-            </li>`
-        });
-        document.getElementById('notificationslist').replaceChildren(...parseHTML(notifs_html))
+        if (legacy) {
+            notifs.forEach(notif => {
+                const type = type_lookup[notif.type] ?? `Misc. Notification (${notif.type})`
+                const id = notif.id ?? 'Unknown ID'
+                const timestamp = formatDate(notif.timestamp ?? 0)
+                if (notif.type == 'notification') {
+                    const notifcard = document.getElementById('legacynotiftemplate2').content.cloneNode(true)
+                    notifcard.querySelector('.notiftypetitle').textContent = type
+                    notifcard.querySelector('.notiftitlebar').href = `lookup.html?user=${notif.from || "Spectator"}`
+                    notifcard.querySelector('.notifsourceusertext').textContent = `From: ${notif.from || "Unknown User"}`
+                    notifcard.querySelector('.notifsourcefineprint').textContent = (notif.source ?? "Unknown Source")
+                    notifcard.querySelector('img').src = `https://avatars.rotur.dev/${notif.from || "Spectator"}`
+                    notifcard.querySelector('img').alt = (notif.from || "Spectator")
+                    notifcard.querySelector('h3').textContent = (notif.title ?? "Unknown Title")
+                    notifcard.querySelector('.fineprint').innerText = `${timestamp} • ID: ${id}`
+                    notifs_html.push(notifcard)
+                } else {
+                    const notifcard = document.getElementById('legacynotiftemplate').content.cloneNode(true)
+                    notifcard.querySelector('h2').textContent = type
+                    notifcard.querySelector('.legacynotifdetails').replaceChildren(...appendBasedOnType(notif))
+                    notifcard.querySelector('.fineprint').textContent = `ID: ${id} • Received: ${timestamp}`
+                    notifs_html.push(notifcard)
+                }
+            });
+        } else {
+            notifs.forEach(notif => {
+                const notifcard = document.getElementById('notiftemplate').content.cloneNode(true)
+                notifcard.querySelector('.notiftitlebar').href = `lookup.html?user=${notif.from || "Spectator"}`
+                notifcard.querySelector('.notifsourceusertext').textContent = `From: ${notif.from || "Unknown User"}`
+                notifcard.querySelector('.notifsourcefineprint').textContent = (notif.source ?? "Unknown Source")
+                notifcard.querySelector('img').src = `https://avatars.rotur.dev/${notif.from || "Spectator"}`
+                notifcard.querySelector('img').alt = (notif.from || "Spectator")
+                notifcard.querySelector('h3').textContent = (notif.title ?? "Unknown Title")
+                notifcard.querySelector('.notifbody').innerText = (notif.body ?? "Unknown Content")
+                notifcard.querySelector('.fineprint').textContent = `${formatDate(notif.at ?? 0)}`
+                notifs_html.push(notifcard)
+            });
+        }
+
+        document.getElementById('notificationslist').replaceChildren(...notifs_html)
         document.getElementById('notificationslist').style = 'border: 2px solid white;'
     }
     document.getElementById('notifsfeed').textContent = `Notifications (${notifs.length ?? 0})`
-}
-
-function appendSenders(data, src) {
-    let sender_html = ``
-    data.forEach(sender => {
-        sender_html += `<li id='sender-${sender.username.replaceAll(' ', '#')}' class='senderlistentry'>
-            <a href='lookup.html?user=${sender.username}'>
-                <img src="https://avatars.rotur.dev/${sender.username}" width="32" height="32">
-                <div class='sendertitle'>
-                    <h4>${sender.username}</h4>
-                    <p>Count: ${sender.count ?? 0}</p>
-                </div>
-            </a>
-            <button class='removesender' title='Remove Sender' data-user='${sender.username}' data-src='${sanitize(src)}'>✕</button>
-        </li>`
-    })
-    if (sender_html == '') {
-        sender_html = `<li><h4>There are no permitted users under this source</h4></li>`
-    }
-    return sender_html
 }
 
 async function getSenders() {
@@ -158,20 +302,13 @@ async function getSenders() {
     senders_cache = await fetch(`https://api.rotur.dev/notify/allowed?auth=${activeacc.token}`).then(res => res.json())
     const sources = Object.keys(senders_cache)
     if (sources.length == 0) {
-        document.getElementById('notifsourcemanager').replaceChildren(...parseHTML(`<li id='nosources'><h3>You don't have any notification sources</h3></li>`))
+        document.getElementById('notifsourcemanager').setHTML(`<li id='nosources'><h3>You don't have any notification sources</h3></li>`, {sanitizer: sanitizer})
     } else {
-        let source_html = ``
+        const source_html = []
         sources.forEach(source => {
-            source_html += `<li id="sourcebody-${sanitize(source).replaceAll(' ', '^')}" class='sourcedatabody'>
-                <h2>${sanitize(source)}</h2>
-                <hr class='dotted_separator'>
-                <button class='removesource' title="Delete Source" data-source='${sanitize(source)}'><img src='../images/misc_icons/delete.png' width=24 height=24></button>
-                <ul class='sourcelist'>
-                    ${appendSenders(senders_cache[source].senders, source)}
-                </ul>
-            </li>`
+            source_html.push(CreateSourceElement(source))
         })
-        document.getElementById('notifsourcemanager').replaceChildren(...parseHTML(source_html))
+        document.getElementById('notifsourcemanager').replaceChildren(...source_html)
         document.getElementById('notifsourcemanager').style = 'border: 2px solid white;'
     }
 }
@@ -183,24 +320,13 @@ async function getEndpoints() {
     endpoints_cache = await fetch(`https://api.rotur.dev/notify/endpoints?auth=${activeacc.token}`).then(res => res.json())
     endpoints_cache = endpoints_cache.endpoints
     if (endpoints_cache.length == 0) {
-        document.getElementById('notifendpointmanager').replaceChildren(...parseHTML(`<li id='noendpoints'><h3>You don't have any notification endpoints</h3></li>`))
+        document.getElementById('notifendpointmanager').setHTML(`<li id='noendpoints'><h3>You don't have any notification endpoints</h3></li>`, {sanitizer: sanitizer})
     } else {
-        let endpoint_html = ``
+        const endpoint_html = []
         endpoints_cache.forEach(endpoint => {
-            endpoint_html += `<li id="endpoint-${sanitize(endpoint.device_id)}" class='endpointdatabody'>
-                <h2>${sanitize(endpoint.source)}</h2>
-                <hr class='dotted_separator'>
-                <button class='removeendpoint' title="Delete Endpoint" data-endpoint='${endpoint.device_id}'><img src='../images/misc_icons/delete.png' width=24 height=24></button>
-                <ul class='endpointlist'>
-                    <li>ID: ${sanitize(endpoint.device_id ?? "Unknown")}</li>
-                    <li>Endpoint URL: ${sanitize(endpoint.endpoint ?? "Unknown")}</li>
-                    <li>P256 Key: ${sanitize(endpoint.p256dh ?? "Unknown")}</li>
-                    <li>Auth Key: ${sanitize(endpoint.auth ?? "Unknown")}</li>
-                    <li>Created: ${formatDate(endpoint.created_at ?? "Unknown")}</li>
-                </ul>
-            </li>`
+            endpoint_html.push(CreateEndpointElement(endpoint))
         })
-        document.getElementById('notifendpointmanager').replaceChildren(...parseHTML(endpoint_html))
+        document.getElementById('notifendpointmanager').replaceChildren(...endpoint_html)
         document.getElementById('notifendpointmanager').style = 'border: 2px solid white;'
     }
 }
@@ -212,6 +338,12 @@ if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
 }
 
 document.addEventListener('click', async function(e) {
+    if (e.target.id == 'legacynotifs') {
+        chrome.storage.local.set({legacynotifs: e.target.checked})
+        notifications_cache = ''
+        getNotifications()
+        return;
+    }
     if (e.target.id == 'notifsourcefinalcreate') {
         const target = e.target
         target.disabled = true
@@ -220,44 +352,19 @@ document.addEventListener('click', async function(e) {
         const name = document.getElementById('notifsourcecreatename').value
         const createsuccess = await fetch(`https://api.rotur.dev/notify/allowed/${name}?auth=${activeacc.token}`, {method: 'POST', body: JSON.stringify({"source":source})}).then(res => res.json())
         if (createsuccess.error) {
-            document.getElementById('notifsourcestatus').replaceChildren(...parseHTML(`<p class='failure'>${createsuccess.error}</p>`))
+            document.getElementById('notifsourcestatus').replaceChildren(MiniError('failure', createsuccess.error))
         } else {
-            document.getElementById('notifsourcestatus').replaceChildren(...parseHTML(`<p class='success'>Notification source added successfully!</p>`))
+            document.getElementById('notifsourcestatus').replaceChildren(MiniError('success', "Notification Source added successfully!"))
             if (senders_cache[source]) {
                 senders_cache[source].senders.push({"username": name, "count": 0})
-                document.getElementById('notifsourcemanager').querySelector(`[id="sourcebody-${source.replaceAll(' ', '^')}"]`).querySelector(`[class='sourcelist']`).appendChild(...parseHTML(`<li id='sender-${name.replaceAll(' ', '#')}' class='senderlistentry'>
-                    <a href='lookup.html?user=${name}'>
-                        <img src="https://avatars.rotur.dev/${name}" width="32" height="32">
-                        <div class='sendertitle'>
-                            <h4>${name}</h4>
-                            <p>Count: 0</p>
-                        </div>
-                    </a>
-                    <button class='removesender' title='Remove Sender' data-user='${name}' data-src='${sanitize(source)}'>✕</button>
-                </li>`))
+                document.getElementById('notifsourcemanager').querySelector(`[id="sourcebody-${source.replaceAll(' ', '^')}"]`).querySelector(`[class='sourcelist']`).appendChild(CreateSenderElement(null, source, name))
             } else {
                 senders_cache[source] = {"senders": [{"username": name, "count": 0}]}
                 document.getElementById('nosources')?.remove()
                 document.getElementById('notifsourcemanager').style = 'border: 2px solid white;'
-                document.getElementById('notifsourcemanager').appendChild(...parseHTML(`<li id="sourcebody-${sanitize(source).replaceAll(' ', '^')}" class='sourcedatabody'>
-                    <h2>${sanitize(source)}</h2>
-                    <hr class='dotted_separator'>
-                    <button class='removesource' title="Delete Source" data-source='${sanitize(source)}'><img src='../images/misc_icons/delete.png' width=24 height=24></button>
-                    <ul class='sourcelist'>
-                        <li id='sender-${name.replaceAll(' ', '#')}' class='senderlistentry'>
-                            <a href='lookup.html?user=${name}'>
-                                <img src="https://avatars.rotur.dev/${name}" width="32" height="32">
-                                <div class='sendertitle'>
-                                    <h4>${name}</h4>
-                                    <p>Count: 0</p>
-                                </div>
-                            </a>
-                            <button class='removesender' title='Remove Sender' data-user='${name}' data-src='${sanitize(source)}'>✕</button>
-                        </li>
-                    </ul>
-                </li>`))
-                document.getElementById('notifsourcecreatename').value = ''
+                document.getElementById('notifsourcemanager').appendChild(CreateSourceElement(source))
             }
+            document.getElementById('notifsourcecreatename').value = ''
         }
         target.disabled = false
         target.textContent = '+ Add Source'
@@ -265,6 +372,15 @@ document.addEventListener('click', async function(e) {
             document.getElementById('notifsourcestatus').replaceChildren()
         }, 10000)
         return;
+    }
+    if (e.target.id == 'notifsreload') {
+        const target = e.target
+        target.disabled = true;
+        target.textContent = '...'
+        notifications_cache = ''
+        await getNotifications()
+        target.disabled = false;
+        target.textContent = '⟳'
     }
     if (e.target.id == 'notifendpointfinalcreate') {
         const target = e.target
@@ -283,10 +399,10 @@ document.addEventListener('click', async function(e) {
             "fingerprint": fingerprint
         })}).then(res => res.json())
         if (createsuccess.error) {
-            document.getElementById('notifendpointstatus').replaceChildren(...parseHTML(`<p class='failure'>${createsuccess.error}</p>`))
+            document.getElementById('notifendpointstatus').replaceChildren(MiniError('success', createsuccess.error))
         } else {
             if (createsuccess.updated) {
-                document.getElementById('notifendpointstatus').replaceChildren(...parseHTML(`<p class='success'>Endpoint added successfully!</p>`))
+                document.getElementById('notifendpointstatus').replaceChildren(MiniError('success', "Endpoint added successfully!"))
                 const device_index = endpoints_cache.findIndex(item => item.device_id == createsuccess.device_id)
                 endpoints_cache[device_index] = {
                     "device_id": createsuccess.device_id,
@@ -296,20 +412,9 @@ document.addEventListener('click', async function(e) {
                     "source": source,
                     "created_at": Date.now()
                 }
-                document.getElementById(`endpoint-${createsuccess.device_id}`).replaceChildren(...parseHTML(`
-                    <h2>${sanitize(source)}</h2>
-                    <hr class='dotted_separator'>
-                    <button class='removeendpoint' title="Delete Endpoint" data-endpoint='${createsuccess.device_id}'><img src='../images/misc_icons/delete.png' width=24 height=24></button>
-                    <ul class='endpointlist'>
-                        <li>ID: ${sanitize(createsuccess.device_id)}</li>
-                        <li>Endpoint URL: ${sanitize(url)}</li>
-                        <li>P256 Key: ${sanitize(p256_key)}</li>
-                        <li>Auth Key: ${sanitize(authkey)}</li>
-                        <li>Created: ${formatDate(Date.now())}</li>
-                    </ul>
-                    `))  
+                document.getElementById(`endpoint-${createsuccess.device_id}`).replaceChildren(CreateEndpointElement(endpoints_cache[device_index]))  
             } else { 
-                document.getElementById('notifendpointstatus').replaceChildren(...parseHTML(`<p class='success'>Endpoint added successfully!</p>`))
+                document.getElementById('notifendpointstatus').replaceChildren(MiniError('success', "Endpoint added successfully!"))
                 endpoints_cache.push({
                     "device_id": createsuccess.device_id,
                     "endpoint": url,
@@ -320,18 +425,7 @@ document.addEventListener('click', async function(e) {
                 })
                 document.getElementById('noendpoints')?.remove()
                 document.getElementById('notifendpointmanager').style = 'border: 2px solid white;'
-                document.getElementById('notifendpointmanager').appendChild(...parseHTML(`<li id="endpoint-${sanitize(createsuccess.device_id)}" class='endpointdatabody'>
-                    <h2>${sanitize(source)}</h2>
-                    <hr class='dotted_separator'>
-                    <button class='removeendpoint' title="Delete Endpoint" data-endpoint='${createsuccess.device_id}'><img src='../images/misc_icons/delete.png' width=24 height=24></button>
-                    <ul class='endpointlist'>
-                        <li>ID: ${sanitize(createsuccess.device_id)}</li>
-                        <li>Endpoint URL: ${sanitize(url)}</li>
-                        <li>P256 Key: ${sanitize(p256_key)}</li>
-                        <li>Auth Key: ${sanitize(authkey)}</li>
-                        <li>Created: ${formatDate(Date.now())}</li>
-                    </ul>
-                </li>`))
+                document.getElementById('notifendpointmanager').appendChild(CreateEndpointElement(endpoints_cache[endpoints_cache.length - 1]))
             }
             document.getElementById('notifendpointcreatesource').value = ''
             document.getElementById('notifendpointcreateendpoint').value = ''
@@ -373,7 +467,7 @@ document.addEventListener('click', async function(e) {
             endpoints_cache = endpoints_cache.filter(item => item.device_id != endpoint)
             document.getElementById(`endpoint-${endpoint}`).remove()
             if (document.getElementById('notifendpointmanager').childElementCount == 0) {
-                document.getElementById('notifendpointmanager').replaceChildren(...parseHTML(`<li id='noendpoints'><h3>You don't have any notification endpoints</h3></li>`))
+                document.getElementById('notifendpointmanager').setHTML(`<li id='noendpoints'><h3>You don't have any notification endpoints</h3></li>`, {sanitizer: sanitizer})
                 document.getElementById('notifendpointmanager').style = 'border: none;'
             }
         }
@@ -399,7 +493,7 @@ document.addEventListener('click', async function(e) {
                     if (document.getElementById(`sourcebody-${source.replaceAll(' ', '^')}`).querySelector(`[class='sourcelist']`).childElementCount == 0) {
                         document.getElementById(`sourcebody-${source.replaceAll(' ', '^')}`).remove()
                         if (document.getElementById('notifsourcemanager').childElementCount == 0) {
-                            document.getElementById('notifsourcemanager').replaceChildren(...parseHTML(`<li id='nosources'><h3>You don't have any notification sources</h3></li>`))
+                            document.getElementById('notifsourcemanager').setHTML(`<li id='nosources'><h3>You don't have any notification sources</h3></li>`, {sanitizer: sanitizer})
                             document.getElementById('notifsourcemanager').style = 'border: none;'
                         }
                         delete senders_cache[source]
@@ -423,7 +517,7 @@ document.addEventListener('click', async function(e) {
                 if (document.getElementById(`sourcebody-${orig_source.replaceAll(' ', '^')}`).querySelector(`[class='sourcelist']`).childElementCount == 0) {
                     document.getElementById(`sourcebody-${orig_source.replaceAll(' ', '^')}`).remove()
                     if (document.getElementById('notifsourcemanager').childElementCount == 0) {
-                        document.getElementById('notifsourcemanager').replaceChildren(...parseHTML(`<li id='nosources'><h3>You don't have any notification sources</h3></li>`))
+                        document.getElementById('notifsourcemanager').setHTML(`<li id='nosources'><h3>You don't have any notification sources</h3></li>`, {sanitizer: sanitizer})
                         document.getElementById('notifsourcemanager').style = 'border: none;'
                     }
                     delete senders_cache[orig_source]
@@ -448,7 +542,7 @@ document.addEventListener('click', async function(e) {
                 if (document.getElementById(`sourcebody-${source.replaceAll(' ', '^')}`).querySelector(`[class='sourcelist']`).childElementCount == 0) {
                     document.getElementById(`sourcebody-${source.replaceAll(' ', '^')}`).remove()
                     if (document.getElementById('notifsourcemanager').childElementCount == 0) {
-                        document.getElementById('notifsourcemanager').replaceChildren(...parseHTML(`<li id='nosources'><h3>You don't have any notification sources</h3></li>`))
+                        document.getElementById('notifsourcemanager').setHTML(`<li id='nosources'><h3>You don't have any notification sources</h3></li>`, {sanitizer: sanitizer})
                         document.getElementById('notifsourcemanager').style = 'border: none;'
                     }
                     delete senders_cache[source]
@@ -467,7 +561,7 @@ document.addEventListener('click', async function(e) {
             tab.style = 'border-bottom: none;'
         })
         e.target.style = 'border-bottom: 2px solid white;'
-        document.getElementById('notificationslist').style.display = (e.target.id == 'notifsfeed') ? 'block' : 'none'
+        document.getElementById('notificationslog').style.display = (e.target.id == 'notifsfeed') ? 'block' : 'none'
         document.getElementById('notificationsettings').style.display = (e.target.id == 'notifsettings') ? 'block' : 'none'
         document.getElementById('notificationendpoints').style.display = (e.target.id == 'notifendpoints') ? 'block' : 'none'
         return;        

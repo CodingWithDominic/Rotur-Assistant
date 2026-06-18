@@ -8,34 +8,33 @@
         <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
     </head>
     <body>
-        <div id="header-placeholder"></div>
+        <header id="header-placeholder"></header>
         <script src="../header.js"></script>
         <div class="container">
             <h1>Secret Zone</h1>
+            <hr class="full-size">
             <p>Congrats! You have entered the secret zone. Here's what's to come for Rotur Assistant:</p>
             <h2>Support for apps.rotur.dev</h2>
             <p>Basically Rotur Assistant's version of Appsie, since the APIs are exposed. Rotur Assistant will call it "App Manager" though.</p>
-            <h2>Reordering of accounts in the account manager</h2>
-            <p>While I can easily do this by adding up and down buttons, it would be more convenient if I went with a drag-to-reorder system, similar to how YouTube handles its playlists.</p>
             <h2>Group Management</h2>
-            <p>This depends on how complete the APIs are, but I may add support for managing Rotur Groups. I skipped this feature since I deemed Rotur Groups to have been abandoned when I first tried it out.</p>
+            <p>This depends on how complete the APIs are, but I may add support for managing Rotur Groups. I skipped this feature since I deemed Rotur Groups to have been abandoned when I first tried it out. As of now, Groups are released, though the high cost to create a group may deter me from adding a group manager, since it will likely be very annoying to test and debug without owning a group yourself.</p>
             <h2>OriginChats client</h2>
-            <p>I may add a simple OriginChats client to Rotur Assistant too, though it won't be as feature-packed than what you would see on the official client or Milo's client.</p>
+            <p>I may add a simple OriginChats client to Rotur Assistant too, though it won't be as feature-packed than what you would see on the official client or some 3rd-party clients.</p>
             <h2>"Contact" button on lookup profiles</h2>
             <p>A button next to the other social bar buttons that asks how you would like to contact them: Rmail or OriginChats.<br>- Rmail: Goes straight to its compose page with the user prefilled in the recipient space<br>- OriginChats: Goes straight to their respective DM channel, or prompts the creation of one if one doesn't exist yet.</p>
-            <h2>Statuses on Lookup</h2>
-            <p>Alongside Notifications, a centralized status endpoint was added. While Rotur Assistant won't use it to tell everyone you use Rotur Assistant (some people would like to be under-the-radar), Rotur Assistant may add something to lookup where if a user has a status, it will show that status. A way to edit it will also be provided in the profile editor too.</p>
             <h2>More Themes</h2>
             <p>I'm always open to the idea of more themes. Just DM me on Discord @dominic_the_gamer or OriginChats @Dominic if you have any themes (or even general ideas) you want to see added to Rotur Assistant.</p>
-            <h2>ICN Renderer</h2>
-            <p>Idk how hard it will be to create an ICN renderer without the help of Scratch's WebGL environment, but it has been done before (example: nulqwy's ICN.rs project). This sounds like a fun challenge I may tackle some time.</p>
             <h2>Talon support</h2>
             <p><a href="https://github.com/fries-git/Talon" target="_blank" rel="noopener noreferrer">Talon</a> is an unofficial spinoff of Claw that aims to seperate Claw from being baked into Rotur itself. Rotur Assistant may incorporate this in its claw client by letting you switch between Claw's feed and Talon's feed.</p>
-            <h2>Avatar overlay support</h2>
-            <p>While developing Rotur Assistant, Mistium added discord-style avatar overlays. As of now, support for them is quite limited, since they're only visible on originChats (pretty much everywhere that shows your avatar) and Rotur Assistant (only on profile pages). An API to manage them was recently added, so expect support for that in 1.2.</p>
-            <h2>Rotur RPC Support</h2>
-            <p>Self-explanatory. The idea is there, since a friend of mine has a working prototype in a Chrome extension of their own.</p>
-            <hr>
+            <h2>Mobile Port</h2>
+            <p>There has been some demand for this, and I plan on making an actual mobile app port some time in the future. As a tradeoff, some features will be stripped (just from the mobile app port, not the main browser extension)</p>
+            <h2>OriginFS Manager</h2>
+            <p>I plan on adding a simple file manager to manage the built-in file system Rotur accounts come with. As of now, the only known way to manage your Rotur files is through OriginOS.</p>
+            <h2>Better sub-token support</h2>
+            <p>The current handling for sub-tokens is admittedly a band-aid one, with a warning saying "Rotur Assistant may not work properly with a sub-token". I'll try to add better handling for them in the future.</p>
+            <h2>Offline Mode</h2>
+            <p>By default, Rotur Assistant assumes you have an internet connection, and Rotur Assistant was designed around assuming you have a connection. The only safeguard in place right now if you don't have a connection is a simple popup.</p>
+            <hr class="full-size">
             <h2>Things I won't add</h2>
             <p>A list of features I won't be adding any-time soon.</p>
             <ul class="patchnotelist" style="text-align: left; padding-left: 20px;">
@@ -44,9 +43,15 @@
                 <li>Direct support for features behind Rotur subs: Similar to the above entry, I want to avoid adding stuff only select people can use. Rotur Assistant even provides a normally paid feature for free: User notes. I may add some compatibility in the future that allows you to sync your Rotur notes to your Rotur Assistant notes and vice versa, but that's about it.</li>
                 <li>Bulk-claiming daily credits across all added accounts: This was almost added, but Mistium said no. Understandable though.</li>
                 <li>Auto-claiming daily credits: Same reason bulk-claiming wasn't added.</li>
+                <li>Safari support: Due to Apple's enclosed ecosystem, plus the fact I don't own an apple product, I can't test the extension on Safari, meaning I can't guarantee the extension will work to an acceptable degree on Safari. Therefore, Safari support is off the table for the time being.</li>
+            </ul>
+            <h2>Things I won't do</h2>
+            <ul class="patchnotelist" style="text-align: left; padding-left: 20px;">
+                <li>Removing features: Once a feature is added, it won't be removed. Between each version, Rotur Assistant goes through a multi-stage testing process where I have my friends test it, and after them, I have Mistium be the final tester before release. It's like how laws are passed (or what I learned about how laws should be passed) in the US. They go through a multi-step approval process, and then Mistium vetoes any feature she may not approve of, right before it hits production. After that, once the feature makes it into a production version, it is set in stone. It may be altered, but almost never removed. A feature may be removed if the API supporting a given feature is removed, or very extreme circumstances.</li>
+                <li>Charging Rotur credits for suggestions: Some people sometimes like to charge credits for suggestions / features to their products. The developer of Rotur Assistant will not ask for credits in exchange for the implementation of any suggestion, regardless of its complexity. This includes trying to 'bribe' for a suggestion. Any attempt to pay me credits to incentivize me to add a suggestion will result in the credits being refunded, especially if the suggestion is out of my current coding ability to implement. If you do it again after the refund, then there will be no second refund, and there still won't be a guarantee on whether I add your suggestion or not. My ability to add a suggestion will purely be based on my coding ability on whether I'm able to add it or not, as well as its feasibility, with financial incentive not being a factor. Likewise, I will not pay anyone credits to add a feature to Rotur Assistant for me. Any offer to add something to Rotur Assistant in exchange for credits will be turned down, with an exception being if a 3rd-party pays on my behalf.<br><br>TL; DR: Rotur Assistant will try its best to operate as a not-for-profit / non-profit product. As much as one desires Rotur Credits, Rotur Assistant will try its best to keep them completely uninvolved with Rotur Assistant's development. This is being done to avoid setting precedents of people offering me 500-1000 credits in order for me to add a "skibidi toilet" app or feature, or make a change that ensh..ifies the service. Donations are exempt from this rule, since donations are more of a "Thank you" / "Good job" type thing, and are not directly tied to development.</li>
             </ul>
         </div>
-        <div id="footer-placeholder"></div>
+        <footer id="footer-placeholder"></footer>
         <script src="../footer.js"></script>
     </body>
 </html>
