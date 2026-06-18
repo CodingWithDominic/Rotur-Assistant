@@ -329,3 +329,17 @@ document.addEventListener('keydown', (e) => {
         cursor = 0;
     }
 });
+
+chrome.runtime.getContexts({ contextTypes: ['SIDE_PANEL'] }, async (contexts) => {
+    if (contexts && contexts.length > 0) {
+        let ui_mode = await new Promise(resolve =>
+            chrome.storage.local.get('ui_mode', data => resolve(data.ui_mode || "popup"))
+        ) ?? "popup";
+        if (ui_mode == 'popup') {
+            ui_mode = 'sidebar'
+            chrome.storage.local.set({ui_mode: ui_mode})
+            await chrome.action.setPopup({ popup: 'index.html' });
+            await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false });
+        }
+    }
+}); // Failsafe in case Rotur Assistant is opened as a side panel via Chrome's right-click context menu
