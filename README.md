@@ -2,7 +2,6 @@
 A versatile Chrome extension for the Rotur ecosystem that allows you to interact with most of Rotur with ease. Anytime, anywhere.
 
 ## Features
-## Features
 - Wallet
 - Economic Stats (Calculator Included)
 - Detailed Lookup
@@ -10,16 +9,33 @@ A versatile Chrome extension for the Rotur ecosystem that allows you to interact
 - Claw
 - Easy Account Management
 - Semi-Universal Account Switcher across select Rotur services
+- And much more
 
 ## Build Instructions
 - Chrome: Download the repo, go to chrome://extensions, click "Load Unpacked", and then select the folder you got by downloading this repo. Make sure you have "Developer Mode" enabled in the top-right corner.
 - Firefox: First, download the repo. Then, click the extension icon in the top-right corner. Click on "Discover Extensions" if necessary. Then click on the settings icon right under where the search bar is. Then click on "Debug Add-ons". From there, click "Load Temporary Add-on", and then click on the zip file you got by downloading this repo. Do not unzip the folder first.
 
 ## Miscellaneous links
-## Miscellaneous links
 - RoturGit counterpart of this repo: https://git.rotur.dev/Dominic/Rotur-Assistant
 - Rotur Assistant (Chrome / Chromium): https://chromewebstore.google.com/detail/rotur-assistant/hpjnmifgongkndfhfobdeppffcgjhleh
 - Rotur Assistant (Firefox): https://addons.mozilla.org/addon/rotur-assistant/
+
+## Licensing Info
+Rotur Assistant is a powerful utility tool for the Rotur ecosystem.
+Copyright (C) 2026 Dominic
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 ## Patch Notes
 
