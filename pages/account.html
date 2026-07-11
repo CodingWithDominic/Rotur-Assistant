@@ -6,6 +6,7 @@
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+        <title>Editing (username) - Rotur Assistant</title>
     </head>
     <body>
         <header id="header-placeholder"></header>
@@ -138,6 +139,7 @@
                     <details class="followingpanel">
                         <summary id='overlayssummary'>Overlays (0)</summary>
                         <ul id="profileoverlays"><li><h2>You don't own any overlays yet!</h2></li></ul>
+                        <button id="randomoverlay" style="display: none;">Equip Random Overlay</button>
                     </details>
                     <hr>
                     <details class="followingpanel">
@@ -185,6 +187,11 @@
                         <div id="economicplaceholder"></div>
                     </details>
                     <hr>
+                    <details id="standinghistory">
+                        <summary>Standing History (0)</summary>
+                        <ul id="standingplaceholder"></ul>
+                    </details>
+                    <hr class="dotted_separator" id="standing_line">
                     <details id="loginhistory">
                         <summary id="recentloginssummary">Recent Logins</summary>
                         <h3 class="loginstats" title="This number increases every time the /get_user endpoint is called on your behalf. If your number is high, it's likely because some platforms that you use, such as this one, call that endpoint very frequently, since it's the most reliable way of fetching your user data, and unlike the /profile endpoint, is not prone to rate-limits.">You have "logged in" a total of ???? times</h3>
@@ -241,6 +248,7 @@
         </template>
         <template id="clawposttemplate">
             <li id="post-postid" class="clawpostbody">
+                <span class="repostlabel"><img src='../images/misc_icons/repost.png' width='12' height='12'> Reposted by User</span>
                 <span class="pinnedpostlabel"><img src='../images/misc_icons/pin.png' width='12' height='12'> Pinned</span>
                 <div class='postauthor'>
                     <a href='../pages/lookup.html?user=user'>
@@ -254,6 +262,10 @@
                     </div>
                 </div>
                 <p class='postcontent'>Hello, claw!</p>
+                <form class="clawpoll" data-postid="">
+                    <ul class="clawpolloptionslist"></ul>
+                    <button class="pollsubmit" data-postid="123" disabled>Submit Choice</button>
+                </form>
                 <img class='clawattachment' src=''>
                 <p class='postmetadata'>Posted from Rotur Assistant on 1/1/1970</p>
                 <div class='feedbackbar'>
@@ -353,6 +365,26 @@
                     <button class='equipoverlay' data-cosmeticid='${sanitize(cosmetic.id)}'>Equip</button>
                     <button class='viewoverlayinfo' data-cosmeticid='${sanitize(cosmetic.id)}'>&#9432;</button>
                 </div>
+            </li>
+        </template>
+        <template id="standingcardtemplate">
+            <li class="standingcard">
+                <ul>
+                    <li class="standing_admin">- Admin ID: <a class="adminidhyperlink" href="lookup.html?id=123">123</a></li>
+                    <li class="standing_new">New Level: </li>
+                    <li class="standing_old">Old Level: </li>
+                    <li class="standing_reason">Reason: </li>
+                    <li class="standing_date">On: </li>
+                </ul>
+            </li>
+        </template>
+        <template id="clawpolloptiontemplate">
+            <li class="clawpolloption">
+                <div class="clawpollprogressbar"></div>
+                <label class="clawpolloptioncontent">
+                    <input type="radio" value="0" name="poll-clawpostid">
+                    <span>Option</span>
+                </label>
             </li>
         </template>
     </body>

@@ -1,8 +1,8 @@
-import { MiniError, UploadImage } from "../index.js";
+import { MiniError, openErrorPopup, UploadImage } from "../index.js";
 
 const config = {
-    elements: ['p', 'img', 'div', 'h1', 'h2', 'h3', 'h4', 'button', 'ul', 'li', 'select', 'option', 'input', 'hr', 'a', 'label'],
-    attributes: ['src', 'alt', 'href', 'width', 'height', 'id', 'class', 'data', 'value', 'title', 'disabled', 'type', 'placeholder', 'step']
+    removeElements: ['iframe', 'script', 'style', 'object', 'embed', 'applet', 'meta', 'link', 'base', 'form'],
+    removeAttributes: ['onload', 'onclick', 'onerror', 'onmouseover', 'onfocus', 'onblur', 'onkeydown', 'onchange', 'onsubmit', 'srcdoc', 'formaction']
 }
 const sanitizer = new Sanitizer(config)
 
@@ -22,8 +22,8 @@ let rpc_json = await new Promise(resolve =>
 ) ?? {}
 
 let settings = await new Promise(resolve =>
-        chrome.storage.local.get('settings', data => resolve(data.settings?.padEnd(8, "0") || "00000000"))
-    ) ?? "00000000";
+        chrome.storage.local.get('settings', data => resolve(data.settings?.padEnd(16, "0") || "0000000000000000"))
+    ) ?? "0000000000000000";
 
 let rpc_active = await new Promise(resolve =>
         chrome.storage.local.get('rpc_active', data => resolve(data.rpc_active || ""))
@@ -43,7 +43,7 @@ if (!activeacc.uuid) {
         <p>Manage your Rotur RPC here</p>
         <hr class="full-size">
         <h3>You are not signed in! Please head over to the account manager to add an account first.</h3>
-    `)
+    `, {sanitizer: sanitizer})
 }
 if (flagged.includes(activeacc.uuid)) {
     document.getElementsByClassName('container')[0].setHTML(`
@@ -51,7 +51,7 @@ if (flagged.includes(activeacc.uuid)) {
         <p>Manage your Rotur RPC here</p>
         <hr class="full-size">
         <h3>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h3>
-    `)
+    `, {sanitizer: sanitizer})
 }
 
 function OpenDisclaimerPopup(warning) {
@@ -274,32 +274,28 @@ document.addEventListener('click', async function(e) {
         }
     }
 })
-
-document.getElementById('rpctype').addEventListener('change', function(e) {
-    Array.from(document.getElementsByClassName('customrpccontrolpanel')).forEach(elem => {
-        elem.querySelector('.rpcnamefield').disabled = (e.target.value == 'auto')
-        elem.querySelector('.rpctitlefield').disabled = (e.target.value == 'auto')
-        elem.querySelector('.rpcdescfield1').disabled = (e.target.value == 'auto')
-        elem.querySelector('.rpcdescfield2').disabled = (e.target.value == 'auto')
-        elem.querySelector('.rpcimgfield').disabled = (e.target.value == 'auto')
-        elem.querySelector('[class="uploadrpcimg hoverexempt"]').disabled = (e.target.value == 'auto')
-        elem.querySelector('.removemodal').disabled = (e.target.value == 'auto')
-        elem.querySelector('.rpcsavebtn').disabled = (e.target.value == 'auto')
+if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
+    document.getElementById('rpctype').addEventListener('change', function(e) {
+        Array.from(document.getElementsByClassName('customrpccontrolpanel')).forEach(elem => {
+            elem.querySelector('.rpcnamefield').disabled = (e.target.value == 'auto')
+            elem.querySelector('.rpctitlefield').disabled = (e.target.value == 'auto')
+            elem.querySelector('.rpcdescfield1').disabled = (e.target.value == 'auto')
+            elem.querySelector('.rpcdescfield2').disabled = (e.target.value == 'auto')
+            elem.querySelector('.rpcimgfield').disabled = (e.target.value == 'auto')
+            elem.querySelector('[class="uploadrpcimg hoverexempt"]').disabled = (e.target.value == 'auto')
+            elem.querySelector('.removemodal').disabled = (e.target.value == 'auto')
+            elem.querySelector('.rpcsavebtn').disabled = (e.target.value == 'auto')
+        })
+        document.getElementById('addmodalbtn').disabled = ((e.target.value == 'auto') || (document.getElementById('rpc_modals').childElementCount > 4))
+        rpc_json[activeacc.uuid].preference = e.target.value
+        chrome.storage.local.set({rpcdata: rpc_json})
     })
-    document.getElementById('addmodalbtn').disabled = ((e.target.value == 'auto') || (document.getElementById('rpc_modals').childElementCount > 4))
-    /*
-    if ((e.target.value == 'auto')) {
-        if ((settings[7] == "0")) {
-            OpenDisclaimerPopup()
-        }
-    }
-    */
-    rpc_json[activeacc.uuid].preference = e.target.value
-    chrome.storage.local.set({rpcdata: rpc_json})
-})
-
-document.addEventListener('change', function(e) {
-    if (e.target.className == 'rpcimgfield') {
-
+}
+chrome.runtime.onMessage.addListener((msg) => {
+    if (msg.data == 'RPC_ERROR') {
+        openErrorPopup(msg.error)
+        document.getElementById('rpcenabled').checked = false
+        rpc_active = ''
+        chrome.storage.local.set({rpc_active: rpc_active})
     }
 })

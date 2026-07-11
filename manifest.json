@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Rotur Assistant",
-    "version": "1.2",
+    "version": "1.2.1",
     "description": "Manage and keep up with most of your Rotur things in one place. Anywhere on the web, anytime.",
     "browser_specific_settings": {
         "gecko": {
@@ -16,6 +16,7 @@
     "permissions": [
         "cookies",
         "storage",
+        "tabs",
         "activeTab",
         "clipboardRead",
         "notifications",
@@ -26,12 +27,13 @@
     "side_panel": {
         "default_path": "index.html"
     },
-    "host_permissions": ["https://*.mistium.com/*", "https://*.rotur.dev/*", "https://graphite.flufi.uk/*", "https://adthoughtsglobal.github.io/*", "https://runnova.github.io/*", "https://warpdrive.team/*", "https://antiviiris.github.io/originChats/*"],
+    "host_permissions": ["https://*.mistium.com/*", "https://*.rotur.dev/*", "https://graphite.flufi.uk/*", "https://adthoughtsglobal.github.io/*", "https://runnova.github.io/*", "https://warpdrive.team/*", "https://antiviiris.github.io/originChats/*", "https://*.originchats.com/*"],
     "content_scripts": [
         {
-            "matches": ["https://*.mistium.com/*", "https://*.rotur.dev/*", "https://graphite.flufi.uk/*", "https://adthoughtsglobal.github.io/*", "https://runnova.github.io/*", "https://warpdrive.team/*", "https://antiviiris.github.io/originChats/*"],
+            "matches": ["https://*.mistium.com/*", "https://*.rotur.dev/*", "https://graphite.flufi.uk/*", "https://adthoughtsglobal.github.io/*", "https://runnova.github.io/*", "https://warpdrive.team/*", "https://antiviiris.github.io/originChats/*", "https://*.originchats.com/*"],
             "js": ["scripts/switchacc.js"],
-            "all_frames": true
+            "all_frames": true,
+            "run_at": "document_end"
         }
     ],
     "background": {

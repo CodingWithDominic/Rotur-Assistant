@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="stylesheet" href="../../style.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+        <title>OSL - Wiki - Rotur Assistant</title>
+    </head>
+    <body>
+        <header id="header-placeholder"></header>
+        <script src="../../header.js"></script>
+        <div class="container">
+            <div class="wiki-container">
+                <a id="wikibackbtn" href="../wiki.html">&larr;</a>
+                <h1>OSL</h1>
+                <hr class="full-size">
+                <p>OSL is a language based on JavaScript and Go. OSL has relatively simple syntax compared to both of the languages they are based off of. The docs for OSL can be found <a href="https://osl.mistium.com/" target="_blank" rel="noopener noreferrer">here</a>. OSL comes in 2 flavors:</p>
+                <ul>
+                    <li>OSL.js: The JavaScript-based version of OSL, used primarily within <a href="origin.html">OriginOS</a>.</li>
+                    <li>OSL.go: The Go-based version of OSL, used primarily for server backends.</li>
+                </ul>
+                <h2>OSL.js</h2>
+                <p class="fineprint">Also known as: OriginOSL, OSL Legacy</p>
+                <p>This is the version of OSL that is used to create apps within <a href="origin.html">OriginOS</a>. A lot of OriginOS is written using OSL, including all the system apps. As the name implies, this version of OSL was primarily made using JavaScript.</p>
+                <h2>OSL.go</h2>
+                <p class="fineprint">Also known as: GOSL, OSL</p>
+                <p>OSL.go is the version of OSL that is used as the backend language for a good chunk of Rotur services. As the name implies, this version of OSL was made using Golang, or Go for short. According to Mistium, this version of OSL is officially the main version of OSL, as of May 3, 2026.</p>
+                <h2>OSL.js vs. OSL.go</h2>
+                <p>While Mistium has made an effort to bring OSL.js and OSL.go up to speed with one another. Outside of the obvious differences mentioned above, there are still a few key differences between the two, such as:<br>- OSL.js has properties that allow it to easily control properties of OriginOS apps, unlike OSL.go<br>- Given that OSL.go is written in Go, this version is better tailored for server backends, unlike OSL.js. OSL.go also comes with the benefit of being significantly faster than OSL.js too, given Go is faster than JavaScript.</p>
+            </div>
+        </div>
+        <footer id="footer-placeholder"></footer>
+        <script src="../../footer.js"></script>
+    </body>
+</html>

@@ -9,14 +9,22 @@ const flagged = await new Promise(resolve =>
 ) ?? [];
 
 const config = {
-    elements: ['p', 'img', 'div', 'h1', 'h2', 'h3', 'h4', 'button', 'ul', 'li', 'select', 'option'],
+    elements: ['p', 'img', 'div', 'h1', 'h2', 'h3', 'h4', 'button', 'ul', 'li', 'select', 'option', 'hr'],
     attributes: ['src', 'alt', 'href', 'width', 'height', 'id', 'class', 'data', 'value', 'title', 'disabled']
 }
 const sanitizer = new Sanitizer(config)
-
+if (!navigator.onLine) {
+    document.getElementsByClassName('container')[0].setHTML(`
+        <h1>Donation page</h1>
+        <hr class="full-size">
+        <h3>A communication error has occurred. Please check your internet connection.</h3>
+    `, {sanitizer: sanitizer})
+    throw new Error("No Internet connection")
+}
 if (!activeacc.uuid) {
     document.getElementsByClassName('container')[0].setHTML(`
         <h1>Donation page</h1>
+        <hr class="full-size">
         <h3>You are not signed in! Please head over to the account manager to add an account first.</h3>
     `, {sanitizer: sanitizer})
 }
@@ -24,6 +32,7 @@ if (!activeacc.uuid) {
 if (flagged.includes(activeacc.uuid)) {
     document.getElementsByClassName('container')[0].setHTML(`
         <h1>Donation page</h1>
+        <hr class="full-size">
         <h3>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h3>
     `, {sanitizer: sanitizer})
 }

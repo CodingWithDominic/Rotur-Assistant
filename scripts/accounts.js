@@ -1,10 +1,12 @@
-import { parseHTML, openErrorPopup, openWarningPopup } from "../index.js";
+import { parseHTML, openErrorPopup, openWarningPopup, CreateEmptyPlaceholder } from "../index.js";
 
-const whitelisted_urls = ['https://apps.rotur.dev', 'https://origin.mistium.com', 'https://originchats.mistium.com/app', 'https://rotur.dev/me',
+const whitelisted_urls = ['https://apps.rotur.dev', 'https://origin.mistium.com', 'https://originchats.mistium.com/app', "https://originchats.com/app", 'https://rotur.dev/me',
                             'https://warptheme.mistium.com', 'https://notes.rotur.dev', 'https://devfund.rotur.dev', 'https://photos.rotur.dev',
                             'https://warpdrive.team', "https://rotur.dev/key-manager", "https://rotur.dev/inventory-manager", "https://graphite.flufi.uk",
                             "https://runnova.github.io/orion", "https://adthoughtsglobal.github.io/Orla", "https://antiviiris.github.io/originChats",
-                            'https://git.rotur.dev', 'https://authenticator.rotur.dev', 'https://gate.rotur.dev', 'https://rotur.dev']
+                            'https://git.rotur.dev', 'https://authenticator.rotur.dev', 'https://gate.rotur.dev', 'https://rotur.dev', "https://pounce.rotur.dev",
+                            "https://mail.rotur.dev", "https://beam.rotur.dev", "https://place.rotur.dev", "https://gifs.originchats.com",
+                            "https://runnova.github.io/indigo", "https://warp.mistium.com"]
                             
 const parser = new DOMParser();
 
@@ -65,6 +67,9 @@ function exportToJsonFile(jsonData, name) {
 
 const roturstwarning = await new Promise(resolve =>
     chrome.storage.session.get('roturstwarning', data => resolve(data.roturstwarning || false))
+) ?? false;
+const roturemailwarning = await new Promise(resolve =>
+    chrome.storage.session.get('roturemailwarning', data => resolve(data.roturemailwarning || false))
 ) ?? false;
 
 // Popup code
@@ -199,14 +204,14 @@ async function checkSwitcherEligibility(url) {
             document.getElementById('switchaccbtn').disabled = false
         }
     }
-        const errorhtml = parser.parseFromString(`
-        <p class='switchertext'>${errormsg}</p>
-        <p class='switchertext'>As of now, the following supported sites are:</p>
-        <ul>
-            ${genURLs()}
-        </ul>`, 'text/html'); // Can't add support for gate.rotur.dev since it's auth loops infinitely. Maybe in the future
-        const errorhtml2 = errorhtml.body.children
-        document.getElementById('disabledcontext').replaceChildren(...errorhtml2)
+    const errorhtml = parser.parseFromString(`
+    <p class='switchertext'>${errormsg}</p>
+    <p class='switchertext'>As of now, the following supported sites are:</p>
+    <ul>
+        ${genURLs()}
+    </ul>`, 'text/html'); // Can't add support for gate.rotur.dev since it's auth loops infinitely. Maybe in the future
+    const errorhtml2 = errorhtml.body.children
+    document.getElementById('disabledcontext').replaceChildren(...errorhtml2)
 }
 
 document.getElementById('account_list').addEventListener('dblclick', (event) => {
@@ -219,7 +224,7 @@ document.getElementById('account_list').addEventListener('dblclick', (event) => 
 });
 
 async function EnableDragging() {
-    if (accounts.length < 2) {
+    if ((accounts.length < 2) || (document.getElementById('accsearchbar').value)) {
         return;
     }
     
@@ -273,7 +278,11 @@ async function EnableDragging() {
     });
 }
 
-async function buildlist() {
+async function buildlist(customquery) {
+    if (accounts.length < 2) {
+        document.getElementById('accsearchbar').style.display = 'none'
+        customquery = null
+    }
     if (roturstwarning) {
         chrome.storage.session.remove('roturstwarning')
         openWarningPopup("You have granted Rotur Assistant a sub-token. Since Rotur Assistant was designed around the main token, some parts of Rotur Assistant may not work correctly with a sub-token.")
@@ -282,6 +291,11 @@ async function buildlist() {
         newbtn.textContent = 'Reauthenticate'
         document.getElementById('popup-choices').prepend(newbtn)
     }
+    if (roturstwarning) {
+        chrome.storage.session.remove('roturemailwarning')
+        openWarningPopup("Your e-mail wasn't verified. Don't worry, Rotur Assistant has verified it for you, regardless if your email was valid or not.")
+        document.getElementById('overlay').querySelector('h1').textContent = 'Notice'
+    }
 
     let activeindex = accounts.findIndex(acc => acc.name === activeacc.name);
     if (activeindex == -1) {
@@ -289,6 +303,7 @@ async function buildlist() {
     }
 
     let acc_html = document.createElement('form')
+    document.querySelector('.selectacctext').textContent = `Select Active Account (${accounts.length})`
 
     if (accounts.length == 0) {
         acc_html = document.createElement('h2')
@@ -298,14 +313,19 @@ async function buildlist() {
     } else {
         for (let i=0; i<accounts.length; i++) {
             const name = accounts[i].name
+            if (customquery && !(name.toLowerCase().includes(customquery.toLowerCase()))) {
+                continue;
+            }
             const addacctemplate = document.getElementById('acclistentrytemplate').content.cloneNode(true)
 
             const radiobtn = addacctemplate.querySelector("[name='account']")
             radiobtn.value = i
             if (i == activeindex) {
                 radiobtn.checked = true
+            } else {
+                radiobtn.checked = false
             }
-            if (accounts.length < 2) {
+            if ((accounts.length < 2) || customquery) {
                 addacctemplate.querySelector('.drag-handle').remove()
             }
             addacctemplate.querySelector(".acclistentry").dataset.name = name
@@ -333,19 +353,25 @@ async function buildlist() {
             }
             acc_html.appendChild(addacctemplate)
         }
+        if (acc_html.childElementCount == 0) {
+            acc_html = document.createElement('h2')
+            acc_html.id = 'noaccsyet'
+            acc_html.textContent = 'No accounts match your search'
+        }
         document.getElementById('switchaccbtn').disabled = flagged.includes(activeacc.uuid)
     }
     const addacc = document.createElement('a')
     addacc.href = "/pages/auth.html"
     addacc.className = 'addaccbtn'
     addacc.textContent = '+ Add Account'
+    addacc.title = "Shift-click to login directly with a Rotur token instead"
 
     document.getElementById('account_list').replaceChildren(acc_html)
     document.getElementById('account_list').appendChild(addacc)
     EnableDragging()
     await checkSwitcherEligibility()
     if (accounts.length == 0) {
-        document.getElementById('disabledcontext').replaceChildren(...parseHTML('<p>You need at least one account added in order to use this feature.</p>'))
+        document.getElementById('disabledcontext').setHTML('<p>You need at least one account added in order to use this feature.</p>')
     }
 }
 
@@ -417,10 +443,13 @@ document.addEventListener('click', async function(e) {
                     accounts[exist_index] = {name: potentialuser.username, token: token, uuid: uuid}
                 } else {
                     accounts.push({name: potentialuser.username, token: token, uuid: uuid})
+                    document.querySelector('.selectacctext').textContent = `Select Active Account (${accounts.length})`
                 }
-                chrome.storage.local.set({userdata: accounts})
-                chrome.storage.local.set({activeacc: {name: potentialuser.username, token: token, uuid: uuid}})
+                activeacc = {name: potentialuser.username, token: token, uuid: uuid}
+                await chrome.storage.local.set({userdata: accounts})
+                await chrome.storage.local.set({activeacc: {name: potentialuser.username, token: token, uuid: uuid}})
                 updateHeaderName(potentialuser.username)
+                document.getElementById('accsearchbar').value = ''
                 buildlist()
                 if (token.startsWith('rotur_st_')) {
                     openWarningPopup("You have granted Rotur Assistant a sub-token. Since Rotur Assistant was designed around the main token, some parts of Rotur Assistant may not work correctly with a sub-token.")
@@ -482,6 +511,7 @@ document.addEventListener('click', async function(e) {
         accounts = accounts.filter(acc => acc.uuid !== IDToRemove);
         flagged = flagged.filter(id => id != IDToRemove)
         chrome.storage.local.set({flagged: flagged})
+        document.querySelector('.selectacctext').textContent = `Select Active Account (${accounts.length})`
 
         let rpcactive = await new Promise(resolve =>
             chrome.storage.local.get('rpcactive', data => resolve(data.rpcactive || ''))
@@ -502,6 +532,18 @@ document.addEventListener('click', async function(e) {
         document.querySelector(`button[data-id="${IDToRemove}"]`).closest("[class='acclistentry']").remove()
         if (accounts.length < 2) {
             document.querySelector('.drag-handle')?.remove()
+            document.getElementById('accsearchbar').value = ''
+            document.getElementById('accsearchbar').style.display = 'none'
+        }
+        if ((document.getElementById('account_list').querySelector('form').childElementCount == 0) && (accounts.length > 0) && document.getElementById('accsearchbar').value) {
+            const addacc = document.createElement('a')
+            addacc.href = "/pages/auth.html"
+            addacc.className = 'addaccbtn'
+            addacc.textContent = '+ Add Account'
+            addacc.title = "Shift-click to login directly with a Rotur token instead"
+
+            document.getElementById('account_list').replaceChildren(CreateEmptyPlaceholder('No accounts match your search'))
+            document.getElementById('account_list').appendChild(addacc)
         }
         if (accounts.length == 0) {
             updateHeaderName("Not signed in")
@@ -578,6 +620,7 @@ document.addEventListener('click', async function(e) {
         }
         chrome.storage.sync.set({userdata: syncdata})
         chrome.storage.sync.set({activeacc: syncacc})
+        chrome.storage.session.remove('sum_cache')
         return;
     }
     if (e.target.id == "uploadsync") {
@@ -633,6 +676,9 @@ document.addEventListener('click', async function(e) {
             }
             chrome.storage.local.set({userdata: syncdata})
             chrome.storage.local.set({activeacc: syncacc})
+            activeacc = syncacc
+            accounts = syncdata
+            flagged = []
             chrome.storage.local.set({flagged: []})
             syncstatus.replaceChildren(...parseHTML(`<p class='success'>Successfuly retrieved data from sync!</p>`))
             buildlist()
@@ -698,7 +744,9 @@ if (ui_mode == 'sidebar') {
         checkSwitcherEligibility()
     });
 }
-
+document.getElementById('accsearchbar').addEventListener('input', function(e) {
+    buildlist(e.target.value)
+})
 chrome.runtime.onMessage.addListener((msg) => {
     if (msg.type == 'New_site') {
         checkSwitcherEligibility(msg.url)

@@ -1,25 +1,34 @@
-import { sanitize, formatDate, openErrorPopup, openSuccessPopup, openWarningPopup, CreateEmptyPlaceholder, MiniError, UploadImage } from "../index.js"
+import { sanitize, formatDate, openErrorPopup, openSuccessPopup, openWarningPopup, CreateEmptyPlaceholder, MiniError, UploadImage, FixDecimal } from "../index.js"
 
 let currentfeeddata = [];
 let lastquery = 'feed'
 let system_cache = []
-let isTalon = false
-const talon_beta = false // Dev flag for when Talon is out and ready to be supported (hopefully it will be a drop-in API swap)
 
 const controller = new AbortController()
 const requestlimit = setTimeout(() => controller.abort(), 5000);
 
 const config = {
-    elements: ['p', 'img', 'div', 'h1', 'h2', 'h3', 'h4', 'button', 'ul', 'li', 'select', 'option', 'a'],
-    attributes: ['src', 'alt', 'href', 'width', 'height', 'id', 'class', 'data', 'value', 'title', 'disabled', 'selected']
+    removeElements: ['iframe', 'script', 'style', 'object', 'embed', 'applet', 'meta', 'link', 'base', 'form'],
+    removeAttributes: ['onload', 'onclick', 'onerror', 'onmouseover', 'onfocus', 'onblur', 'onkeydown', 'onchange', 'onsubmit', 'srcdoc', 'formaction']
 }
 const sanitizer = new Sanitizer(config)
 
-if (talon_beta) {
-    document.getElementById('clawtalon').setHTML(`<select id='clawtalonoption'>
-        <option value='Claw' selected>Claw</option>
-        <option value='Talon'>Talon</option>
-        </select>`, {sanitizer: sanitizer})
+const real_time = await new Promise(resolve =>
+    chrome.storage.local.get('claw_realtime', data => resolve(data.claw_realtime || false))
+) ?? false;
+
+if (!navigator.onLine) {
+    document.getElementsByClassName('container')[0].setHTML(`
+        <h1>Claw</h1>
+        <hr class="full-size">
+        <h3>A communication error has occurred. If you're sure it's not your connection, then Rotur may be down right now.</h3>
+    `, {sanitizer: sanitizer})
+    throw new Error("No Internet Connection")
+}
+
+if (real_time) {
+    document.getElementById('realtime').checked = true
+    document.getElementById('reloadfeed').disabled = true
 }
 
 function openPopup(post_id) {
@@ -45,9 +54,10 @@ function openRepostPopup(post_id) {
             <button id="popup-x" class="closebtn">✕</button>
         </div>
         <p id="deleteconfirmdialogue">Repost this post?</p>
+        <textarea id="clawrepostquote" placeholder="Optional Quote..."></textarea>
         <div id="popup-choices">
-            <button id="cancel" class="closebtn">No</button>
-            <button class="finalrepost" data-postid='${post_id}'>Yes</button>
+            <button id="cancel" class="closebtn">Cancel</button>
+            <button class="finalrepost" data-postid='${post_id}'>Repost</button>
         </div>
     `, {sanitizer: sanitizer})
 }
@@ -78,23 +88,31 @@ const flagged = await new Promise(resolve =>
     chrome.storage.local.get('flagged', data => resolve(data.flagged || []))
 ) ?? [];
 
-let premium = false
-
-if (!activeacc.uuid) {
-    document.getElementById('postwindow').replaceChildren(CreateEmptyPlaceholder('Sign in to create posts!', true))
-} else {
-    premium = await fetch(`https://api.rotur.dev/keys/check/${activeacc.name}?key=bd6249d2b87796a25c30b1f1722f784f`, {signal: controller.signal}).then(res => res.json()).catch((err) => {
-        clearTimeout(requestlimit)
-        openWarningPopup('An error occurred while checking for Claw premium.')
-        return ({owned: false})
-    })
-    premium = premium.owned
-    clearTimeout(requestlimit)
-    if (premium) {
-        document.getElementById('limit-post').innerText = `0/600`
-    }
+const charlimitmap =
+{
+    Free: 300,
+    Lite: 400,
+    Plus: 600,
+    Pro: 800,
+    Max: 1000
 }
-
+let charlimit = 300
+if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
+    charlimit = await fetch(`https://api.rotur.dev/profile?id=${activeacc.uuid}`).then(res => res.json()).then(res => (charlimit[res.subscription] ?? 300)).catch(err => {
+        document.getElementsByClassName('container')[0].setHTML(`
+            <h1>Claw</h1>
+            <hr class="full-size">
+            <h3>A communication error has occurred. If you're sure it's not your connection, then Rotur may be down right now.</h3>
+        `, {sanitizer: sanitizer})
+        return 300;
+    })
+    document.getElementById('postcontent').placeholder = `Share something to Claw...\n(Posting as ${activeacc.name})`
+}
+if (!activeacc.uuid) {
+    const h3 = document.createElement('h3')
+    h3.textContent = 'Sign in to create posts!'
+    document.getElementById('postwindow').replaceChildren(h3)
+}
 if (flagged.includes(activeacc.uuid)) {
     const h3 = document.createElement('h3')
     h3.textContent = 'Due to an authentication issue that has been detected with your current account, interaction features has been disabled.'
@@ -120,6 +138,8 @@ async function getSystems() {
 
 getSystems()
 
+const clawerrorattachment = "https://i.postimg.cc/BZMMMNWw/RA-Error-Attachment.png"
+
 function createReplyElement(reply) {
     const clawreply = document.getElementById('clawreplytemplate').content.cloneNode(true)
 
@@ -130,7 +150,19 @@ function createReplyElement(reply) {
     clawreply.querySelector('h2').textContent = reply.user || "Unknown User"
     clawreply.querySelector('.postcontent').innerText = reply.content
     if (reply.attachment) {
-        clawreply.querySelector('.clawattachment').src = reply.attachment
+        const attachment = clawreply.querySelector('.clawattachment')
+        attachment.src = reply.attachment
+        const imgload = (e) => {
+            attachment.removeEventListener('load', imgload)
+            attachment.removeEventListener('error', imgerror)
+        }
+        const imgerror = (e) => {
+            e.target.src = 'https://i.postimg.cc/BZMMMNWw/RA-Error-Attachment.png'
+            attachment.removeEventListener('load', imgload)
+            attachment.removeEventListener('error', imgerror)
+        }
+        attachment.addEventListener('load', imgload)
+        attachment.addEventListener('error', imgerror)
     } else {
         clawreply.querySelector('.clawattachment').remove()
     }
@@ -145,15 +177,14 @@ function appendReplies(postdata) {
     }
     return replybody
 }
-
 function createPostElement(post) {
-    const repost = post.is_repost
+    const repost = (post.is_repost && post.original_post)
     const clawpost = document.getElementById('clawposttemplate').content.cloneNode(true)
     clawpost.querySelector('li').id = `post-${post.id}`
-    clawpost.querySelector('.clawpfp').src = `https://avatars.rotur.dev/${post.user || "Spectator"}`
+    clawpost.querySelector('.clawpfp').src = `https://avatars.rotur.dev/${(repost ? post.original_post.user : post.user) || "Spectator"}`
     clawpost.querySelector('.clawpfp').alt = post.user || "Spectator"
-    clawpost.querySelector('a').href = `../pages/lookup.html?user=${post.user || "Spectator"}`
-    clawpost.querySelector('.clawpfp').href = `../pages/lookup.html?user=${post.user || "Spectator"}`
+    clawpost.querySelector('a').href = `../pages/lookup.html?user=${(repost ? post.original_post.user : post.user) || "Spectator"}`
+    clawpost.querySelector('.clawpfp').href = `../pages/lookup.html?user=${(repost ? post.original_post.user : post.user) || "Spectator"}`
     clawpost.querySelectorAll('[data-postid]').forEach(elementnode => {
         elementnode.dataset.postid = post.id
     })
@@ -161,7 +192,7 @@ function createPostElement(post) {
         elementnode.dataset.user = post.user
     }) // Get around having to do it manually since it appears so often
 
-    clawpost.querySelector('.clawpostauthortitle').textContent = post.user ? (post.user + ' ') : "Unknown User "
+    clawpost.querySelector('.clawpostauthortitle').textContent = (repost ? post.original_post.user : post.user) ? ((repost ? post.original_post.user : post.user) + ' ') : "Unknown User "
     if (repost) {
         const mark = document.createElement('mark')
         mark.textContent = post.original_post.profile_only ? `Profile + Repost` : `Repost`
@@ -169,6 +200,7 @@ function createPostElement(post) {
         clawpost.querySelector('.clawpostauthortitle').appendChild(mark)
         clawpost.querySelector('.repostbtn').disabled = true
         clawpost.querySelector('.repostbtn').title = "Repost (Cannot repost profile-only posts or other reposts)"
+        clawpost.querySelector('.repostlabel').setHTML(`<img src='../images/misc_icons/repost.png' width='12' height='12'> Reposted by ${post.user} with quote: ${sanitize(post.content)}`, {sanitizer: sanitizer})
     } else if (post.profile_only) {
         const mark = document.createElement('mark')
         mark.textContent = `Profile`
@@ -176,6 +208,9 @@ function createPostElement(post) {
         clawpost.querySelector('.clawpostauthortitle').appendChild(mark)  
         clawpost.querySelector('.repostbtn').disabled = true
         clawpost.querySelector('.repostbtn').title = "Repost (Cannot repost profile-only posts or other reposts)"
+    }
+    if (!repost) {
+        clawpost.querySelector('.repostlabel').remove()
     }
     if (!activeacc.uuid || flagged.includes(activeacc.uuid)) {
         clawpost.querySelector('.repostbtn').remove()
@@ -186,7 +221,19 @@ function createPostElement(post) {
         clawpost.querySelector('.deletebtn').remove()
     }
     if (post.attachment || (repost && post.original_post.attachment)) {
-        clawpost.querySelector('.clawattachment').src = repost ? post.original_post.attachment : post.attachment
+        const attachment = clawpost.querySelector('.clawattachment')
+        attachment.src = repost ? post.original_post.attachment : post.attachment
+        const imgload = (e) => {
+            attachment.removeEventListener('load', imgload)
+            attachment.removeEventListener('error', imgerror)
+        }
+        const imgerror = (e) => {
+            e.target.src = 'https://i.postimg.cc/BZMMMNWw/RA-Error-Attachment.png'
+            attachment.removeEventListener('load', imgload)
+            attachment.removeEventListener('error', imgerror)
+        }
+        attachment.addEventListener('load', imgload)
+        attachment.addEventListener('error', imgerror)
     } else {
         clawpost.querySelector('.clawattachment').remove()
     }
@@ -204,8 +251,8 @@ function createPostElement(post) {
     if (activeacc.uuid) {
         clawpost.querySelector('.replyboxplaceholder').querySelector('h2').remove()
         clawpost.querySelector('.postcharlimit').id = `limit-${post.id}`
-        clawpost.querySelector('.postcharlimit').textContent = `0/${premium ? "600" : "300"}`
-        clawpost.querySelector('.replybox').placeholder = `Add a reply for ${post.user}`
+        clawpost.querySelector('.postcharlimit').textContent = `0/${charlimit}`
+        clawpost.querySelector('.replybox').placeholder = `Add a reply for ${post.user}\n(Replying as ${activeacc.name})`
     } else {
         clawpost.querySelector('.replyboxplaceholder').querySelectorAll(':not(h2)').forEach(elemNode => {
             elemNode.remove()
@@ -217,13 +264,42 @@ function createPostElement(post) {
     } else {
         clawpost.querySelector(`.reply`).remove()
     }
+    if (post.poll) {
+        const poll = clawpost.querySelector(`.clawpolloptionslist`)
+        let currentoption = 0
+        post.poll.options.forEach(option => {
+            const polloption = document.getElementById('clawpolloptiontemplate').content.cloneNode(true)
+            const percentage = FixDecimal((option.count / post.poll.total) * 100)
+            polloption.querySelector('input').name = `poll-${post.id}`
+            polloption.querySelector('input').value = currentoption
+            polloption.querySelector('.clawpollprogressbar').style = `width: ${percentage}%; height: 28px;`
+            polloption.querySelector('span').textContent = `${option.text} (${percentage}%)`
+            poll.appendChild(polloption)
+            currentoption += 1
+        })
+        let newmetadata = clawpost.querySelector('.postmetadata').textContent
+        newmetadata = (newmetadata + " • Total votes: " + post.poll.total)
+        clawpost.querySelector('.postmetadata').textContent = newmetadata
+        clawpost.querySelector('.pollsubmit').dataset.postid = post.id
+    } else {
+        clawpost.querySelector(`.clawpoll`).remove()
+    }
     return clawpost;
 }
 
 async function renderClawFeed() {
+    if (!navigator.onLine) {
+        document.getElementsByClassName('container')[0].setHTML(`
+            <h1>Claw</h1>
+            <hr class="full-size">
+            <h3>A communication error has occurred. If you're sure it's not your connection, then Rotur may be down right now.</h3>
+        `, {sanitizer: sanitizer})
+        return;
+    }
     const feed = await fetch(`https://claw.rotur.dev/${lastquery}`).then(res => res.json()).catch(err => {
         document.getElementsByClassName('container')[0].setHTML(`
             <h1>Claw</h1>
+            <hr class="full-size">
             <h3>A communication error has occurred. If you're sure it's not your connection, then Rotur may be down right now.</h3>
         `, {sanitizer: sanitizer})
         return;
@@ -251,7 +327,11 @@ async function renderClawFeed() {
         currentfeeddata = feed;
         feedbody.replaceChildren();
         feed.forEach(post => {
-            feedbody.appendChild(createPostElement(post));
+            try {
+                feedbody.appendChild(createPostElement(post));
+            } catch {
+                openErrorPopup('An error occurred while trying to load some Claw posts. The posts causing the error were skipped.')
+            }
         });
         return;
     }
@@ -268,16 +348,26 @@ async function renderClawFeed() {
     });
     // Add new posts
     newPosts.forEach(post => {
-        if ((feed[1] ?? feed[0]).timestamp > newPosts[newPosts.length - 1].timestamp) {
-            feedbody.appendChild(createPostElement(post));
-        } else {
-            feedbody.prepend(createPostElement(post));
+        try {
+            if ((feed[1] ?? feed[0]).timestamp > newPosts[newPosts.length - 1].timestamp) {
+                feedbody.appendChild(createPostElement(post));
+            } else {
+                feedbody.prepend(createPostElement(post));
+            }
+        } catch {
+            openErrorPopup('An error occurred while trying to load some Claw posts. The posts causing the error were skipped.')
         }
     });
 
     feed.forEach(post => {
         const likebtn = document.getElementById(`post-${post.id}`).querySelector('[class="likebutton"]')
         likebtn.textContent = (post.likes && post.likes.includes(activeacc.name)) ? `❤️ Unlike (${post.likes ? post.likes.length : 0})` : `🩶 Like (${post.likes ? post.likes.length : 0})`
+        if (post.likes) {
+            document.querySelector(`#post-${post.id}`).querySelector('.viewlikes').disabled = (post.likes.length == 0)
+            document.querySelector(`#post-${post.id}`).querySelector('.viewlikes').dataset.likes = JSON.stringify(post.likes)
+        } else {
+            document.querySelector(`#post-${post.id}`).querySelector('.viewlikes').disabled = true
+        }
         if (post.replies) {
             if (!document.getElementById(`post-${post.id}`).querySelector('[class="reply"]')) {
                 const ul = document.createElement('ul')
@@ -297,19 +387,19 @@ renderClawFeed()
 
 function updateCharLimit(num) {
     const postlimit = document.getElementById('limit-post')
-    postlimit.style = `color: ${num > (premium ? 600 : 300) ? 'red' : 'white'};`
-    postlimit.textContent = `${num}/${premium ? '600' : '300'}`
-    document.getElementById('sendpost').disabled = (num > (premium ? 600 : 300))
+    postlimit.style = `color: ${num > charlimit ? 'red' : 'white'};`
+    postlimit.textContent = `${num}/${charlimit}`
+    document.getElementById('sendpost').disabled = (num > charlimit)
 }
 function updateReplyCharLimit(postid, num) {
     const replycharlimit = document.getElementById(`limit-${postid}`)
-    replycharlimit.style = `color: ${num > (premium ? 600 : 300) ? 'red' : 'white'};`
-    replycharlimit.textContent = `${num}/${premium ? '600' : '300'}`
-    document.getElementById(`post-${postid}`).querySelector('[class="sendreply"]').disabled = (num > (premium ? 600 : 300))
+    replycharlimit.style = `color: ${num > charlimit ? 'red' : 'white'};`
+    replycharlimit.textContent = `${num}/${charlimit}`
+    document.getElementById(`post-${postid}`).querySelector('[class="sendreply"]').disabled = (num > charlimit)
 }
 
 async function post(message, system) {
-    if (message == '') {
+    if ((message == '') && !document.getElementById('clawimage').files[0]) {
         document.getElementById('posterrorplaceholder').replaceChildren(MiniError('failure', "You can't post a blank post"))
         setTimeout(function() {
             document.getElementById('posterrorplaceholder').replaceChildren()
@@ -329,7 +419,7 @@ async function post(message, system) {
             if (!potentialattachment) {
                 document.getElementById('posterrorplaceholder').replaceChildren(MiniError('failure', "Attachment failed to upload"))
                 postbutton.disabled = false
-                postbutton.textContent = 'Send'
+                postbutton.textContent = 'Send →'
                 document.getElementById('clearattachment').disabled = false
                 setTimeout(function() {
                     document.getElementById('posterrorplaceholder').replaceChildren()
@@ -339,7 +429,7 @@ async function post(message, system) {
         }
         let postsuccess = ''
         document.getElementById('posterrorplaceholder').replaceChildren()
-        postsuccess = await fetch(`https://api.rotur.dev/post${system != `Unknown` ? `?os=${system == "Random" ? (system_cache[Math.floor(Math.random() * system_cache.length)] ?? "Rotur Assistant") : system}` : ``}${system == "Unknown" ? `?` : `&`}auth=${activeacc.token}&content=${message}${potentialattachment ? `&attachment=${encodeURIComponent(potentialattachment)}` : ``}${document.getElementById('profileonly').checked ? `&profile_only=1` : ``}`).then(res => res.json())
+        postsuccess = await fetch(`https://api.rotur.dev/post${system != `Unknown` ? `?os=${system == "Random" ? (system_cache[Math.floor(Math.random() * system_cache.length)] ?? "Rotur Assistant") : system}` : ``}${system == "Unknown" ? `?` : `&`}auth=${activeacc.token}&content=${encodeURIComponent(message)}${potentialattachment ? `&attachment=${encodeURIComponent(potentialattachment)}` : ``}${document.getElementById('profileonly').checked ? `&profile_only=1` : ``}`).then(res => res.json())
         if (postsuccess.error) {
             document.getElementById('posterrorplaceholder').replaceChildren(MiniError('failure', postsuccess.error))
         } else {
@@ -355,8 +445,9 @@ async function post(message, system) {
                 renderClawFeed()
             }
         }
+        document.getElementById('clearattachment').disabled = false
         postbutton.disabled = false
-        postbutton.textContent = 'Send'
+        postbutton.textContent = 'Send →'
         setTimeout(function() {
             document.getElementById('posterrorplaceholder').replaceChildren()
         }, 10000)
@@ -375,7 +466,7 @@ async function reply(postid, message) {
     if (content == '') {
         replystatus.replaceChildren(MiniError('failure', "You can't post a blank reply"))
     } else {
-        replysuccess = await fetch(`https://api.rotur.dev/reply?id=${postid}&auth=${activeacc.token}&content=${message}`)
+        replysuccess = await fetch(`https://api.rotur.dev/reply?id=${postid}&auth=${activeacc.token}&content=${encodeURIComponent(message)}`)
         if (replysuccess.error) {
             replystatus.replaceChildren(MiniError('failure', replysuccess.error))
         } else {
@@ -385,7 +476,7 @@ async function reply(postid, message) {
         }
     }
     replybtn.disabled = false
-    replybtn.textContent = 'Send'
+    replybtn.textContent = 'Send →'
     setTimeout(function() {
     if (document.getElementById(`post-${postid}`)) {
         document.getElementById(`post-${postid}`).querySelector('[class="replyerrorplaceholder"]').replaceChildren()
@@ -399,32 +490,65 @@ function updatepostcontrols() {
     document.getElementById('clawimage').disabled = (lastquery != 'feed')
     document.getElementById('system').disabled = (lastquery != 'feed')
     document.getElementById('profileonly').disabled = (lastquery != 'feed')
-    document.getElementById('sendpost').disabled = ((lastquery != 'feed') || (document.getElementById('sendpost').value.length > (premium ? 600 : 300)))
+    document.getElementById('sendpost').disabled = ((lastquery != 'feed') || (document.getElementById('sendpost').value.length > charlimit))
 }
 
-let livefeed = ''
-let claw_ws = null
+var claw_ws = null
+let errorflag = false
+
+function connectWebSocket() {
+    // Prevent duplicate connections if one is already open
+    if (claw_ws && (claw_ws.readyState === WebSocket.OPEN || claw_ws.readyState === WebSocket.CONNECTING)) {
+        return;
+    }
+    claw_ws = new WebSocket("wss://socialws.rotur.dev");
+    claw_ws.onmessage = (event) => {
+        let data = JSON.parse(event.data);
+        if (data.cmd == 'ping') {
+            claw_ws.send(JSON.stringify({cmd: 'pong'}));
+        }
+        if (!(data.cmd == 'ping' || data.cmd == 'handshake')) {
+            renderClawFeed();
+        }
+    };
+
+    claw_ws.onerror = (event) => {
+        openErrorPopup('An error occurred while connecting to the Claw websocket');
+        errorflag = true;
+        document.getElementById('realtime').checked = false;
+        document.getElementById('reloadfeed').disabled = false;
+        claw_ws?.close();
+        claw_ws = null;
+        chrome.storage.local.set({claw_realtime: false});
+    };
+
+    claw_ws.onclose = (event) => {
+        if (document.getElementById('realtime').checked && !errorflag) {
+            setTimeout(() => {
+                connectWebSocket(); 
+            }, 1000); // Get around "pong" not keeping the websocket connection alive
+        }
+        errorflag = false;
+    };
+}
 
 document.getElementById('realtime').addEventListener('change', async function(e) {
     if (document.getElementById('realtime').checked) {
+        chrome.storage.local.set({claw_realtime: true});
         document.getElementById('reloadfeed').disabled = true;
-        claw_ws = new WebSocket("wss://socialws.rotur.dev")
-        claw_ws.onmessage = function(e) {
-            let data = JSON.parse(e.data)
-            if (!(data.cmd == 'ping' || data.cmd == 'handshake')) {
-                renderClawFeed()
-            }
-        }
-        livefeed = setInterval(() => {
-            claw_ws.send(JSON.stringify({cmd: "ping"}))
-        }, 30000);
+        connectWebSocket();
     } else {
         document.getElementById('reloadfeed').disabled = false;
-        clearInterval(livefeed)
-        claw_ws.close()
-        claw_ws = null
+        chrome.storage.local.set({claw_realtime: false});
+        claw_ws?.close();
+        claw_ws = null;
     }
-})
+});
+
+if (real_time) {
+    const loadevent = new Event('change')
+    document.getElementById('realtime').dispatchEvent(loadevent)
+}
 
 if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
     document.getElementById('post').addEventListener('submit', (event) => {
@@ -464,126 +588,183 @@ async function readImageFromClipboard() {
 }
 
 document.addEventListener('click', async function(e) {
-    if (e.target.className == 'deletebtn') {
-        openPopup(e.target.dataset.postid)
-        return;
-    }
-    if (e.target.id == 'clawimage' && e.shiftKey) {
-        e.preventDefault()
-        const target = e.target
-        try {
-            const clipboardItems = await navigator.clipboard.read();
-            for (const clipboardItem of clipboardItems) {
-                const imageType = clipboardItem.types.find(type => type.startsWith('image/'));
-                if (imageType) {
-                    const blob = await clipboardItem.getType(imageType);
-                    const file = new File([blob], `image.${blob.type.split('/')[1]}`, { type: blob.type });
-                    const dataTransfer = new DataTransfer();
-                    dataTransfer.items.add(file);
-                    target.files = dataTransfer.files;
-                    document.getElementById('clearattachment').style.display = 'flex';
-                    return;
-                } else {
+    switch (e.target.id) {
+        case ('clawimage'): {
+            if (e.shiftKey) {
+                e.preventDefault()
+                const target = e.target
+                try {
+                    const clipboardItems = await navigator.clipboard.read();
+                    for (const clipboardItem of clipboardItems) {
+                        const imageType = clipboardItem.types.find(type => type.startsWith('image/'));
+                        if (imageType) {
+                            const blob = await clipboardItem.getType(imageType);
+                            const file = new File([blob], `image.${blob.type.split('/')[1]}`, { type: blob.type });
+                            const dataTransfer = new DataTransfer();
+                            dataTransfer.items.add(file);
+                            target.files = dataTransfer.files;
+                            document.getElementById('clearattachment').style.display = 'flex';
+                            return;
+                        } else {
+                            openErrorPopup('No image was detected on your clipboard.')
+                        }
+                    }
+                } catch (err) {
                     openErrorPopup('No image was detected on your clipboard.')
                 }
             }
-        } catch (err) {
-            openErrorPopup('No image was detected on your clipboard.')
+            break;
+        }
+        case ('reloadfeed'): {
+            const target = e.target
+            target.disabled = true
+            target.textContent = "..."
+            await renderClawFeed()
+            target.disabled = false
+            target.textContent = '⟳'
+            break;
+        }
+        case ('clearsearch'): {
+            if (lastquery.includes('search_posts')) {
+                currentfeeddata = []
+                lastquery = document.getElementById('feedfilter').value ?? 'feed'
+                updatepostcontrols()
+                renderClawFeed()
+            }
+            document.getElementById('postsearchbarinput').value = ''
+            break;
+        }
+        case ('clearattachment'): {
+            document.getElementById('clearattachment').style.display = 'none'
+            document.getElementById('clawimage').value = ''
+            break;
         }
     }
-    if (e.target.className == 'repostbtn') {
-        openRepostPopup(e.target.dataset.postid)
-        return;
-    }
-    if (e.target.className == 'closebtn') {
-        closePopup()
-        return;
-    }
-    if (e.target.className == 'finaldelete') {
-        const postid = e.target.dataset.postid
-        const deletesuccess = await fetch(`https://api.rotur.dev/delete?auth=${activeacc.token}&id=${postid}`).then(res => res.json())
-        closePopup()
-        if (deletesuccess.error) {
-            openErrorPopup(deletesuccess.error)
-        } else {
-            renderClawFeed()
+    switch (e.target.className) {
+        case ('deletebtn'): {
+            openPopup(e.target.dataset.postid)
+            break;
         }
-        return;
-    }
-    if (e.target.className == 'finalrepost') {
-        const postid = e.target.dataset.postid
-        const repostsuccess = await fetch(`https://api.rotur.dev/repost?auth=${activeacc.token}&id=${postid}`).then(res => res.json())
-        closePopup()
-        if (repostsuccess.error) {
-            openErrorPopup(repostsuccess.error)
-        } else {
-            openSuccessPopup("This post has been reposted successfully!")
+        case ('repostbtn'): {
+            openRepostPopup(e.target.dataset.postid)
+            break;
         }
-        return;
-    }
-    if (e.target.id == 'reloadfeed') {
-        const target = e.target
-        target.disabled = true
-        target.textContent = "..."
-        await renderClawFeed()
-        target.disabled = false
-        target.textContent = '⟳'
-        return;
-    }
-    if (e.target.className == 'likebutton') {
-        const likebtn = e.target
-        let likes = parseInt(likebtn.textContent.match(/\d+\.?\d*/g));
-        const like = await fetch(`https://api.rotur.dev/rate?id=${likebtn.dataset.postid}&auth=${activeacc.token}&rating=${Number(!likebtn.textContent.includes('Unlike'))}`)
-        likebtn.textContent = (e.target.textContent.includes('Unlike') ? `🩶 Like (${likes - 1})` : `❤️ Unlike (${likes + 1})`)
-        document.getElementById(`post-${e.target.dataset.postid}`).querySelector('[class*="viewlikes"]').disabled = ((likes - 1 == 0) && !likebtn.textContent.includes('Unlike'))
-        return;
-    }
-    if (e.target.className == 'viewlikes') {
-        const likes = JSON.parse(e.target.dataset.likes ?? "[]")
-        if (document.getElementById(`post-${e.target.dataset.postid}`).querySelector('[class="likebutton"]').textContent.includes('Unlike') && !likes.includes(activeacc.name)) {
-            likes.push(activeacc.name)
+        case ('closebtn'): {
+            closePopup()
+            break;
         }
-        let likeshtml = `<ul class='likelist'>`
-        for (let i=0; i<likes.length; i++) {
-            likeshtml += `<li>
-            <a href="lookup.html?user=${likes[i] || "Spectator"}">
-                <img src='https://avatars.rotur.dev/${likes[i] || "Spectator"}' alt='${likes[i] || "Spectator"}' width='24' height='24'>
-                <p>${likes[i] || "Unknown User"}</p>
-            </a>
-            </li>`
+        case ('finaldelete'): {
+            const postid = e.target.dataset.postid
+            const deletesuccess = await fetch(`https://api.rotur.dev/delete?auth=${activeacc.token}&id=${postid}`).then(res => res.json())
+            closePopup()
+            if (deletesuccess.error) {
+                openErrorPopup(deletesuccess.error)
+            } else {
+                renderClawFeed()
+            }
+            break;
         }
-        likeshtml += `</ul>`
-        openLikesPopup(likeshtml)
-        return;
-    }
-    if (e.target.className == 'sendreply') {
-        const postid = e.target.dataset.postid
-        const content = document.getElementById(`post-${postid}`).querySelector('[class="replybox"]').value
-        reply(postid, content)
-    }
-    if (e.target.className == 'copypostid') {
-        try {
-            await navigator.clipboard.writeText(e.target.dataset.postid);
-        } catch (err) {
-            console.error('Failed to copy: ', err);
+        case ('finalrepost'): {
+            const postid = e.target.dataset.postid
+            const quote = document.getElementById('clawrepostquote').value
+            const repostsuccess = await fetch(`https://api.rotur.dev/repost?auth=${activeacc.token}&id=${postid}${quote ? `&content=${encodeURIComponent(quote)}&os=Rotur%20Assistant` : ``}`).then(res => res.json())
+            closePopup()
+            if (repostsuccess.error) {
+                openErrorPopup(repostsuccess.error)
+            } else {
+                if (quote) {
+                    document.getElementById('clawrepostquote').value = ''
+                    renderClawFeed()
+                } else {
+                    openSuccessPopup("This post has been reposted to your profile successfully!")
+                }
+            }
+            break;
         }
-        return;
-    }
-    
-    if (e.target.id == 'clearsearch') {
-        if (lastquery.includes('search_posts')) {
-            currentfeeddata = []
-            lastquery = document.getElementById('feedfilter').value ?? 'feed'
-            updatepostcontrols()
-            renderClawFeed()
+        case ('likebutton'): {
+            const likebtn = e.target
+            let likes = parseInt(likebtn.textContent.match(/\d+\.?\d*/g));
+            const like = await fetch(`https://api.rotur.dev/rate?id=${likebtn.dataset.postid}&auth=${activeacc.token}&rating=${Number(!likebtn.textContent.includes('Unlike'))}`)
+            likebtn.textContent = (e.target.textContent.includes('Unlike') ? `🩶 Like (${likes - 1})` : `❤️ Unlike (${likes + 1})`)
+            document.getElementById(`post-${e.target.dataset.postid}`).querySelector('[class*="viewlikes"]').disabled = ((likes - 1 == 0) && !likebtn.textContent.includes('Unlike'))
+            break;
         }
-        document.getElementById('postsearchbarinput').value = ''
-        return;
-    }
-    if (e.target.id == 'clearattachment') {
-        document.getElementById('clearattachment').style.display = 'none'
-        document.getElementById('clawimage').value = ''
-        return;
+        case ('viewlikes'): {
+            const likes = JSON.parse(e.target.dataset.likes ?? "[]")
+            if (document.getElementById(`post-${e.target.dataset.postid}`).querySelector('[class="likebutton"]').textContent.includes('Unlike') && !likes.includes(activeacc.name)) {
+                likes.push(activeacc.name)
+            }
+            let likeshtml = `<ul class='likelist'>`
+            for (let i=0; i<likes.length; i++) {
+                likeshtml += `<li>
+                <a href="lookup.html?user=${likes[i] || "Spectator"}">
+                    <img src='https://avatars.rotur.dev/${likes[i] || "Spectator"}' alt='${likes[i] || "Spectator"}' width='24' height='24'>
+                    <p>${likes[i] || "Unknown User"}</p>
+                </a>
+                </li>`
+            }
+            likeshtml += `</ul>`
+            openLikesPopup(likeshtml)
+            break;
+        }
+        case ('sendreply'): {
+            const postid = e.target.dataset.postid
+            const content = document.getElementById(`post-${postid}`).querySelector('[class="replybox"]').value
+            reply(postid, content)
+            break;
+        }
+        case ('copypostid'): {
+            try {
+                await navigator.clipboard.writeText(e.target.dataset.postid);
+                const target = e.target
+                const oldtextcontent = target.textContent
+                target.textContent = 'Copied!'
+                target.style.background = 'rgb(0, 179, 0)'
+                target.disabled = true
+                setTimeout(() => {
+                    target.textContent = oldtextcontent.includes('Reply') ? 'Copy Reply ID' : 'Copy Post ID'
+                    target.style.background = ''
+                    target.disabled = false
+                }, 1500)
+            } catch (err) {
+                const target = e.target
+                const oldtextcontent = target.textContent
+                target.textContent = 'Copy Failed'
+                target.style.background = 'rgb(179, 0, 0)'
+                target.disabled = true
+                setTimeout(() => {
+                    target.textContent = oldtextcontent.includes('Reply') ? 'Copy Reply ID' : 'Copy Post ID'
+                    target.style.background = ''
+                    target.disabled = false
+                }, 1500)
+            }
+            break;
+        }
+        case ('pollsubmit'): {
+            e.preventDefault()
+            const target = e.target
+            target.disabled = true
+            target.textContent = 'Submitting...'
+            const postid = target.dataset.postid
+            const chosen_option = target.closest('form').querySelector(`input[name="poll-${postid}"]:checked`).value
+            if (chosen_option == null) {
+                openErrorPopup("Please choose an option")
+                break;
+            }
+            const pollsuccess = await fetch(`https://api.rotur.dev/vote_poll?id=${postid}&option=${chosen_option}&auth=${activeacc.token}`).then(res => res.json())
+            if (pollsuccess.error) {
+                openErrorPopup(String(pollsuccess.error))
+            } else {
+                openSuccessPopup('Your vote was successfully cast.')
+                const postdata = currentfeeddata.find(clawpost => clawpost.id == postid)
+                postdata.poll = pollsuccess.poll
+                const newpost = document.querySelector(`.clawpostbody[id="post-${postid}"]`).replaceWith(createPostElement(postdata))
+                target.closest('form').reset()
+                target.disabled = true
+            }
+            target.textContent = "Submit Choice"
+            break;
+        }
     }
 })
 
@@ -620,12 +801,9 @@ if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
     })
 }
 
-document.getElementById('clawtalon').addEventListener('change', async function(e) {
-    isTalon = (document.getElementById('clawtalonoption').value == 'Talon')
-    if (isTalon) {
-        // Future code for transitioning things from Claw over to Talon
-    } else {
-        // Future code for transitioning things from Talon over to Claw
+document.addEventListener('change', function(e) {
+    if (e.target.name.startsWith('poll-')) {
+        e.target.closest('form').querySelector('.pollsubmit').disabled = false
+        return;
     }
-
 })

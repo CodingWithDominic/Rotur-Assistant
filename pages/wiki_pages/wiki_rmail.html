@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="stylesheet" href="../../style.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+        <title>Rmail - Wiki - Rotur Assistant</title>
+    </head>
+    <body>
+        <header id="header-placeholder"></header>
+        <script src="../../header.js"></script>
+        <div class="container">
+            <div class="wiki-container">
+                <a id="wikibackbtn" href="../wiki.html">&larr;</a>
+                <h1>Rmail</h1>
+                <hr class="full-size">
+                <p style="text-align: center;" class="fineprint">For Rotur Assistant's client itself, see <a href="../rmail.html">Rmail</a>.</p>
+                <h2>Overview</h2>
+                <p>Rmail is Rotur's version of E-mail. Before Claw and later OriginChats, this was pretty much the only way Rotur accounts could officially communicate with one another. Rmail has many features a typical E-mail would have, such as:</p>
+                <ul>
+                    <li>Replying</li>
+                    <li>Forwarding</li>
+                    <li>Starring</li>
+                    <li>Trashing</li>
+                    <li>And more</li>
+                </ul>
+                <p>Each user can send and receive unlimited Rmails, until the total data of Rmails reaches 10 MB (upgradable with a Rotur <a href="subscription.html">subscription</a>). After a user sends an Rmail, they cannot send another one for 60 seconds, likely to prevent spam.</p>
+                <h2>History</h2>
+                <p>Before Rmail was fleshed with features, Rmail was very simple, consisting of only 2 inboxes, and only being able to send and receive Rmails, and delete Rmails from your feed. There was also a limit of 100 total Rmails for free users, rather than the more generous 10 MB limit. The Rmail APIs were also exclusively accessible through the websocket, with no HTTP alternative. However, sometime around June 24, 2026, everything changed. Rmail was completely overhauled to include many new features, such as Rmail threads, starring, forwarding, archiving, and more. To make sure older Rmail clients didn't break, the old websocket was modified to still work with the new APIs.</p>
+                <h2>Clients</h2>
+                <p>While there aren't many Rmail clients, the list of (known) Rmail clients are:</p>
+                <ul>
+                    <li><a href="https://mail.rotur.dev/" target="_blank" rel="noopener noreferrer">RoturMail (Official Client)</a></li>
+                    <li><a href="https://origin.mistium.com" target="_blank" rel="noopener noreferrer">Omail (OriginOS)</a></li>
+                    <li><a href="https://runnova.github.io/orion" target="_blank" rel="noopener noreferrer">Orion</a></li>
+                    <li><a href="../rmail.html">Rotur Assistant's client</a></li>
+                </ul>
+            </div>
+        </div>
+        <footer id="footer-placeholder"></footer>
+        <script src="../../footer.js"></script>
+    </body>
+</html>

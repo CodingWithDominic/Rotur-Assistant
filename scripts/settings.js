@@ -2,12 +2,23 @@ import { parseHTML, sanitize, openSuccessPopup, openErrorPopup, MiniError, Creat
 
 const themedata = {
     oceanblue: ["#0F0052", "#004DB1", "#00002B", "#0012B4", "#4F46E5", "#4338CA", "#03009C"],
-    forestgreen: ["#0A3100", "#00b83d", "#271e00", "#058a00", "#7c5500", "rgb(187, 106, 0)", "#006b17"],
+    forestgreen: ["#0A3100", "#00b83d", "#271e00", "#058a00", "#7c5500", "#bb6a00", "#006b17"],
     orange: ["#6d4100", "#7c280f", "#cf3000", "#741b00", "#FF4C4B", "#df2727", "#df795a"],
+
+    darkpink: ["#8b0242", "#ff00aa", "#57002b", "#bd005e", "#c90788", "#b1128e", "#750844"],
+
     blurple: ["#200044", "#35008b", "#28004e", "#4500b4", "#4918cf", "#4a00d4", "#2f009c"],
     discord: ["#323339", "#7D7E87", "#323339", "#2C2D32", "#5865F2", "#4452BB", "#393A41"],
     midnight: ["#000000", "#4d4d4d", "#242425", "#2e2e2e", "#5a5a5a", "#494949", "#3b3b3b"],
     blackout: ["#000000", "#000000", "#000000", "#000000", "#000000", "#000000", "#000000"] // The "F... it, we ball" version of the midnight theme
+}
+
+let customtheme = await new Promise(resolve =>
+    chrome.storage.local.get('customtheme', data => resolve(data.customtheme || ["#000000", "#000000", "#000000", "#000000", "#000000", "#000000", "#000000", "#FFFFFF"]))
+    ) ?? ["#000000", "#000000", "#000000", "#000000", "#000000", "#000000", "#000000", "#FFFFFF"];
+
+for (let i=0; i< customtheme.length; i++) {
+    document.getElementById(`customthemecolor${i+1}`).value = customtheme[i]
 }
 
 function openConfirmOverwriteNotePopup(user) {
@@ -83,7 +94,7 @@ function replaceCharAtIdx(string, index, newchar) {
 
 const default_app_settings =
 {
-    rows: 3,
+    size: 2,
     utils: true,
     social: true,
     misc: true
@@ -95,8 +106,8 @@ const currenttheme = await new Promise(resolve =>
     ) ?? "oceanblue";
 
 let settings = await new Promise(resolve =>
-    chrome.storage.local.get('settings', data => resolve(data.settings || "00000000"))
-    ) ?? "00000000";
+    chrome.storage.local.get('settings', data => resolve(data.settings?.padEnd(16, "0") || "0000000000000000"))
+    ) ?? "0000000000000000";
 
 let display_mode = await new Promise(resolve =>
     chrome.storage.local.get('ui_mode', data => resolve(data.ui_mode || "popup"))
@@ -109,9 +120,11 @@ let preferredcdn = await new Promise(resolve =>
 let app_settings = await new Promise(resolve =>
     chrome.storage.local.get('app_settings', data => resolve(data.app_settings || default_app_settings))
     ) ?? default_app_settings;
+    delete app_settings.rows
 
 document.getElementById('roturphotoswarning').style.display = (preferredcdn == 'roturphotos') ? 'block' : 'none'
 document.getElementById('fluficdnwarning').style.display = (preferredcdn == 'fluficdn') ? 'block' : 'none'
+document.getElementById('mistiumwarning').style.display = (preferredcdn == 'mistiums3') ? 'block' : 'none'
 
 document.getElementsByName('cdnoption').forEach(option => {
     if (option.value == preferredcdn) {
@@ -122,10 +135,10 @@ document.getElementsByName('cdnoption').forEach(option => {
 document.getElementById('showutils').checked = app_settings.utils
 document.getElementById('showsocial').checked = app_settings.social
 document.getElementById('showmisc').checked = app_settings.misc
-document.getElementById('approwinput').value = app_settings.rows
-document.getElementById('approwlabel').textContent = app_settings.rows
+document.getElementById('appsizeinput').value = app_settings.size
+document.getElementById('appsizelabel').textContent = `${50 + ((app_settings.size ?? 2) * 25)}%`
 
-const setting_ids = ['renderoverlays', 'renderoverlaysglobal', 'anchorheader', 'anchorfooter', '24h', 'circular', 'showstatusicons']
+const setting_ids = ['renderoverlays', 'renderoverlaysglobal', 'anchorheader', 'anchorfooter', '24h', 'circular', 'showstatusicons', 'noborders', 'blockgifs', 'overridegeneral']
 for (let i=0; i<setting_ids.length; i++) {
     const setting = setting_ids[i]
     document.getElementById(setting).checked = (settings[i] == "1")
@@ -133,10 +146,28 @@ for (let i=0; i<setting_ids.length; i++) {
 
 async function updateTheme() {
     const theme = await new Promise(resolve =>
-    chrome.storage.local.get('theme', data => resolve(data.theme || "oceanblue"))
+        chrome.storage.local.get('theme', data => resolve(data.theme || "oceanblue"))
     ) ?? "oceanblue";
-    const newtheme = themedata[theme]
+
     const cssvars = document.documentElement.style
+    const newtheme = (theme == 'custom') ? 
+    [
+        document.getElementById('customthemecolor1').value,
+        document.getElementById('customthemecolor2').value,
+        document.getElementById('customthemecolor3').value,
+        document.getElementById('customthemecolor4').value,
+        document.getElementById('customthemecolor5').value,
+        document.getElementById('customthemecolor6').value,
+        document.getElementById('customthemecolor7').value,
+        document.getElementById('customthemecolor8').value
+    ] : themedata[theme]
+    if (theme == 'custom') {
+        chrome.storage.local.set({customtheme: newtheme})
+        cssvars.setProperty("--customcolor", newtheme[7])
+        document.body.classList.add('customtextcolor');
+    } else {
+        document.body.classList.remove('customtextcolor');
+    }
     for (let i=0; i<themevarnames.length; i++) {
         cssvars.setProperty(themevarnames[i], newtheme[i])
     }
@@ -270,6 +301,14 @@ document.getElementById('gensettings').addEventListener('click', async function(
         settings = replaceCharAtIdx(settings, 6, (e.target.checked ? '1' : '0'))
         chrome.storage.local.set({settings: settings})
     }
+    if (e.target.id == 'noborders') {
+        settings = replaceCharAtIdx(settings, 7, (e.target.checked ? '1' : '0'))
+        chrome.storage.local.set({settings: settings})
+    }
+    if (e.target.id == 'overridegeneral') {
+        settings = replaceCharAtIdx(settings, 9, (e.target.checked ? '1' : '0'))
+        chrome.storage.local.set({settings: settings})
+    }
     if (e.target.id == 'renderoverlaysglobal') {
         if (e.target.checked) {
             settings = replaceCharAtIdx(settings, 1, '1')
@@ -289,6 +328,34 @@ document.getElementById('gensettings').addEventListener('click', async function(
             settings = replaceCharAtIdx(settings, 1, '0')
             await chrome.declarativeNetRequest.updateDynamicRules({
                 removeRuleIds: [123]
+            });
+        }
+        chrome.storage.local.set({settings: settings})
+        return;
+    }
+    if (e.target.id == 'blockgifs') {
+        const CUSTOM_IMAGE_URL = "https://i.postimg.cc/1XCBXRcn/Rotur-Assistant-No-Gifs.png"
+        if (e.target.checked) {
+            settings = replaceCharAtIdx(settings, 8, '1')
+            await chrome.declarativeNetRequest.updateDynamicRules({
+                removeRuleIds: [456], 
+                addRules: [{
+                    id: 456,
+                    priority: 1,
+                    action: {
+                        type: "redirect",
+                        redirect: {url: CUSTOM_IMAGE_URL}
+                    },
+                    condition: {
+                        urlFilter: `|https://gifs.originchats.com/api/*`,
+                        resourceTypes: ["image", "xmlhttprequest", "sub_frame"]
+                    }
+                }]
+            });
+        } else {
+            settings = replaceCharAtIdx(settings, 8, '0')
+            await chrome.declarativeNetRequest.updateDynamicRules({
+                removeRuleIds: [456]
             });
         }
         chrome.storage.local.set({settings: settings})
@@ -317,6 +384,9 @@ document.getElementById('gensettings').addEventListener('click', async function(
 
 document.getElementById('themepicker').addEventListener('change', async function(e) {
     await chrome.storage.local.set({theme: e.target.value})
+    updateTheme()
+})
+document.getElementById('customthemes').addEventListener('change', async function(e) {
     updateTheme()
 })
 
@@ -424,6 +494,37 @@ document.addEventListener('click', async function(e) {
         chrome.storage.session.clear()
         openSuccessPopup('Cache cleared successfully.')
     }
+    if (e.target.id == 'randomizetheme') {
+        const getRandomHexColor = () => `#${Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0')}`;
+        document.getElementById('customthemecolor1').value = getRandomHexColor()
+        document.getElementById('customthemecolor2').value = getRandomHexColor()
+        document.getElementById('customthemecolor3').value = getRandomHexColor()
+        document.getElementById('customthemecolor4').value = getRandomHexColor()
+        document.getElementById('customthemecolor5').value = getRandomHexColor()
+        document.getElementById('customthemecolor6').value = getRandomHexColor()
+        document.getElementById('customthemecolor7').value = getRandomHexColor()
+        document.getElementById('customthemecolor8').value = getRandomHexColor()
+        if (document.querySelector('input[value="custom"]').checked) {
+            updateTheme()
+        }
+        return;
+    }
+    if (e.target.id == 'examplepopup') {
+        openSuccessPopup('Example Popup content')
+        document.getElementById('overlay').querySelector('h1').textContent = "Example Popup"
+        return;
+    }
+    if (e.target.name == 'themeselect') {
+        if (e.shiftKey) {
+            e.preventDefault()
+            await chrome.storage.local.set({theme: 'custom'})
+            for (let i=0; i<7; i++) {
+                document.getElementById(`customthemecolor${i+1}`).value = themedata[e.target.value][i]
+            }
+            document.getElementById(`customthemecolor8`).value = '#FFFFFF'
+            document.querySelector('input[value="custom"]').click()
+        }
+    }
 })
 
 document.getElementById('usernotelist').addEventListener('input', function(e) {
@@ -455,13 +556,14 @@ document.getElementById('preferredcdnoptions').addEventListener('change', (e) =>
     chrome.storage.local.set({ preferredcdn: preferredcdn });
     document.getElementById('roturphotoswarning').style.display = (preferredcdn == 'roturphotos') ? 'block' : 'none'
     document.getElementById('fluficdnwarning').style.display = (preferredcdn == 'fluficdn') ? 'block' : 'none'
+    document.getElementById('mistiumwarning').style.display = (preferredcdn == 'mistiums3') ? 'block' : 'none'
 });
 
-document.getElementById('approwinput').addEventListener('input', function(e) {
-    document.getElementById('approwlabel').textContent = e.target.value
+document.getElementById('appsizeinput').addEventListener('input', function(e) {
+    document.getElementById('appsizelabel').textContent = `${50 + (Number(e.target.value) * 25)}%`
 })
 
-document.getElementById('approwinput').addEventListener('change', function(e) {
-    app_settings.rows = Number(e.target.value)
+document.getElementById('appsizeinput').addEventListener('change', function(e) {
+    app_settings.size = Number(e.target.value)
     chrome.storage.local.set({app_settings: app_settings})
 })

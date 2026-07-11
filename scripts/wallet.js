@@ -9,6 +9,7 @@ let tosrecentlyaccepted = false
 let systemowner_cache = 'Mist'
 let lastsort = 'roster'
 let includezeroesinsort = true
+let activeaccdata = ''
 const type_translator = 
 {
     in: "Received credits",
@@ -17,7 +18,7 @@ const type_translator =
     gift_claim: "You claimed a gift",
     gift_claimed: "Your gift was claimed",
     gift_create: "You created a gift",
-    key_sale: "Key sale",
+    key_sale: "Someone bought your key",
     key_buy: "You bought a Key",
     escrow_in: "Devfund Completed",
     escrow_out: "Devfund Contribution",
@@ -33,8 +34,8 @@ const type_translator =
 }
 
 const config = {
-    elements: ['p', 'img', 'div', 'h1', 'h2', 'h3', 'h4', 'button', 'ul', 'li', 'select', 'option', 'input', 'hr', 'a', 'label'],
-    attributes: ['src', 'alt', 'href', 'width', 'height', 'id', 'class', 'data', 'value', 'title', 'disabled', 'type', 'placeholder', 'step']
+    elements: ['p', 'img', 'div', 'h1', 'h2', 'h3', 'h4', 'button', 'ul', 'li', 'select', 'option', 'input', 'br', 'hr', 'a', 'label'],
+    attributes: ['src', 'alt', 'href', 'width', 'height', 'id', 'class', 'data', 'value', 'title', 'disabled', 'type', 'placeholder', 'step', 'style']
 }
 const sanitizer = new Sanitizer(config)
 
@@ -76,13 +77,28 @@ function openPopup(senderbal, recipientdata, amt, note) {
             <button id="popup-x" class="closebtn">✕</button>
         </div>
         <h2>Transferring ${amt} credit${amt != 1 ? 's' : ''} to: ${recipientdata.username}</h2>
-        <p>Your Balance: ${senderbal} -> ${FixDecimal(senderbal - amt)}</p>
-        <p>${recipientdata.username}'s Balance: ${recipientdata.username == 'rotur' ? '1 -> 1' : `${recipientdata.currency} -> ${FixDecimal(recipientdata.currency + amt)}`}</p>
+        <p>Your Balance: ${FixDecimal(senderbal)} -> ${FixDecimal(senderbal - amt)}</p>
+        <p>${recipientdata.username}'s Balance: ${recipientdata.username == 'rotur' ? '1 -> 1' : `${FixDecimal(recipientdata.currency)} -> ${FixDecimal(recipientdata.currency + amt)}`}</p>
         ${(note != "" ? `<p class='transactionnote'>With note: ${sanitize(note.substring(0, 50))}</p>` : "")}
         ${recipientdata.username == 'rotur' ? `<p class='specialtransfercase'>Note: The "rotur" Rotur account has a special property where its balance remains at 1 no matter what transaction it's involved in. This means that any credits sent to it are effectively voided.` : ``}
         <div id="popup-choices">
             <button id="cancel" class="closebtn">Cancel</button>
             <button id="finaltransfer">Confirm & Send</button>
+        </div>
+    `, {sanitizer: sanitizer})
+}
+
+function openDailyClaimPopup() {
+    document.getElementById('overlay').style.display = 'flex';
+    document.getElementsByClassName('popup')[0].setHTML(`
+        <div id="popup-header">
+            <h1>Confirm Claim</h1>
+            <button id="popup-x" class="closebtn">✕</button>
+        </div>
+        <p>Your Balance is currently over 500 credits. If you claim the daily credit now, you will receive half the daily credits you would normally receive.<br>Claim anyways?</p>
+        <div id="popup-choices">
+            <button id="cancel" class="closebtn">Cancel</button>
+            <button id="finaldailyclaim">Claim</button>
         </div>
     `, {sanitizer: sanitizer})
 }
@@ -157,7 +173,10 @@ async function getTransactionHistory(accdata) {
         const exceptions = ['gift_create', 'gift_refund', 'group_create', 'group_tip', 'group_entry_fee', 'escrow_in', 'escrow_out']
         const userexception = exceptions.includes(transaction_snippet.type)
         transactioncard.querySelector('h1').textContent = type
-        if (type.length > 24) {
+        if (type.length > 22) {
+            transactioncard.querySelector('h1').style = 'font-size: 20px;'
+        }
+        if (type.length > 26) {
             transactioncard.querySelector('h1').style = 'font-size: 18px;'
         }
         transactioncard.querySelector('a').href = `../pages/lookup.html?user=${userexception ? accdata.username : user_avatar}`
@@ -172,11 +191,13 @@ async function getTransactionHistory(accdata) {
         transactionhtml.push(transactioncard)
     }
     if (transactionhtml.length == 0) {
-        document.getElementById('transactionlist').setHTML(`<li><h3 style='font-size: 16px;'>You don't have any transaction history yet.</h3></li>`, {sanitizer: sanitizer})
+        document.getElementById('transactionlist').setHTML(`<h3 style='font-size: 16px;'>You don't have any transaction history yet.</h3>`, {sanitizer: sanitizer})
         document.getElementById('transactionlist').style = 'border: none;'
         document.getElementById('averageprofit').style = 'display: none;'
         document.getElementById('transactionreload').style = 'display: none;'
     } else {
+        document.getElementById('transactionlist').style = 'border: 2px solid white;'
+        document.getElementById('transactioncontrols').style.display = 'block'
         document.getElementById('transactionlist').replaceChildren(...transactionhtml)
     }
     document.getElementById('averageprofit').innerText = `Recent average profit margin: ${FixDecimal(profit)}`
@@ -186,17 +207,16 @@ async function getTransactionHistory(accdata) {
 
 function refreshCounters() {
     document.getElementById('balancedisplay').setHTML(`
-    <h2> Active Account Balance: ${bal_cache}</h2>
+    <h2> Active Account Balance: ${FixDecimal(bal_cache)}</h2>
     ${accounts.length > 1 ? `<h2 id='totalsumofaccs'> Total Balance (Sum of all accounts): ${suminprogress ? `...` : sum_cache[0]}</h2>` : ``}
     `, {sanitizer: sanitizer})
     chrome.storage.session.set({sum_cache: sum_cache})
 }
 
-async function getEconomicData(activeaccdata) {
-
-    const userbalance = activeaccdata['sys.currency'] ?? activeaccdata.currency
+async function getEconomicData(currentaccdata) {
+    const userbalance = currentaccdata['sys.currency'] ?? currentaccdata.currency
     const stats = (stats_cache1 ? stats_cache1 : await fetch('https://api.rotur.dev/stats/economy').then(res => res.json()))
-    const accdata = (stats_cache2 ? stats_cache2 : activeaccdata)
+    const accdata = (stats_cache2 ? stats_cache2 : currentaccdata)
 
     const cents = parseFloat(stats.currency_comparison.cents.split('¢')[0])
     const pence = parseFloat(stats.currency_comparison.pence.split('p')[0])
@@ -226,6 +246,91 @@ async function getEconomicData(activeaccdata) {
 
 // Everything else
 
+async function sumBalances() {
+    if (!activeaccdata['sys.tos_accepted'] || (activeaccdata['sys.email_verified'] === false)) {
+        return;
+    }
+    if (flagged.includes(activeacc.uuid)) {
+        document.getElementById('wallet-container').setHTML(`
+            <h1>Your Wallet</h1>
+            <hr class="full-size">
+            <h2>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h2>
+        `, {sanitizer: sanitizer})
+        return;
+    }
+    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+    sum_cache = [0, 0, {}]
+    sum_cache[0] = 0
+    suminprogress = true
+    let sumcache2 = []
+    const flat_cache = {}
+    const sumlist = []
+    async function PerformSum(i) {
+        let accdata = {}
+        let accjson = {}
+        accdata = (accounts[i].uuid == activeacc.uuid) ? activeaccdata : await fetch(`https://api.rotur.dev/get_user?auth=${accounts[i].token}`).then(res => res.json())
+        if ((accdata.error && (accdata.error == "Invalid authentication credentials") && !accdata.username) || (accdata['sys.banned'])) {
+            if (!flagged.includes(accounts[i].uuid)) {
+                flagged.push(accounts[i].uuid)
+                chrome.storage.local.set({flagged: flagged})                    
+            }
+        }
+        sum_cache[0] += (accdata['sys.currency'] ?? 0)
+        accjson[accounts[i].name] = (accdata['sys.currency'] ?? 0)
+        sumcache2.push(accjson)
+        flat_cache[accounts[i].name] = (accdata['sys.currency'] ?? 0)
+    }
+    const promises = []
+    for (let i=0; i<accounts.length; i++) {
+        promises.push(PerformSum(i))
+    }
+    await Promise.all(promises)
+
+    for (let j=0; j < accounts.length; j++) {
+        const sumcard = document.getElementById('breakdownusertemplate').content.cloneNode(true)
+        sumcard.querySelector('li').dataset.user = (accounts[j].name ?? "Spectator")
+        sumcard.querySelector('img').src = `https://avatars.rotur.dev/${accounts[j].name ?? "Spectator"}`;
+        sumcard.querySelector('img').alt = (accounts[j].name ?? "Spectator");
+        sumcard.querySelector('h4').textContent = (accounts[j].name ?? "Unknown User")
+        sumcard.querySelector('p').textContent = `Balance: ${flat_cache[accounts[j].name] ?? 'Unknown'}`
+        sumlist.push(sumcard)
+    }
+    if (String(sum_cache[0]).length > 10) {
+        sum_cache[0] = sum_cache[0].toFixed(2)
+    }
+    if (isNaN(sum_cache[0] ?? NaN)) {
+        sum_cache[0] = '???'
+        document.getElementById('claimstatusplaceholder').replaceChildren(MiniError('failure', "An error occurred while finding the total sum. This is likely due to being rate-limited by the Rotur API mid-calculation."))
+        setTimeout(function() {
+        document.getElementById('claimstatusplaceholder').replaceChildren()
+        }, (10000))
+    } else {
+        sum_cache[1] = Date.now()
+        sum_cache[2] = sumcache2
+        chrome.storage.session.set({sum_cache: sum_cache})
+    }
+    if (accounts.length > 1) {
+        document.getElementById('totalsumofaccs').textContent = `Total Balance (Sum of all accounts): ${sum_cache[0]}`
+        const total = document.createElement('li')
+        const h3 = document.createElement('h3')
+        const p = document.createElement('p')
+        const hr = document.createElement('hr')
+        const div = document.createElement('div')
+        h3.textContent = "Total"
+        p.textContent = `Balance: ${sum_cache[0]}`;
+        div.appendChild(hr)
+        div.appendChild(p)
+        total.appendChild(h3)
+        total.appendChild(div)
+        sumlist.push(total)
+        document.getElementById('accountsbysum').replaceChildren(...sumlist)
+        document.getElementById('accountsbysum').style = 'border: 2px solid white;'
+        document.getElementById('breakdownoptions').style.display = 'block'
+        suminprogress = false;
+    }
+
+}
+
 function UpdateSumList(order, includezeros) {
     const sumdata = [ ...sum_cache[2] ]
 
@@ -254,7 +359,14 @@ function UpdateSumList(order, includezeros) {
 
     const sumlist = []
     for (let i=0; i<accounts.length; i++) {
-        const currentname = Object.keys(sumdata[i])[0]
+        let currentname = ''
+        try {
+            currentname = Object.keys(sumdata[i])[0]
+        } catch {
+            sum_cache = [0, 0, {}]
+            sumBalances() // Failsafe in case invalid sum data is received
+            return;
+        }
         if (!includezeros && (sumdata[i][currentname] == 0)) {
             continue;
         }
@@ -284,9 +396,18 @@ function UpdateSumList(order, includezeros) {
 }
 
 async function walletpage() {
+    if (!navigator.onLine) {
+        document.getElementById('wallet-container').setHTML(`
+            <h1>Your Wallet</h1>
+            <hr class="full-size">
+            <h2>A communication error has occurred. If you're sure it's not your connection, then Rotur may be down right now.</h2>
+        `, {sanitizer: sanitizer})
+        return;
+    }
     if (accounts.length == 0) {
         document.getElementById('wallet-container').setHTML(`
         <h1>Your Wallet</h1>
+        <hr class="full-size">
         <h2>You are not signed in! Please head over to the account manager to add an account first.</h2>
         `, {sanitizer: sanitizer})
         return;
@@ -298,13 +419,15 @@ async function walletpage() {
     if (flagged.includes(activeacc.uuid)) {
         document.getElementById('wallet-container').setHTML(`
             <h1>Your Wallet</h1>
+            <hr class="full-size">
             <h2>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h2>
         `, {sanitizer: sanitizer})
         return;
     }
-    const activeaccdata = await fetch(`https://api.rotur.dev/get_user?auth=${activeacc.token}`).then(res => res.json()).catch(err => {
+    activeaccdata = await fetch(`https://api.rotur.dev/get_user?auth=${activeacc.token}`).then(res => res.json()).catch(err => {
         document.getElementById('wallet-container').setHTML(`
             <h1>Your Wallet</h1>
+            <hr class="full-size">
             <h2>A communication error has occurred. If you're sure it's not your connection, then Rotur may be down right now.</h2>
         `, {sanitizer: sanitizer})
         return;
@@ -314,6 +437,7 @@ async function walletpage() {
         chrome.storage.local.set({flagged: flagged})
         document.getElementById('wallet-container').setHTML(`
             <h1>Your Wallet</h1>
+            <hr class="full-size">
             <h2>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h2>
         `, {sanitizer: sanitizer})
         return;
@@ -321,6 +445,7 @@ async function walletpage() {
     if (activeaccdata['sys.email_verified'] == false) {
         document.getElementById('wallet-container').setHTML(`
             <h1>Your Wallet</h1>
+            <hr class="full-size">
             <div id='toscontainer'>
                 <h4>Your E-mail is not verified. Until you verify your E-mail address, some actions may be limited. To verify your e-mail, head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> and reauthenticate.</h4>
             </div>
@@ -330,6 +455,7 @@ async function walletpage() {
     if (!activeaccdata['sys.tos_accepted']) {
         document.getElementById('wallet-container').setHTML(`
             <h1>Your Wallet</h1>
+            <hr class="full-size">
             <div id='toscontainer'>
                 <h4>The Rotur TOS was updated since your last visit. As a result, accounts can't access or perform certain actions until they accept the TOS again. Accept the new terms?</h4>
                 <button id='accepttos'>Accept Terms</button>
@@ -346,99 +472,25 @@ async function walletpage() {
     }
     bal_cache = activeaccdata['sys.currency']
     document.getElementById('balancedisplay').setHTML(`
-    <h2>Active Account Balance: ${bal_cache}</h2>
+    <h2>Active Account Balance: ${FixDecimal(bal_cache)}</h2>
     ${accounts.length > 1 ? `<h2 id='totalsumofaccs'>Total Balance (Sum of all accounts): ...</h2>` : ``}
     `, {sanitizer: sanitizer})
     if (activeaccdata['sys.currency'] == undefined) {
         document.getElementById('wallet-container').setHTML(`
         <h1>Your Wallet</h1>
+        <hr class="full-size">
         <h2>If you see this, you were probably rate-limited by the Rotur API. Please wait a bit, then try again.</h2>
         `, {sanitizer: sanitizer})
         return;
     }
-
-    async function sumBalances() {
-        if (!activeaccdata['sys.tos_accepted'] || (activeaccdata['sys.email_verified'] === false)) {
-            return;
-        }
-        sum_cache = [0, 0, {}]
-        sum_cache[0] = 0
-        suminprogress = true
-        let sumcache2 = []
-        const sumlist = []
-        let accdata = {}
-        for (let i=0; i<accounts.length; i++) {
-            let accjson = {}
-            accdata = (accounts[i].uuid == activeacc.uuid) ? activeaccdata : await fetch(`https://api.rotur.dev/get_user?auth=${accounts[i].token}`).then(res => res.json())
-            if ((accdata.error && (accdata.error == "Invalid authentication credentials") && !accdata.username) || (accdata['sys.banned'])) {
-                if (!flagged.includes(accounts[i].uuid)) {
-                    flagged.push(accounts[i].uuid)
-                    chrome.storage.local.set({flagged: flagged})                    
-                }
-            }
-            sum_cache[0] += (accdata['sys.currency'] ?? 0)
-            accjson[accounts[i].name] = (accdata['sys.currency'] ?? 0)
-            sumcache2.push(accjson)
-            const sumcard = document.getElementById('breakdownusertemplate').content.cloneNode(true)
-            sumcard.querySelector('li').dataset.user = (accounts[i].name ?? "Spectator")
-            sumcard.querySelector('img').src = `https://avatars.rotur.dev/${accounts[i].name ?? "Spectator"}`;
-            sumcard.querySelector('img').alt = (accounts[i].name ?? "Spectator");
-            sumcard.querySelector('h4').textContent = (accounts[i].name ?? "Unknown User")
-            sumcard.querySelector('p').textContent = `Balance: ${accdata['sys.currency'] ?? 'Unknown'}`
-            sumlist.push(sumcard)
-        }
-        if (flagged.includes(activeacc.uuid)) {
-            document.getElementById('wallet-container').setHTML(`
-                <h1>Your Wallet</h1>
-                <h2>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h2>
-            `, {sanitizer: sanitizer})
-            return;
-        }
-        if (String(sum_cache[0]).length > 10) {
-            sum_cache[0] = sum_cache[0].toFixed(2)
-        }
-        if (isNaN(sum_cache[0] ?? NaN)) {
-            sum_cache[0] = '???'
-            document.getElementById('claimstatusplaceholder').replaceChildren(MiniError('failure', "An error occurred while finding the total sum. This is likely due to being rate-limited by the Rotur API mid-calculation."))
-            setTimeout(function() {
-            document.getElementById('claimstatusplaceholder').replaceChildren()
-            }, (10000))
-        } else {
-            sum_cache[1] = Date.now()
-            sum_cache[2] = sumcache2
-            chrome.storage.session.set({sum_cache: sum_cache})
-        }
-        if (accounts.length > 1) {
-            document.getElementById('totalsumofaccs').textContent = `Total Balance (Sum of all accounts): ${sum_cache[0]}`
-            const total = document.createElement('li')
-            const h3 = document.createElement('h3')
-            const p = document.createElement('p')
-            const hr = document.createElement('hr')
-            const div = document.createElement('div')
-            h3.textContent = "Total"
-            p.textContent = `Balance: ${sum_cache[0]}`;
-            div.appendChild(hr)
-            div.appendChild(p)
-            total.appendChild(h3)
-            total.appendChild(div)
-            sumlist.push(total)
-            document.getElementById('accountsbysum').replaceChildren(...sumlist)
-            document.getElementById('accountsbysum').style = 'border: 2px solid white;'
-            document.getElementById('breakdownoptions').style.display = 'block'
-
-            suminprogress = false;
-        }
-
-    }
     if (accounts.length > 1) {
         if (sum_cache && (Date.now() - sum_cache[1] < 600000)) {
-            document.getElementById('totalsumofaccs').textContent = `Total Balance (Sum of all accounts): ${sum_cache[0]}` // Refresh sum cache after 10 minutes after passed
+            document.getElementById('totalsumofaccs').textContent = `Total Balance (Sum of all accounts): ${sum_cache[0]}` // Refresh sum cache after 10 minutes have passed
             UpdateSumList('roster', true)
         } else {
             sumBalances()
         }
     }
-
     const systemdata = await fetch(`https://api.rotur.dev/systems`).then(res => res.json())
     const accsystem = activeaccdata.system
     const systemowner = systemdata[accsystem].owner.name
@@ -552,6 +604,9 @@ document.addEventListener('click', async function(e) {
     if (e.target.className == 'tab') {
         Array.from(document.getElementsByClassName('tab')).forEach(tab => {
             tab.style = 'border-bottom: none;'
+            if (tab.id == 'breakdowntab' && accounts.length < 2) {
+                tab.style.display = 'none'
+            }
         })
         e.target.style = 'border-bottom: 2px solid white;'
         document.getElementById('transferwindow').style.display = (e.target.id == 'transfertab') ? 'flex' : 'none'
@@ -606,15 +661,23 @@ document.addEventListener('click', async function(e) {
         }
     }
 
-    if (e.target.id == 'dailyclaim') {
-        const claimbtn = e.target
+    if ((e.target.id == 'dailyclaim') || (e.target.id == 'finaldailyclaim')) {
+        closePopup()
+        const claimbtn = (e.target.id == 'dailyclaim') ? e.target : document.getElementById('dailyclaim')
         claimbtn.disabled = true
         claimbtn.textContent = 'Claiming...'
-        const activeaccdata = await fetch(`https://api.rotur.dev/profile?name=${activeacc.name}&include_posts=no`).then(res => res.json())
-        const multiplier = (activeaccdata.subscription == "Pro" || activeaccdata.subscription == "Max") ? 3 : ((activeaccdata.subscription == "Drive") ? 2 : 1)
+        const activeaccdata2 = await fetch(`https://api.rotur.dev/profile?name=${activeacc.name}&include_posts=no`).then(res => res.json())
+        const multiplier = (activeaccdata2.subscription == "Pro" || activeaccdata2.subscription == "Max") ? 3 : ((activeaccdata2.subscription == "Drive") ? 2 : 1)
         document.getElementById('claimstatusplaceholder').replaceChildren()
-        if (activeaccdata.currency <= 1000) {
-            var dailysuccess = await fetch(`https://api.rotur.dev/claim_daily?auth=${activeacc.token}`).then(res => res.json())
+        if (activeaccdata2.currency <= 1000) {
+            if ((activeaccdata2.currency > 500) && (e.target.id == 'dailyclaim')) {
+                openDailyClaimPopup()
+                claimbtn.textContent = 'Claim Daily Credit'
+                claimbtn.disabled = false
+                return;
+            } else {
+                var dailysuccess = await fetch(`https://api.rotur.dev/claim_daily?auth=${activeacc.token}`).then(res => res.json())
+            }
         } else {
             var dailysuccess = "Balance too high"
         }
@@ -627,7 +690,7 @@ document.addEventListener('click', async function(e) {
             document.getElementById('claimstatusplaceholder').replaceChildren(MiniError('failure', `Daily claim failed. ${waittime.includes('NaN') ? dailysuccess.error : `Please wait ${waittime}`}.`))
             claimbtn.disabled = false
         } else {
-            if (activeaccdata.currency > 500) {
+            if (activeaccdata2.currency > 500) {
                 document.getElementById('claimstatusplaceholder').replaceChildren(MiniError('partialsuccess', `While the daily claim was successful, you only received half the credits as normal, since your balance is greater than 500.`))
                 bal_cache += 0.5 * multiplier // I almost switched this out because apparently, dailysuccess was supposed to also return the amount received according to the docs, but in testing, that was not true. The returned object only has the message saying the claim was successful.
                 sum_cache[0] += 0.5 * multiplier
@@ -650,7 +713,6 @@ document.addEventListener('click', async function(e) {
         }, (dailysuccess == "Balance too high" ? 20000 : 10000))
     }
     if (e.target.id == 'sendcredits') {
-        const activeaccdata = bal_cache
         const recipientdata = await fetch(`https://api.rotur.dev/profile?name=${document.getElementById('transferuser').value}&include_posts=no`).then(res => res.json())
         const transferamt = parseFloat(document.getElementById('amount').value)
         const note = document.getElementById('transfernote').value

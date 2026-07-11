@@ -6,6 +6,7 @@
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+        <title>ICN Editor - Rotur Assistant</title>
     </head>
     <body>
         <header id="header-placeholder"></header>
@@ -30,7 +31,9 @@
                 <textarea id="icn_field" placeholder="ICN goes here..." spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
                 <button id="rendericn">Render</button>
                 <hr class="full-size dotted_separator">
-                <canvas id="icn_canvas" width="370" height="240"></canvas>
+                <canvas id="icn_canvas" width="370" height="240">
+                    If you see this, then unfortunately, the browser you are currently using does not support the HTML Canvas API. Rotur Assistant handles its ICN rendering using the HTML Canvas API.
+                </canvas>
                 <button id="resetcamera">Reset Camera</button>
             </div>
             <div id="icnsettings" style="display: none">
@@ -72,7 +75,7 @@
             <div id="icndocs" style="display: none">
                 <div class="wiki-container">
                     <h2>ICN Docs</h2>
-                    <p>Since ICN has consistent syntax and a small amount of commands, Rotur Assistant is able to provide its own version of the <a href="https://icn.rotur.dev/" target="_blank" rel="noopener noreferrer">ICN documentation</a>. Note that any command or argument that is highlighted in <mark class="highlight_yellow">yellow</mark> are things that only work within Rotur Assistant's implementation of ICN, and nowhere else. You can toggle support for these special commands in the ICN settings tab.</p>
+                    <p>Since ICN has consistent syntax and a small amount of commands, Rotur Assistant is able to provide its own version of the <a href="https://icn.rotur.dev/" target="_blank" rel="noopener noreferrer">ICN documentation</a>. Rotur Assistant provides some additional information about ICN <a href="wiki_pages/wiki_icn.html">here</a>. Note that any command or argument that is highlighted in <mark class="highlight_yellow">yellow</mark> are things that only work within Rotur Assistant's implementation of ICN, and nowhere else. You can toggle support for these special commands in the ICN settings tab.</p>
                     <hr class="full-size">
                     <h3>w</h3>
                     <p class="icnsyntaxfineprint">Syntax: w (num)<br>Example command: w 5<br><mark class="highlight_yellow">Alias: width, weight</mark></p>

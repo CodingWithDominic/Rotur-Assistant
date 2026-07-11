@@ -6,6 +6,7 @@
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+        <title>Claw - Rotur Assistant</title>
     </head>
     <body>
         <header id="header-placeholder"></header>
@@ -14,7 +15,7 @@
             <div id="clawtalon"><h1>Claw</h1></div>
             <div id="postwindow">
                 <form id="post">
-                    <textarea id="postcontent" placeholder="Share something to claw..."></textarea>
+                    <textarea id="postcontent" placeholder="Share something to Claw..."></textarea>
                     <p class="postcharlimit" id="limit-post">0/300</p>
                     <label id="profileonlyoption">
                         <input type="checkbox" id="profileonly">
@@ -28,11 +29,12 @@
                         <button id="clearattachment" title="Clear Attachment" type="button">✕</button>
                     </div>
                     <div id="systemandsend">
-                        <label for="system">System: </label>
+                        <label for="system" id="clawsystemoption">System: 
                             <select name="system" id="system">
                                 <option value="Rotur Assistant">Rotur Assistant</option>
                             </select>
-                        <button type="submit" id="sendpost">Send</button>
+                        </label>
+                        <button type="submit" id="sendpost">Send &rarr;</button>
                     </div>
                 </form>
                 <div id="posterrorplaceholder"></div>
@@ -72,6 +74,7 @@
         <script src="../footer.js"></script>
         <template id="clawposttemplate">
             <li id="post-postid" class="clawpostbody">
+                <span class="repostlabel"><img src='../images/misc_icons/repost.png' width='12' height='12'> Reposted by User</span>
                 <div class='postauthor'>
                     <a href='../pages/lookup.html?user=user'>
                         <img class='clawpfp' src='user' href='../pages/lookup.html?user=user' alt='user' width='32' height='32'>
@@ -83,6 +86,10 @@
                     </div>
                 </div>
                 <p class='postcontent'>Hello, claw!</p>
+                <form class="clawpoll" data-postid="">
+                    <ul class="clawpolloptionslist"></ul>
+                    <button class="pollsubmit" data-postid="123" disabled>Submit Choice</button>
+                </form>
                 <img class='clawattachment' src=''>
                 <p class='postmetadata'>Posted from Rotur Assistant on 1/1/1970</p>
                 <div class='feedbackbar'>
@@ -98,7 +105,7 @@
                     <div class='replyboxplaceholder'>
                         <textarea class='replybox' data-postid='postid' placeholder='Add a reply for User' name='userclawpostreplybox'></textarea>
                         <p class="postcharlimit" id="limit-id">0/300</p>
-                        <button class='sendreply' data-postid='postid'>Send</button>
+                        <button class='sendreply' data-postid='postid'>Send &rarr;</button>
                         <h2>Sign in to add a reply</h2>
                     </div>
                     <div class='replyerrorplaceholder'></div>
@@ -117,6 +124,15 @@
                 <p class='postcontent'>Hello User!</p>
                 <img class='clawattachment' src=''>
                 <p class='postmetadata'>Posted on 1/1/1970</p>
+            </li>
+        </template>
+        <template id="clawpolloptiontemplate">
+            <li class="clawpolloption">
+                <div class="clawpollprogressbar"></div>
+                <label class="clawpolloptioncontent">
+                    <input type="radio" value="0" name="poll-clawpostid">
+                    <span>Option</span>
+                </label>
             </li>
         </template>
     </body>

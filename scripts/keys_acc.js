@@ -1,7 +1,8 @@
-import { sanitize, formatDate, parseHTML, openSuccessPopup, MiniError } from "../index.js"
+import { sanitize, formatDate, parseHTML, openSuccessPopup, MiniError, CreateEmptyPlaceholder } from "../index.js"
 
 let systemcache = ''
 let tosrecentlyaccepted = false
+let accdata = {}
 
 function openPopup(keyname) {
     document.getElementById('overlay').style.display = 'flex';
@@ -156,11 +157,20 @@ function CreateKeyElement(key, value, system) {
 }
 
 async function renderKeys() {
-   if (!activeacc.uuid) {
+    if (!navigator.onLine) {
         document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
             <h1>Key Manager (Account)</h1>
             <p>This page is for managing account keys. For the page that manages keys associated with purchases / subscriptions, see <a href="../pages/keymanager_eco.html">Key Manager (Purchases)</a></p>
-            <hr>
+            <hr class="full-size">
+            <h3>A communication error has occurred. If you're sure it's not your connection, then Rotur may be down right now.</h3>
+        `))
+        return;
+    }
+    if (!activeacc.uuid) {
+        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+            <h1>Key Manager (Account)</h1>
+            <p>This page is for managing account keys. For the page that manages keys associated with purchases / subscriptions, see <a href="../pages/keymanager_eco.html">Key Manager (Purchases)</a></p>
+            <hr class="full-size">
             <h3>You are not signed in! Please head over to the account manager to add an account first.</h3>
         `))
         return;
@@ -175,11 +185,11 @@ async function renderKeys() {
         return;
     }
 
-    const accdata = await fetch(`https://api.rotur.dev/get_user?auth=${activeacc.token}`).then(res => res.json()).catch(err => {
+    accdata = await fetch(`https://api.rotur.dev/get_user?auth=${activeacc.token}`).then(res => res.json()).catch(err => {
         document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
             <h1>Key Manager (Account)</h1>
             <p>This page is for managing account keys. For the page that manages keys associated with purchases / subscriptions, see <a href="../pages/keymanager_eco.html">Key Manager (Purchases)</a></p>
-            <hr>
+            <hr class="full-size">
             <h3>A communication error has occurred. If you're sure it's not your connection, then Rotur may be down right now.</h3>
         `))
         return;
@@ -190,7 +200,7 @@ async function renderKeys() {
         document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
             <h1>Key Manager (Account)</h1>
             <p>This page is for managing account keys. For the page that manages keys associated with purchases / subscriptions, see <a href="../pages/keymanager_eco.html">Key Manager (Purchases)</a></p>
-            <hr>
+            <hr class="full-size">
             <h3>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h3>
         `))
         return;
@@ -199,7 +209,7 @@ async function renderKeys() {
         document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
             <h1>Key Manager (Account)</h1>
             <p>This page is for managing account keys. For the page that manages keys associated with purchases / subscriptions, see <a href="../pages/keymanager_eco.html">Key Manager (Purchases)</a></p>
-            <hr>
+            <hr class="full-size">
             <div id='toscontainer'>
                 <h4>Your E-mail is not verified. Until you verify your E-mail address, some actions may be limited. To verify your e-mail, head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> and reauthenticate.</h4>
             </div>
@@ -209,7 +219,7 @@ async function renderKeys() {
         document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
             <h1>Key Manager (Account)</h1>
             <p>This page is for managing account keys. For the page that manages keys associated with purchases / subscriptions, see <a href="../pages/keymanager_eco.html">Key Manager (Purchases)</a></p>
-            <hr>
+            <hr class="full-size">
             <div id='toscontainer'>
                 <h4>The Rotur TOS was updated since your last visit. As a result, accounts can't access or perform certain actions until they accept the TOS again. Accept the new terms?</h4>
                 <button id='accepttos'>Accept Terms</button>
@@ -231,6 +241,8 @@ async function renderKeys() {
     document.getElementById('readonlykeys').replaceChildren()
     document.getElementById('sys_keys').replaceChildren()
     document.getElementById('otherkeys').replaceChildren()
+    document.getElementById('syskeysearch').value = ''
+    document.getElementById('otherkeysearch').value = ''
     for (let i=0; i<key_names.length; i++) {
         let keyname = key_names[i]
         let keyvalue = accdata[keyname]
@@ -382,7 +394,13 @@ document.addEventListener('click', async function(e) {
         setTimeout(function() { error_element.replaceChildren() }, 10000)
         return;
     }
-
+    if (e.target.id == "reloadkeys") {
+        const target = e.target
+        target.textContent = '...'
+        await renderKeys()
+        target.textContent = '⟳'
+        return;
+    }
     if (["keynamecopy", "keyvaluecopy", "keysave", "keydelete", "finaldelete", "finalsystemconfirm"].includes(e.target.className)) {
         const keyname = e.target.dataset.keyname
         const keyvalue = (() => {
@@ -492,3 +510,49 @@ document.addEventListener('click', async function(e) {
         }
     }
 })
+
+if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
+    document.getElementById('syskeysearch').addEventListener('input', function(e) {
+        const newquery = e.target.value
+        document.getElementById('sys_keys').replaceChildren()
+        for (let i=0; i<key_names.length; i++) {
+            let keyname = key_names[i]
+            if (!keyname.startsWith('sys.') || !keyname.toLowerCase().includes(newquery.toLowerCase())) {
+                continue;
+            }
+            let keyvalue = accdata[keyname]
+            if (typeof(keyvalue) == 'object') {
+                keyvalue = JSON.stringify(keyvalue)
+            }
+            document.getElementById('sys_keys').appendChild(CreateKeyElement(keyname, keyvalue, null))
+        }
+        if (document.getElementById('sys_keys').childElementCount == 0) {
+            document.getElementById('sys_keys').replaceChildren(CreateEmptyPlaceholder('No keys match your current search', true))
+            document.getElementById('sys_keys').style.border = 'none'
+        } else {
+            document.getElementById('sys_keys').style.border = '1px solid white'
+        }
+    })
+
+    document.getElementById('otherkeysearch').addEventListener('input', function(e) {
+        const newquery = e.target.value
+        document.getElementById('otherkeys').replaceChildren()
+        for (let i=0; i<key_names.length; i++) {
+            let keyname = key_names[i]
+            if (read_only_keys.includes(keyname) || main_keys.includes(keyname) || keyname.startsWith('sys.') || !keyname.toLowerCase().includes(newquery.toLowerCase())) {
+                continue;
+            }
+            let keyvalue = accdata[keyname]
+            if (typeof(keyvalue) == 'object') {
+                keyvalue = JSON.stringify(keyvalue)
+            }
+            document.getElementById('otherkeys').appendChild(CreateKeyElement(keyname, keyvalue, null))
+        }
+        if (document.getElementById('otherkeys').childElementCount == 0) {
+            document.getElementById('otherkeys').replaceChildren(CreateEmptyPlaceholder('No keys match your current search', true))
+            document.getElementById('otherkeys').style.border = 'none'
+        } else {
+            document.getElementById('otherkeys').style.border = '1px solid white'
+        }
+    })
+}

@@ -6,6 +6,7 @@
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+        <title>Notifications - Rotur Assistant</title>
     </head>
     <body>
         <header id="header-placeholder"></header>
@@ -75,16 +76,13 @@
         <script src="../footer.js"></script>
         <template id="notiftemplate">
             <li>
-                <a class='notiftitlebar' href="lookup.html?user=User">
-                    <img src="https://avatars.rotur.dev/User" width="32" height="32">
-                    <div class="notifuserbar">
-                        <h2 class="notifsourcefineprint">User</h2>
-                        <p class="notifsourceusertext">Source: OriginChats</p>
-                    </div>
-                </a>
                 <h3>Title</h3>
-                <p class="notifbody">Body</p>
-                <p class='fineprint'>1/1/1970</p>
+                <hr class="full-size dotted_separator" style="margin-top: 3px; margin-bottom: 0; padding: 0;">
+                <p class="notifbody" style="margin-top: 5px; margin-bottom: 5px;">Body</p>
+                <div class="notifmiscinfo">
+                    <p class='notiftimeinfo'>1/1/1970</p>
+                    <p class='notifsenderinfo'>1/1/1970</p>
+                </div>
             </li>
         </template>
         <template id="legacynotiftemplate">
@@ -98,15 +96,12 @@
             <li>
                 <h2 class="notiftypetitle">Type</h2>
                 <hr class='full-size dotted_separator'>
-                <a class='notiftitlebar' href="lookup.html?user=User">
-                    <img src="https://avatars.rotur.dev/User" width="32" height="32">
-                    <div class="notifuserbar">
-                        <h2 class="notifsourcefineprint">User</h2>
-                        <p class="notifsourceusertext">Source: OriginChats</p>
-                    </div>
-                </a>
                 <h3>Title</h3>
-                <p class='fineprint'>Source: OriginChats &bull; 1/1/1970<br>ID: 123</p>
+                <div class="notifmiscinfo" style="margin-top: 5px; margin-bottom: 2px;">
+                    <p class='notiftimeinfo'>1/1/1970</p>
+                    <p class='notifsenderinfo'>1/1/1970</p>
+                </div>
+                <p class="fineprint" style="margin-top: -4px;"></p>
             </li>
         </template>
         <template id="notifsourcetemplate">

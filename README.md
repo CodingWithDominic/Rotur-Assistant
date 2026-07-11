@@ -121,3 +121,41 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 - Several other small/minor tweaks and bug fixes.
 <br>
 - Overall, this update mainly focused on cleaning up a lot of "tech debt", fixing even more bugs, and correcting a lot of bad coding practices.
+
+### 1.2.1
+- Updated Rmail to use the new HTTP APIs, rather than the now-outdated websocket. Thanks to Mistium for providing backwards-compatibility with the old websocket in the meantime so that older Rmail clients (mainly Rotur Assistant's client on versions prior to 1.2.1) can continue to function.
+- Rmail replying and attachments now use the new official methods, rather than Rotur Assistant's special markdown. Attachments that were originally shared using the special markdown will continue to render properly on Rotur Assistant. As a side effect, the preferred CDN will no longer affect attachments sent when creating an Rmail. They will be fixed to using attachments.mistium.com (or OCHost if you have that selected). Any images that appear using the special markdown will appear before the actual attachments, for any Rmails that happen to use both the special markdown and have actual attachments.
+- Overall, the Rmail app basically got a complete overhaul due to the drastic changes Rmail itself received.
+- In response to to Mistium revamping Claw, as seen by the new official client, <a href="https://pounce.rotur.dev" target="_blank" rel="noopener noreferrer">Pounce</a>, Rotur Assistant adopted some of the new features, such as being able to view quoted reposts and vote on polls. Additional support for more features will come in 1.3, since this update primarily focused on bringing Rmail up to speed. Support for creating polls is up in the air, since creating polls requires a paid Rotur subscription, and since I don't have one, I can't test.
+- Added a failsafe regarding Rotur Assistant erroring when it encounters a Claw post with data it doesn't recognize. Rotur Assistant will now instead skip that Claw post when rendering posts. This phenomenon made some profiles inaccessible on Rotur Assistant.
+- The "Update in real time" option on Claw now persists.
+- On top of that, a few bugs surrounding it were fixed.
+- Fixed a bug where the breakdown tab would reappear after switching tabs in the wallet app with only one account added
+- Fixed a bug where retrieving from sync data would not properly refresh the roster
+- Fixed a bug with trying to send a Claw post that contained the "%" symbol
+- Fixed a bug where opening the notifications app while not connected to the internet leaves you stuck on its loading screen, without properly displaying the communication error message
+- Added error handling for Rotur RPC if Rotur Assistant fails to connect to the status websocket.
+- Fixed a bug regarding a desync with the sum cache once an account roster is loaded from sync storage
+- Fixed a bug where equipping an overlay in the profile editor would equip it on the active account shown in the header, rather than the account you are currently editing.
+- Switching accounts using the header right-click menu while editing a profile will now open the editor of the profile of the new account you switched to, rather than the same profile.
+- Added a number to the account manager that shows how many accounts you have added
+- Economy keys now properly handle pending cancellaions.
+- Added account switcher support for several new sites/services, and tweaked the login method for some existing sites that were rewritten.
+- Rotur Assistant will no longer prevent you from posting a Claw post if you have just an attachment with no text in the textbox.
+- The placeholder text on Claw's post and reply boxes will now tell you which account you're posting or replying as, to decrease the chance of sending a post or a reply from the wrong account.
+- Since I happened to (unawaringly) be a test subject of Mistium testing standing, I added a section on profiles that lets you see standing history, since I now had something to reference for it. This is also the first (known) case of standing being seen in action.
+- Added a search bar to the account key manager and the account manager. The searches are case-insensitive.
+- Added a refresh button to the account key manager
+- Tweaked the CSS to allow Rotur Assistant to have a variable width, rather than its width being fixed to 400px.
+- Thanks to the change above, there's a new view mode: Full-site mode
+- In case the chat on OriginChats or whatever uses the GIF service becomes a little too chaotic for your liking, there is now an option to block GIFs from <a href="https://gifs.originchats.com" target="_blank" rel="noopener noreferrer">https://gifs.originchats.com</a>. Do note that this does have the side effect of rendering the GIF service completely inaccessible and unusable.
+- Added an option to have the general channel on OriginChats appear as "general" no matter what its nickname is, in case the server owners have a little too much fun with changing the channel name.
+- Added a new theme: Dark Pink
+- Added custom themes!
+- Split off OSL and ICN into their own wiki pages, rather than cramming them all under OriginOS's wiki page
+- Added a new wiki page for Rmail
+- Categorized some settings under "Chat Controls"
+- Tweaked the layout of (non-legacy) notifications
+- Greatly improved the speed of total sum calculation in the Wallet app by making the calculation process asynchronous. The difference will me mainly noticeable if you have several accounts added.
+- Using the same logic above, the loading times of looking up someone's profiles as well as opening the profile editor has been greatly reduced.
+- And many more small changes

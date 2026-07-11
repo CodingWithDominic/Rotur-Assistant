@@ -6,6 +6,7 @@
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+        <title>Wallet - Rotur Assistant</title>
     </head>
     <body>
         <header id="header-placeholder"></header>
@@ -13,6 +14,7 @@
         <div class="container">
             <div id="wallet-container">
                 <h1>Your Wallet</h1>
+                <hr class="full-size">
                 <div id="balancedisplay">
                     <h2>Active Account Balance: ...</h2>
                     <h2 id="totalsumofaccs">Total Balance (Sum of all accounts): ...</h2>
@@ -45,9 +47,13 @@
                     <div id="transferstatusplaceholder"></div>
                 </div>
                 <div id="transactionpanel" style="display: none;">
-                    <button id="transactionreload" title="Refresh Transaction History">⟳</button>
-                    <p id="averageprofit">Average profit margin: </p>
-                    <ul id="transactionlist"></ul>
+                    <div id="transactioncontrols" style="display: none;">
+                        <button id="transactionreload" title="Refresh Transaction History">⟳</button>
+                        <p id="averageprofit">Average profit margin: </p>
+                    </div>
+                    <ul id="transactionlist">
+                        <h3>Loading...</h3>
+                    </ul>
                 </div>
                 <div id="statspanel" style="display: none;">
                     <button id="statsreload" title="Refresh Statistics">⟳</button>

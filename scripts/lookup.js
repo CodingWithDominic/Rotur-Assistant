@@ -8,7 +8,14 @@ let outgoing_cache = ''
 
 let user_cache = 'MRBELLY'
 
-import { sanitize, formatDate, parseHTML, openErrorPopup, openWarningPopup, openSuccessPopup, CreateEmptyPlaceholder, MiniError } from "../index.js"
+const config = {
+    elements: ['p', 'img', 'div', 'h1', 'h2', 'h3', 'h4', 'button', 'ul', 'li', 'select', 'option', 'input', 'hr', 'a', 'label', 'span'],
+    attributes: ['src', 'alt', 'href', 'width', 'height', 'id', 'class', 'data', 'value', 'title', 'disabled', 'type', 'placeholder', 'step', 'rel', 'target']
+}
+
+const sanitizer = new Sanitizer(config)
+
+import { sanitize, formatDate, parseHTML, openErrorPopup, openWarningPopup, openSuccessPopup, CreateEmptyPlaceholder, MiniError, FixDecimal } from "../index.js"
 
 function desanitize(string) {
     return string.replaceAll('&sol;','/').replaceAll('&lt;', '<').replaceAll('&gt;', '>').replaceAll('&lpar;', '(').replaceAll('&rpar;', ')').replaceAll("&equals;", "=").replaceAll(`&quot;`, `"`).replaceAll(`&#39;`, `'`).replaceAll('&amp;', '&') // Used for handling items since Rotur decided to use the direct item names as the IDs instead.
@@ -21,7 +28,15 @@ const accounts = await new Promise(resolve =>
 const settings = await new Promise(resolve =>
         chrome.storage.local.get('settings', data => resolve(data.settings || "0000000"))
     ) ?? "00000000";
-
+const presencecolors = 
+{
+    online: 'green',
+    idle: 'rgb(221, 162, 0)',
+    dnd: 'red',
+    invisible: 'gray',
+    offline: 'rgb(48, 48, 48)'
+}
+const clawerrorattachment = "https://i.postimg.cc/BZMMMNWw/RA-Error-Attachment.png"
 let accountsarray = []
 accounts.forEach(acc => {
     accountsarray.push(acc.name)
@@ -69,11 +84,20 @@ const flagged = await new Promise(resolve =>
     chrome.storage.local.get('flagged', data => resolve(data.flagged || []))
 ) ?? [];
 
+const charlimitmap =
+{
+    Free: 300,
+    Lite: 400,
+    Plus: 600,
+    Pro: 800,
+    Max: 1000
+}
+
+let clawcharlimit = 300
+
 const known_badges = ['Architext', "Asier System", "Bugger", "colon three", "dev", "discord", "friendly", "gingerbug", "Nex", "originOS", "orion", "pro", "rich", "Spark", "rotur", "Constellinux", "HuopaOS", "kyrOS", "flf", "Rotur Assistant", "OliveOS", "geec os", "Warpdrive", "passNet", "PassNet", "originChats", "Fluoride", "fluoride", 'plus']
 
 // Re-using code from claw.js for the claw posts section
-
-let premium = false;
 
 function openLikesPopup(likes) {
     document.getElementById('overlay').style.display = 'flex';
@@ -223,9 +247,10 @@ function openRepostPopup(post_id) {
             <button id="popup-x" class="closebtn">✕</button>
         </div>
         <p id="deleteconfirmdialogue">Repost this post?</p>
+        <textarea id="clawrepostquote" placeholder="Optional Quote..."></textarea>
         <div id="popup-choices">
-            <button id="cancel" class="closebtn">No</button>
-            <button class="finalrepost" data-postid='${post_id}'>Yes</button>
+            <button id="cancel" class="closebtn">Cancel</button>
+            <button class="finalrepost" data-postid='${post_id}'>Repost</button>
         </div>
     `))
 }
@@ -264,9 +289,9 @@ function openUninPopup(post_id) {
 
 function updateReplyCharLimit(postid, num) {
     const replycharlimit = document.getElementById(`limit-${postid}`)
-    replycharlimit.style = `color: ${num > (premium ? 600 : 300) ? 'red' : 'white'};`
-    replycharlimit.textContent = `${num}/${premium ? "600" : "300"}`
-    document.getElementById(`post-${postid}`).querySelector('[class="sendreply"]').disabled = (num > (premium ? 600 : 300))
+    replycharlimit.style = `color: ${num > clawcharlimit ? 'red' : 'white'};`
+    replycharlimit.textContent = `${num}/${clawcharlimit}`
+    document.getElementById(`post-${postid}`).querySelector('[class="sendreply"]').disabled = (num > clawcharlimit)
 }
 
 function createReplyElement(reply) {
@@ -279,7 +304,20 @@ function createReplyElement(reply) {
     clawreply.querySelector('h2').textContent = reply.user || "Unknown User"
     clawreply.querySelector('.postcontent').innerText = reply.content
     if (reply.attachment) {
-        clawreply.querySelector('.clawattachment').src = reply.attachment
+        const attachment = clawreply.querySelector('.clawattachment')
+        attachment.src = repost ? post.original_post.attachment : post.attachment
+        attachment.src = reply.attachment
+        const imgload = (e) => {
+            attachment.removeEventListener('load', imgload)
+            attachment.removeEventListener('error', imgerror)
+        }
+        const imgerror = (e) => {
+            e.target.src = clawerrorattachment
+            attachment.removeEventListener('load', imgload)
+            attachment.removeEventListener('error', imgerror)
+        }
+        attachment.addEventListener('load', imgload)
+        attachment.addEventListener('error', imgerror)
     } else {
         clawreply.querySelector('.clawattachment').remove()
     }
@@ -296,13 +334,13 @@ function appendReplies(postdata) {
 }
 
 function createPostElement(post) {
-    const repost = post.is_repost
+    const repost = (post.is_repost && post.original_post)
     const clawpost = document.getElementById('clawposttemplate').content.cloneNode(true)
     clawpost.querySelector('li').id = `post-${post.id}`
-    clawpost.querySelector('.clawpfp').src = `https://avatars.rotur.dev/${post.user || "Spectator"}`
+    clawpost.querySelector('.clawpfp').src = `https://avatars.rotur.dev/${(repost ? post.original_post.user : post.user) || "Spectator"}`
     clawpost.querySelector('.clawpfp').alt = post.user || "Spectator"
-    clawpost.querySelector('a').href = `../pages/lookup.html?user=${post.user || "Spectator"}`
-    clawpost.querySelector('.clawpfp').href = `../pages/lookup.html?user=${post.user || "Spectator"}`
+    clawpost.querySelector('a').href = `../pages/lookup.html?user=${(repost ? post.original_post.user : post.user) || "Spectator"}`
+    clawpost.querySelector('.clawpfp').href = `../pages/lookup.html?user=${(repost ? post.original_post.user : post.user) || "Spectator"}`
     clawpost.querySelectorAll('[data-postid]').forEach(elementnode => {
         elementnode.dataset.postid = post.id
     })
@@ -310,7 +348,7 @@ function createPostElement(post) {
         elementnode.dataset.user = post.user
     }) // Get around having to do it manually since it appears so often
 
-    clawpost.querySelector('.clawpostauthortitle').textContent = ((post.user + ' ') || "Unknown User ")
+    clawpost.querySelector('.clawpostauthortitle').textContent = (((repost ? post.original_post.user : post.user) + ' ') || "Unknown User ")
     if (repost) {
         const mark = document.createElement('mark')
         mark.textContent = post.original_post.profile_only ? `Profile + Repost` : `Repost`
@@ -318,6 +356,7 @@ function createPostElement(post) {
         clawpost.querySelector('.clawpostauthortitle').appendChild(mark)
         clawpost.querySelector('.repostbtn').disabled = true
         clawpost.querySelector('.repostbtn').title = "Repost (Cannot repost profile-only posts or other reposts)"
+        clawpost.querySelector('.repostlabel').setHTML(`<img src='../images/misc_icons/repost.png' width='12' height='12'> Reposted by ${post.user}`, {sanitizer: sanitizer})
     } else if (post.profile_only) {
         const mark = document.createElement('mark')
         mark.textContent = `Profile`
@@ -325,6 +364,9 @@ function createPostElement(post) {
         clawpost.querySelector('.clawpostauthortitle').appendChild(mark)  
         clawpost.querySelector('.repostbtn').disabled = true
         clawpost.querySelector('.repostbtn').title = "Repost (Cannot repost profile-only posts or other reposts)"
+    }
+    if (!repost) {
+        clawpost.querySelector('.repostlabel').remove()
     }
     if (clawpost.querySelector('.repostbadge') && (post.user.length > 15)) {
         clawpost.querySelector('.clawpostauthortitle').style = 'font-size: 16px;'
@@ -347,7 +389,19 @@ function createPostElement(post) {
         clawpost.querySelector('.pinbtn').remove()
     }
     if (post.attachment || (repost && post.original_post.attachment)) {
-        clawpost.querySelector('.clawattachment').src = repost ? post.original_post.attachment : post.attachment
+        const attachment = clawpost.querySelector('.clawattachment')
+        attachment.src = repost ? post.original_post.attachment : post.attachment
+        const imgload = (e) => {
+            attachment.removeEventListener('load', imgload)
+            attachment.removeEventListener('error', imgerror)
+        }
+        const imgerror = (e) => {
+            e.target.src = clawerrorattachment
+            attachment.removeEventListener('load', imgload)
+            attachment.removeEventListener('error', imgerror)
+        }
+        attachment.addEventListener('load', imgload)
+        attachment.addEventListener('error', imgerror)
     } else {
         clawpost.querySelector('.clawattachment').remove()
     }
@@ -365,8 +419,8 @@ function createPostElement(post) {
     if (activeacc.uuid) {
         clawpost.querySelector('.replyboxplaceholder').querySelector('h2').remove()
         clawpost.querySelector('.postcharlimit').id = `limit-${post.id}`
-        clawpost.querySelector('.postcharlimit').textContent = `0/${premium ? "600" : "300"}`
-        clawpost.querySelector('.replybox').placeholder = `Add a reply for ${post.user}`
+        clawpost.querySelector('.postcharlimit').textContent = `0/${clawcharlimit}`
+        clawpost.querySelector('.replybox').placeholder = `Add a reply for ${post.user}\n(Replying as ${activeacc.name})`
     } else {
         clawpost.querySelector('.replyboxplaceholder').querySelectorAll(':not(h2)').forEach(elemNode => {
             elemNode.remove()
@@ -378,13 +432,37 @@ function createPostElement(post) {
     } else {
         clawpost.querySelector(`.reply`).remove()
     }
+    if (post.poll) {
+        const poll = clawpost.querySelector(`.clawpolloptionslist`)
+        let currentoption = 0
+        post.poll.options.forEach(option => {
+            const polloption = document.getElementById('clawpolloptiontemplate').content.cloneNode(true)
+            const percentage = FixDecimal((option.count / post.poll.total) * 100)
+            polloption.querySelector('input').name = `poll-${post.id}`
+            polloption.querySelector('input').value = currentoption
+            polloption.querySelector('.clawpollprogressbar').style = `width: ${percentage}%; height: 28px;`
+            polloption.querySelector('span').textContent = `${option.text} (${percentage}%)`
+            poll.appendChild(polloption)
+            currentoption += 1
+        })
+        let newmetadata = clawpost.querySelector('.postmetadata').textContent
+        newmetadata = (newmetadata + " • Total votes: " + post.poll.total)
+        clawpost.querySelector('.postmetadata').textContent = newmetadata
+        clawpost.querySelector('.pollsubmit').dataset.postid = post.id
+    } else {
+        clawpost.querySelector(`.clawpoll`).remove()
+    }
     return clawpost;
 }
 
 function renderClawFeed(feeddata) {
     let feed_html = []
     feeddata.forEach(post => {
-        feed_html.push(createPostElement(post))
+        try {
+            feed_html.push(createPostElement(post))
+        } catch (err) {
+            openErrorPopup('An error occurred while trying to load some Claw posts. The posts causing the error were skipped.')
+        }
     });
     return feed_html;
 }
@@ -406,7 +484,7 @@ async function reply(postid, message) {
     if (content == '') {
         replystatus.replaceChildren(MiniError('failure', "You can't post a blank reply"))
     } else {
-        replysuccess = await fetch(`https://api.rotur.dev/reply?id=${postid}&auth=${activeacc.token}&content=${message}`)
+        replysuccess = await fetch(`https://api.rotur.dev/reply?id=${postid}&auth=${activeacc.token}&content=${encodeURIComponent(message)}`)
         if (replysuccess.error) {
             replystatus.replaceChildren(MiniError('failure', replysuccess.error))
         } else {
@@ -419,7 +497,7 @@ async function reply(postid, message) {
         }
     }
     replybtn.disabled = false
-    replybtn.textContent = 'Send'
+    replybtn.textContent = 'Send →'
     setTimeout(function() {
     if (document.getElementById(`post-${postid}`)) {
         document.getElementById(`post-${postid}`).querySelector('[class="replyerrorplaceholder"]').replaceChildren()
@@ -523,7 +601,7 @@ function getItems(itemdata) {
             buybtn.dataset.owner = item.owner
             buybtn.dataset.amt = item.price
             buybtn.textContent = `Buy (${item.price} RC)`
-            buybtn.disabled = ((!item.selling) || item.owner == activeacc.name)
+            buybtn.disabled = (!item.selling || item.owner == activeacc.name || !activeacc.uuid)
 
             roturitem.querySelector('.transferhistory').replaceChildren(...formatTransferHistory(item.transfer_history))
             item_html.push(roturitem)
@@ -533,6 +611,17 @@ function getItems(itemdata) {
 }
 
 // End of all functions reused from other files
+
+function CreateStandingCard(standingdata) {
+    const standingcard = document.getElementById('standingcardtemplate').content.cloneNode(true)
+    standingcard.querySelector('.adminidhyperlink').textContent = (standingdata.admin_id || 'Unknown')
+    standingcard.querySelector('.adminidhyperlink').href = `lookup.html?id=${(standingdata.admin_id || '2cb2fa41-b59a-43bf-aa24-a3474ff6050e')}`
+    standingcard.querySelector('.standing_reason').textContent = `- Reason: ${(standingdata.reason || 'None')}`
+    standingcard.querySelector('.standing_old').textContent = `- Old Level: ${(standingdata.previous || 'Unknown')}`
+    standingcard.querySelector('.standing_new').textContent = `- New Level: ${(standingdata.level || 'Unknown')}`
+    standingcard.querySelector('.standing_date').textContent = `- On: ${(formatDate(standingdata.timestamp * 1000) || 'Unknown Date')}`
+    return standingcard
+}
 
 function openPopup() {
     document.getElementById('overlay').style.display = 'flex';
@@ -574,7 +663,7 @@ function renderFollowingFollowers(list) {
         let currentuser = list[i]
         const listusertemplate = document.getElementById('listusertemplate').content.cloneNode(true)
         listusertemplate.querySelector('li').dataset.user = (currentuser || "Spectator")
-        listusertemplate.querySelector('a').href = `lookup.html?user=${currentuser}`
+        listusertemplate.querySelector('a').href = `lookup.html?user=${currentuser || "Spectator"}`
         listusertemplate.querySelector('img').src = `https://avatars.rotur.dev/${currentuser || "Spectator"}`
         listusertemplate.querySelector('p').textContent = (currentuser || "Unknown User")
         return_html.push(listusertemplate)
@@ -588,14 +677,15 @@ async function renderProfile(userdata, you) {
     const balance = userdata.currency
     const id = userdata.id
     const badges = userdata.badges ?? []
-    const followingData = await fetch(`https://api.rotur.dev/following?username=${name}`).then(res => res.json())
-    const followersData = await fetch(`https://api.rotur.dev/followers?username=${name}`).then(res => res.json())
+    const promise_followingData = fetch(`https://api.rotur.dev/following?username=${name}`).then(res => res.json())
+    const promise_followersData = fetch(`https://api.rotur.dev/followers?username=${name}`).then(res => res.json())
+    const promise_standingData = fetch(`https://api.rotur.dev/get_standing?username=${name}`).then(res => res.json())
+    const promise_economydata = fetch(`https://api.rotur.dev/stats/economy`).then(res => res.json())
+    const promise_useritems = fetch(`https://api.rotur.dev/items/list/${name}`).then(res => res.json())
+    const [followingData, followersData, standingData, economydata, useritems] = await Promise.all([promise_followingData, promise_followersData, promise_standingData, promise_economydata, promise_useritems])
     const following = followingData.following
     const followers = followersData.followers
-    const standingData = await fetch(`https://api.rotur.dev/get_standing?username=${name}`).then(res => res.json())
-    const economydata = await fetch(`https://api.rotur.dev/stats/economy`).then(res => res.json())
-    const useritems = await fetch(`https://api.rotur.dev/items/list/${name}`).then(res => res.json())
-    const userstatus = userdata.status ?? {}
+    const userstatus = userdata.status ?? {} // GET /status/get?name= returns the same thing as this btw
     useritems.reverse()
     const cents = parseFloat(economydata.currency_comparison.cents.split('¢')[0])
     const pence = parseFloat(economydata.currency_comparison.pence.split('p')[0])
@@ -613,6 +703,7 @@ async function renderProfile(userdata, you) {
         isBlocked = you['sys.blocked'] && you['sys.blocked'].includes(name)
         outgoingrequest = outgoing_cache.includes(name)
     }
+    document.title = `${name}'s Profile - Rotur Assistant`
 
     const profile = document.getElementById('profiletemplate').content.cloneNode(true)
     const joindate = formatDate(userdata.created)
@@ -719,29 +810,7 @@ ${badges[i].description}`}`
     if (settings[6] == '1') {
         profile.querySelector('.statusicon').remove()
     } else {
-        profile.querySelector('.statusicon').style.background = (() => {
-            switch (userstatus.presence) {
-                case ('online'): {
-                    return 'green'
-                    break;
-                }
-                case ('idle'): {
-                    return 'rgb(221, 162, 0)'
-                    break;
-                }
-                case ('dnd'): {
-                    return 'red'
-                    break;
-                }
-                case ('invisible'): {
-                    return 'gray'
-                    break;
-                }
-                default: {
-                    return 'rgb(48, 48, 48)'
-                }
-            }
-        })();
+        profile.querySelector('.statusicon').style.background = (presencecolors[userstatus.presence] ?? 'rgb(48, 48, 48)')
         profile.querySelector('.statusicon').title = (userstatus.presence ?? 'offline')
     }
 
@@ -818,6 +887,17 @@ ${badges[i].description}`}`
         profile.querySelector('#useruuidplaceholder').remove()
         profile.querySelector('.uuidbar').remove()
     }
+    if (standingData.history && standingData.history.length > 0) {
+        const standing_html = []
+        standingData.history.forEach(standingelement => {
+            standing_html.push(CreateStandingCard(standingelement))
+        })
+        profile.querySelector('#standingplaceholder').replaceChildren(...standing_html)
+        profile.querySelector('#standinghistory').querySelector('summary').textContent = (`Standing History (${standingData.history.length})`)
+    } else {
+        profile.querySelector('#standinghistory').remove()
+        profile.querySelector('#standing_line').remove()
+    }
     following.length ? profile.querySelector('#followinglist').replaceChildren(...renderFollowingFollowers(following)) : ``
     followers.length ? profile.querySelector('#followerslist').replaceChildren(...renderFollowingFollowers(followers)) : ``
     userdata.posts ? profile.querySelector('#clawpostslist').replaceChildren(...renderClawFeed(userdata.posts)) : ``
@@ -861,7 +941,7 @@ async function performSearch(user) {
             searchtype2 = 'name'
         }
     }
-        document.getElementById('lookuperror').replaceChildren(MiniError('partialsuccess', 'Loading...'))
+    document.getElementById('lookuperror').replaceChildren(MiniError('partialsuccess', 'Loading...'))
     const userdata = await fetch(`https://api.rotur.dev/profile?${searchtype2}=${user}${(activeacc.uuid && !flagged.includes(activeacc.uuid)) ? `&auth=${activeacc.token}` : ``}`, {signal: controller2.signal}).then(res => res.json()).catch((err) => {
         document.getElementById('lookuperror').replaceChildren(MiniError('failure', `An error occurred while searching this user's profile. This could be due to a deadlock, Rotur being down, or your internet connection. Please try again later.`))
         clearTimeout(requestlimit2)
@@ -888,7 +968,6 @@ async function performSearch(user) {
     let you = null
     if (flagged.includes(activeacc.uuid)) {
         openWarningPopup('Due to an authentication issue that has been detected with your account, some interaction features have been disabled.')
-        premium = false
     } else {
         you = activeacc.uuid ? (you_cache ? you_cache : await fetch(`https://api.rotur.dev/get_user?auth=${activeacc.token}`).then(res => res.json())) : null
         if (you) {
@@ -909,19 +988,13 @@ async function performSearch(user) {
             }
         }
     }
-    if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
-        premium = await fetch(`https://api.rotur.dev/keys/check/${activeacc.name}?key=bd6249d2b87796a25c30b1f1722f784f`, {signal: controller.signal}).then(res => res.json()).catch((err) => {
-            clearTimeout(requestlimit)
-            console.warn('An error occurred while checking for Claw premium')
-            return ({owned: false})
-        })
-        premium = premium.owned
-        clearTimeout(requestlimit)
+    if (you && (activeacc.uuid && !flagged.includes(activeacc.uuid))) {
+        clawcharlimit = (charlimitmap[you["sys.subscription"]?.tier ?? "Free"])
     }
     const queryString = window.location.search;
     const urlParams = new URLSearchParams(queryString);
 
-    const bypassprivate = Boolean(urlParams.get('bypass')) || reloadinprogress; // Skip the private profile popup if one of these conditions is met
+    const bypassprivate = Boolean(urlParams.get('bypass')) || reloadinprogress || (accounts.findIndex(acc => acc.name.toLowerCase() == user.toLowerCase().trim()) != -1); // Skip the private profile popup if one of these conditions is met
     userdata_cache = userdata
 
     you_cache = you
@@ -993,7 +1066,9 @@ document.addEventListener('click', async function(e) {
         const name = target.dataset.targetname
         const isFollowed = JSON.parse(target.dataset.following)
         if (isFollowed) {
-            const followsuccess = await fetch(`https://api.rotur.dev/unfollow?auth=${activeacc.token}&username=${name}`)
+            const followsuccess = await fetch(`https://api.rotur.dev/unfollow?auth=${activeacc.token}&username=${name}`).then(res => res.json()).catch(err => {
+                return ({error: "A communication error has occurred"})
+            })
             if (followsuccess.error) {
                 openErrorPopup(followsuccess.error)
             } else {
@@ -1001,7 +1076,9 @@ document.addEventListener('click', async function(e) {
                 target.dataset.following = 'false'
             }
         } else {
-            const followsuccess = await fetch(`https://api.rotur.dev/follow?auth=${activeacc.token}&username=${name}`)
+            const followsuccess = await fetch(`https://api.rotur.dev/follow?auth=${activeacc.token}&username=${name}`).then(res => res.json()).catch(err => {
+                return ({error: "A communication error has occurred"})
+            })
             if (followsuccess.error) {
                 openErrorPopup(followsuccess.error)
             } else {
@@ -1311,12 +1388,18 @@ document.addEventListener('click', async function(e) {
     }
     if (e.target.className == 'finalrepost') {
         const postid = e.target.dataset.postid
+        const quote = document.getElementById('clawrepostquote').value
+        const repostsuccess = await fetch(`https://api.rotur.dev/repost?auth=${activeacc.token}&id=${postid}${quote ? `&content=${encodeURIComponent(quote)}&os=Rotur%20Assistant` : ``}`).then(res => res.json())
         closePopup()
-        const repostsuccess = await fetch(`https://api.rotur.dev/repost?auth=${activeacc.token}&id=${postid}`).then(res => res.json())
         if (repostsuccess.error) {
             openErrorPopup(repostsuccess.error)
         } else {
-            openSuccessPopup("This post has been reposted successfully!")
+            if (quote) {
+                document.getElementById('clawrepostquote').value = ''
+                openSuccessPopup("This post has been reposted successfully!")
+            } else {
+                openSuccessPopup("This post has been reposted to your profile successfully!")
+            }
         }
         return;
     }
@@ -1354,9 +1437,53 @@ document.addEventListener('click', async function(e) {
     if (e.target.className == 'copypostid') {
         try {
             await navigator.clipboard.writeText(e.target.dataset.postid);
+            const target = e.target
+            const oldtextcontent = target.textContent
+            target.textContent = 'Copied!'
+            target.style.background = 'rgb(0, 179, 0)'
+            target.disabled = true
+            setTimeout(() => {
+                target.textContent = oldtextcontent.includes('Reply') ? 'Copy Reply ID' : 'Copy Post ID'
+                target.style.background = ''
+                target.disabled = false
+            }, 1500)
         } catch (err) {
-            console.error('Failed to copy: ', err);
+            const target = e.target
+            const oldtextcontent = target.textContent
+            target.textContent = 'Copy Failed'
+            target.style.background = 'rgb(179, 0, 0)'
+            target.disabled = true
+            setTimeout(() => {
+                target.textContent = oldtextcontent.includes('Reply') ? 'Copy Reply ID' : 'Copy Post ID'
+                target.style.background = ''
+                target.disabled = false
+            }, 1500)
         }
+        return;
+    }
+    if (e.target.className == 'pollsubmit') {
+        e.preventDefault()
+        const target = e.target
+        target.disabled = true
+        target.textContent = 'Submitting...'
+        const postid = target.dataset.postid
+        const chosen_option = target.closest('form').querySelector(`input[name="poll-${postid}"]:checked`).value
+        if (chosen_option == null) {
+            openErrorPopup("Please choose an option")
+            return;
+        }
+        const pollsuccess = await fetch(`https://api.rotur.dev/vote_poll?id=${postid}&option=${chosen_option}&auth=${activeacc.token}`).then(res => res.json())
+        if (pollsuccess.error) {
+            openErrorPopup(String(pollsuccess.error))
+        } else {
+            openSuccessPopup('Your vote was successfully cast.')
+            const postdata = userdata_cache.posts.find(clawpost => clawpost.id == postid)
+            postdata.poll = pollsuccess.poll
+            const newpost = document.querySelector(`.clawpostbody[id="post-${postid}"]`).replaceWith(createPostElement(postdata))
+            target.closest('form').reset()
+            target.disabled = true
+        }
+        target.textContent = "Submit Choice"
         return;
     }
 });
@@ -1365,6 +1492,11 @@ document.addEventListener('change', async function(e) {
     if (e.target.name == 'searchtype') {
         document.getElementById('usersearchbarinput').placeholder = e.target.dataset.placeholdervalue
         searchtype = e.target.value
+        return;
+    }
+    if (e.target.name.startsWith('poll-')) {
+        e.target.closest('form').querySelector('.pollsubmit').disabled = false
+        return;
     }
 })
 

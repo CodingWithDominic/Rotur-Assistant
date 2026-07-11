@@ -124,6 +124,11 @@ function ActivateWebsockets(auth) { // This is why I don't like working with web
 
         }
     }
+
+    statusws.onerror = (event) => {
+        statusws.close()
+        chrome.runtime.sendMessage({data: "RPC_ERROR", error: "Failed to connect to the status websocket. It may be down right now, or your connection isn't stable enough. Try again later and/or check your connection."})
+    }
 }
 
 chrome.runtime.onMessage.addListener((msg) => {
@@ -245,7 +250,7 @@ chrome.runtime.onStartup.addListener(async () => {
             if (rpcdata.preference == 'auto') {
                 nexhook = new WebSocket('Nex hook goes here')
             }
-            ActivateWebsockets(accounts[accounts.findIndex(acc => acc.uuid == rpcactive)].token)
+            ActivateWebsockets(accounts.find(acc => acc.uuid == rpcactive).token)
         } else {
             // Future code goes here once NexRPC integration is added.
         }
@@ -255,15 +260,45 @@ chrome.runtime.onStartup.addListener(async () => {
 // Popup and Sidebar toggle stuff
 
 async function toggleExtensionMode(mode) {
+    await chrome.action.setPopup({ popup: '' });
+    await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false });
     if (mode == 'sidebar') {
         await chrome.action.setPopup({ popup: '' });
         await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
         await chrome.sidePanel.setOptions({ enabled: true });
-    } else {
+    } else if (mode == 'popup') {
         await chrome.action.setPopup({ popup: 'index.html' });
         await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false });
     }
 }
+
+async function switchToOrOpenTab(targetUrl) {
+    const tabs = await chrome.tabs.query({});
+    const existingTab = tabs.find(tab => tab.title && tab.title.includes(" - Rotur Assistant"));
+
+    if (existingTab) {
+        await chrome.tabs.update(existingTab.id, { active: true });
+        await chrome.windows.update(existingTab.windowId, { focused: true });
+    } else {
+        await chrome.tabs.create({ url: targetUrl });
+    }
+}
+
+chrome.action.onClicked.addListener(async (tab) => {
+    const mode = await new Promise(resolve =>
+        chrome.storage.local.get('ui_mode', data => resolve(data.ui_mode || "popup"))
+    ) ?? "popup";
+    if ((mode == 'site')) {
+        chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+        if (tabs.length > 0) {
+            const currentTabTitle = tabs[0].title;
+            if (!(currentTabTitle.includes(' - Rotur Assistant'))) {
+                switchToOrOpenTab("index.html") // To prevent tab clutter, switch to an existing Rotur Assistant tab if one is already open when you click the extension
+            }
+        }
+        });
+    }
+});
 
 chrome.storage.onChanged.addListener((changes) => {
     if (changes.ui_mode) {

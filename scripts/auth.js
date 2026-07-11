@@ -64,6 +64,10 @@ window.addEventListener('message', function(event) {
             if (token.startsWith('rotur_st_')) {
                 chrome.storage.session.set({roturstwarning: true})
             }
+            if (token.startsWith('ev_')) {
+                await fetch(`https://api.rotur.dev/email_verify?token=${token}`)
+                chrome.storage.session.set({roturemailwarning: true})
+            }
 
             chrome.storage.local.set({ userdata: existing_users });
             chrome.storage.session.remove('sum_cache')

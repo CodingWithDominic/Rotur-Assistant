@@ -15,7 +15,7 @@ if (!activeacc.uuid) {
     document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(
         `<h1>Key Manager (Economy)</h1>
         <p id="keyfineprint">This page is for managing keys that are purchaseable (either one-time or recursively). For the page that manages keys associated with your account, see <a href="../pages/keymanager_acc.html">Key Manager (Account)</a></p>
-        <hr>
+        <hr class="full-size">
         <h3>You are not signed in! Please head over to the account manager to add an account first.</h3>`
     ))
 }
@@ -23,7 +23,7 @@ if (flagged.includes(activeacc.uuid)) {
     document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
         <h1>Key Manager (Economy)</h1>
         <p id="keyfineprint">This page is for managing keys that are purchaseable (either one-time or recursively). For the page that manages keys associated with your account, see <a href="../pages/keymanager_acc.html">Key Manager (Account)</a></p>
-        <hr>
+        <hr class="full-size">
         <h3>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h3>
     `))
 }
@@ -136,6 +136,7 @@ function renderUsers(userdata, type, creator, id, price) {
         }
         usercard.querySelector('.purchasedate').textContent = `${type == "subscription" ? "Subscribed" : "Purchased"}: ${formatDate(userdata[user].time * 1000)}`
         userdata[user].next_billing ? usercard.querySelector('.nextbillingdate').textContent = `Next Billing: ${formatDate(userdata[user].next_billing)}` : usercard.querySelector('.nextbillingdate').remove()
+        userdata[user].cancel_at ? (usercard.querySelector('.nextbillingdate') ? usercard.querySelector('.nextbillingdate').textContent = `Pending Cancellation: ${formatDate(userdata[user].next_billing)}` : '') : ''
 
         userlist_html.push(usercard)
     })
@@ -143,11 +144,20 @@ function renderUsers(userdata, type, creator, id, price) {
 }
 
 async function RenderKeys() {
+    if (!navigator.onLine) {
+        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+            <h1>Key Manager (Economy)</h1>
+            <p id="keyfineprint">This page is for managing keys that are purchaseable (either one-time or recursively). For the page that manages keys associated with your account, see <a href="../pages/keymanager_acc.html">Key Manager (Account)</a></p>
+            <hr class="full-size">
+            <h3>A communication error has occurred. If you're sure it's not your connection, then this part of Rotur may be down right now.</h3>
+        `))
+        return;
+    }
 	const keys = await fetch(`https://api.rotur.dev/keys/mine?auth=${activeacc.token}`, {signal: controller.signal}).then(res => res.json()).catch(err => {
         document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
             <h1>Key Manager (Economy)</h1>
             <p id="keyfineprint">This page is for managing keys that are purchaseable (either one-time or recursively). For the page that manages keys associated with your account, see <a href="../pages/keymanager_acc.html">Key Manager (Account)</a></p>
-            <hr>
+            <hr class="full-size">
             <h3>A communication error has occurred. If you're sure it's not your connection, then this part of Rotur may be down right now.</h3>
         `))
         return;
@@ -160,7 +170,7 @@ async function RenderKeys() {
             document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
                 <h1>Key Manager (Economy)</h1>
                 <p id="keyfineprint">This page is for managing keys that are purchaseable (either one-time or recursively). For the page that manages keys associated with your account, see <a href="../pages/keymanager_acc.html">Key Manager (Account)</a></p>
-                <hr>
+                <hr class="full-size">
                 <h3>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h3>
             `))
             return;
@@ -168,7 +178,7 @@ async function RenderKeys() {
             document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
                 <h1>Key Manager (Economy)</h1>
                 <p id="keyfineprint">This page is for managing keys that are purchaseable (either one-time or recursively). For the page that manages keys associated with your account, see <a href="../pages/keymanager_acc.html">Key Manager (Account)</a></p>
-                <hr>
+                <hr class="full-size">
                 <h3>The sub-token you have granted for your current account does not allow you to view this page. To resolve this issue, please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> and reauthenticate.</h3>
             `))
         }
@@ -192,9 +202,16 @@ async function RenderKeys() {
                 keyobj.dataset.keyid = key.key
             })
             mykey.querySelector('.ecokeynameheader').textContent = key.name
+            mykey.querySelector('.ecokeynameheader').style = "padding-left: 5px; padding-right: 5px;"
             mykey.querySelector('.ecokeynameupdate').value = key.name
             mykey.querySelector('.keyidlabel').textContent = `ID: ${key.key}`
             mykey.querySelector('.keytypelabel').textContent = `Type: ${key.type}`
+            if (key.total_income) {
+                mykey.querySelector('.totalincomelabel').textContent = `Total Income: ${0.9 * key.total_income} RC`
+                mykey.querySelector('.totalincomelabel').title = `The API actually shows ${key.total_income} RC as the total income, but since keys have a 10% tax, Rotur Assistant decided to calculate the total income after taxes for you, and just show that instead.`
+            } else {
+                mykey.querySelector('.totalincomelabel').remove()
+            }
             key.type == 'subscription' ? mykey.querySelector('.keybillinglabel').textContent = `Bills every: ${key.subscription.frequency} ${key.subscription.period + (key.subscription.frequency != 1 ? 's' : '')}` : mykey.querySelector('.keybillinglabel').remove()
             mykey.querySelector('.ecokeypriceupdate').value = (key.price ?? 0)
             mykey.querySelector('.ecokeywebhook').value = (key.webhook ?? '')
@@ -223,6 +240,7 @@ async function RenderKeys() {
             })
             boughtkey.querySelector('.ecokeyownerlabel').setHTML(`Owner: <img src="https://avatars.rotur.dev/${key.creator}" alt="${key.creator}" width=24 height=24> ${key.creator}`, {sanitizer: sanitizer})
             boughtkey.querySelector('.ecokeynameheader').textContent = key.name
+            boughtkey.querySelector('.ecokeynameheader').style = "padding-left: 5px; padding-right: 5px;"
             boughtkey.querySelector('.keyidlabel').textContent = `ID: ${key.key}`
             boughtkey.querySelector('.keytypelabel').textContent = `Type: ${key.type}`
             key.type == 'subscription' ? boughtkey.querySelector('.keybillinglabel').textContent = `Bills every: ${key.subscription.frequency} ${key.subscription.period + (key.subscription.frequency != 1 ? 's' : '')}` : boughtkey.querySelector('.keybillinglabel').remove()
@@ -237,6 +255,11 @@ async function RenderKeys() {
             boughtkey.querySelector('.ecokeyuserlist').replaceChildren(...renderUsers(key.users, key.type, key.creator, key.key, key.price))
             boughtkey.querySelector('.ecokeysubcancel').id = `cancel-${key.key}`
             boughtkey.querySelector('.ecokeysubcancel').dataset.owner = key.creator
+            if (key.users[activeacc.name] && key.users[activeacc.name].cancel_at) {
+                boughtkey.querySelector('.ecokeysubcancel').disabled = true
+                boughtkey.querySelector('.ecokeysubcancel').textContent = "Pending Cancellation"
+                boughtkey.querySelector('.ecokeysubcancel').title = `This subscription is pending cancellation on ${formatDate(key.users[activeacc.name].cancel_at)}. Until then, you can continue to enjoy any benefits this subscription provides, if any.`
+            }
             owned_keys_html.push(boughtkey)
         }
     })
@@ -285,14 +308,16 @@ if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
         if (keyid == '') {
             document.getElementById('ecokeylookupstatusplaceholder').replaceChildren(MiniError('failure', 'Enter a valid Key ID'))
         }
-        const keydata = await fetch(`https://api.rotur.dev/keys/get/${keyid}`).then(res => res.json())
+        const keydata = await fetch(`https://api.rotur.dev/keys/get/${keyid}`).then(res => res.json()).catch(err => {
+            return ({error: "Enter a valid Key ID"})
+        })
 
         if (keydata.error) {
             document.getElementById('ecokeylookupstatusplaceholder').replaceChildren(MiniError('failure', keydata.error))
         } else {
             const userinfo = await fetch(`https://api.rotur.dev/profile?name=${activeacc.name}&include_posts=0`).then(res => res.json())
             const usercurrency = userinfo.currency
-            document.getElementById('ecokeylookupplaceholder').style = 'border: 2px solid white;'
+            document.getElementById('ecokeylookupplaceholder').style = 'border: 2px solid white; display: block;'
             const h2 = document.createElement('h2')
             const ecokeylookupdiv = document.createElement('div')
             const p1 = document.createElement('p')
@@ -444,7 +469,10 @@ document.addEventListener('click', async function(e) {
         if (cancelsuccess.error) {
             document.getElementById(`key-${keyid}`).querySelector('[class="ecokeystatus"]').replaceChildren(MiniError('failure', cancelsuccess.error))
         } else {
-            document.getElementById(`key-${keyid}`).querySelector('[class="ecokeystatus"]').replaceChildren(MiniError('success', `Your subscription to ${keyname} will be cancelled on the next billing date. You won't be charged on that date. For now until the next billing date, you can continue to enjoy any benefits this key provides.`))         
+            document.getElementById(`key-${keyid}`).querySelector('[class="ecokeystatus"]').replaceChildren(MiniError('success', `Your subscription to ${keyname} will be cancelled on the next billing date. You won't be charged on that date. For now until the next billing date, you can continue to enjoy any benefits this key provides.`))
+            document.getElementById(`key-${keyid}`).querySelector('[class="ecokeysubcancel"]').disabled = true
+            document.getElementById(`key-${keyid}`).querySelector('[class="ecokeysubcancel"]').textContent = "Pending Cancellation"
+            document.getElementById(`key-${keyid}`).querySelector('[class="ecokeysubcancel"]').title = `This subscription is pending cancellation on ${formatDate(Date.now())}. Until then, you can continue to enjoy any benefits this subscription provides, if any.`
         }
         return;
     }
@@ -501,6 +529,7 @@ document.addEventListener('click', async function(e) {
     }
 
     if (e.target.className == 'finalbuy') {
+        closePopup()
         const buysuccess = await fetch(`https://api.rotur.dev/keys/buy/${keyid}?auth=${activeacc.token}`)
         if (buysuccess.error) {
             document.getElementById('ecokeylookupstatusplaceholder').replaceChildren(MiniError('failure', buysuccess.error))

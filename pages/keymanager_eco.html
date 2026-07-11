@@ -6,6 +6,7 @@
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+        <title>Key Manager (Economy) - Rotur Assistant</title>
     </head>
     <body>
         <header id="header-placeholder"></header>
@@ -60,7 +61,7 @@
                     <input type="search" id="keysearchbar" placeholder="Key ID">
                     <button id="keysearchbtn" type="submit" title="Search Key"><img src='../images/app_icons/lookup.png' width="16" height="16"></button>
                 </form>
-                <div id="ecokeylookupplaceholder"></div>
+                <div id="ecokeylookupplaceholder" style="display: none;"></div>
                 <div id="ecokeylookupstatusplaceholder"></div>
             </section>
         </div>
@@ -78,6 +79,7 @@
                     <p class="keyidlabel">ID: 123</p>
                     <p class="keytypelabel">Type: Subscription</p>
                     <p class="keybillinglabel">Bills every: 1 month</p>
+                    <p class="totalincomelabel">Total Income: 0 RC</p>
                     <form class='editpriceandhook'>
                         <label>Price: <input type='text' name='ecokeypricefield' placeholder='Price (RC)' class='ecokeypriceupdate' value="1"> RC <button type="button" class="ecokeysave" title="Save Price" id="saveprice-keyid" data-keyid='keyid'><image src='../images/misc_icons/save.png' width=24 height=24 alt='Save'></button></label>
                         <label>Webhook: <input type='text' name='ecokeywebhookfield' placeholder='Webhook URL' class='ecokeywebhook' value="keywebhook"> <button type="button" class="ecokeysave" title="Save Webhook" id="savehook-keyid" data-keyid='keyid'><image src='../images/misc_icons/save.png' width=24 height=24 alt='Save'></button></label>

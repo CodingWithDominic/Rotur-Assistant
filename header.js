@@ -1,9 +1,10 @@
-// Themes are handled here since unlike index.js, header.js is called everywhere
+// Themes and a few other universal things are handled here since unlike index.js, header.js is called everywhere
 
 const themedata = {
     oceanblue: ["#0F0052", "#004DB1", "#00002B", "#0012B4", "#4F46E5", "#4338CA", "#03009C"],
-    forestgreen: ["#0A3100", "#00b83d", "#271e00", "#058a00", "#7c5500", "rgb(187, 106, 0)", "#006b17"],
+    forestgreen: ["#0A3100", "#00b83d", "#271e00", "#058a00", "#7c5500", "#bb6a00", "#006b17"],
     orange: ["#6d4100", "#7c280f", "#cf3000", "#741b00", "#FF4C4B", "#df2727", "#df795a"],
+    darkpink: ["#8b0242", "#ff00aa", "#57002b", "#bd005e", "#c90788", "#b1128e", "#750844"],
     blurple: ["#200044", "#35008b", "#28004e", "#4500b4", "#4918cf", "#4a00d4", "#2f009c"],
     discord: ["#323339", "#7D7E87", "#323339", "#2C2D32", "#5865F2", "#4452BB", "#393A41"],
     midnight: ["#000000", "#4d4d4d", "#242425", "#2e2e2e", "#5a5a5a", "#494949", "#3b3b3b"],
@@ -13,12 +14,19 @@ const themevarnames = ["--bg-color", "--scrollbar-bar", "--scrollbar-bg", "--hea
 
 document.getElementById('header-placeholder').innerHTML = `
     <nav class="header" style='position: relative;'>
-        <a href="/index.html" class="headerbtns">Home</a>
-        <button class="headerbtns" data-headermenu='utilityflyout'>Utility</button>
-        <button class="headerbtns" data-headermenu='socialflyout'>Social</button>
-        <button class="headerbtns" data-headermenu='otherflyout'>Other</button>
-        <div id=accountarea class=headerbtns title="Right-click to quickly switch accounts">
-            <h1>Accounts</h1>
+        <div id="raheaderlogo">
+            <a href="/index.html" id="raheaderlogoimg">
+                <h2 id="ra_headertitle"><img src='/images/icon32.png' alt="Rotur Assistant Logo"> Rotur Assistant <img src='/images/icon32.png' alt="Rotur Assistant Logo"></h2>
+            </a>
+        </div>
+        <div id="headerbuttonrow">
+            <a href="/index.html" class="headerbtns">Home</a>
+            <button class="headerbtns" data-headermenu='utilityflyout'>Utility</button>
+            <button class="headerbtns" data-headermenu='socialflyout'>Social</button>
+            <button class="headerbtns" data-headermenu='otherflyout'>Other</button>
+            <div id=accountarea class=headerbtns title="Right-click to quickly switch accounts">
+                <h1>Accounts</h1>
+            </div>
         </div>
         <div id='utilityflyout' class='headerflyout' style="display: none;">
             <ul>
@@ -57,8 +65,23 @@ document.getElementById('header-placeholder').innerHTML = `
             <li>Getting accounts...</li>
             </ul>
         </div>
-    </nav>`
-
+    </nav>` // It's easier if I do this since if I need to modify the header, I can just modify this rather than having to modify it in every single HTML file.
+if (document.body.clientWidth > 950) {
+    document.getElementById('raheaderlogo').style.display = 'block'
+    document.getElementById('headerbuttonrow').style.maxWidth = '800px'
+} else {
+    document.getElementById('raheaderlogo').style.display = 'none'
+    document.getElementById('headerbuttonrow').style.maxWidth = '9999px'
+}
+window.addEventListener('resize', () => {
+    if (document.body.clientWidth > 950) {
+        document.getElementById('raheaderlogo').style.display = 'block'
+        document.getElementById('headerbuttonrow').style.maxWidth = '800px'
+    } else {
+        document.getElementById('raheaderlogo').style.display = 'none'
+        document.getElementById('headerbuttonrow').style.maxWidth = '9999px'
+    }
+});
 async function checkSignin() {
     const activeacc = await new Promise(resolve =>
             chrome.storage.local.get('activeacc', data => resolve(data.activeacc || {}))
@@ -137,7 +160,11 @@ document.addEventListener('click', async function(e) {
             chrome.storage.local.get('userdata', data => resolve(data.userdata || []))
             ) ?? [];
         chrome.storage.local.set({activeacc: accounts[accounts.findIndex(acc => acc.name == e.target.dataset.accref)]})
-        this.location.reload()
+        if (this.location.href.includes(`/pages/account.html`)) {
+            this.location.href = `/pages/account.html?user=${e.target.dataset.accref}`
+        } else {
+            this.location.reload()
+        }
     }
     if (e.target.className == 'headerbtns') {
         if (document.getElementById(e.target.dataset.headermenu)?.style.display != 'none') {
@@ -161,10 +188,19 @@ document.getElementById('accountarea').addEventListener("contextmenu", (event) =
 
 async function updateTheme() {
     const theme = await new Promise(resolve =>
-    chrome.storage.local.get('theme', data => resolve(data.theme || "oceanblue"))
+        chrome.storage.local.get('theme', data => resolve(data.theme || "oceanblue"))
     ) ?? "oceanblue";
-    const newtheme = themedata[theme]
+
+    const customtheme = await new Promise(resolve =>
+        chrome.storage.local.get('customtheme', data => resolve(data.customtheme || ["#000000", "#000000", "#000000", "#000000", "#000000", "#000000", "#000000", "#FFFFFF"]))
+    ) ?? ["#000000", "#000000", "#000000", "#000000", "#000000", "#000000", "#000000", "#FFFFFF"];
+
+    const newtheme = (theme == 'custom') ? customtheme : themedata[theme]
     const cssvars = document.documentElement.style
+    if (theme == 'custom') {
+        cssvars.setProperty("--customcolor", customtheme[7])
+        document.body.classList.toggle('customtextcolor');
+    }
     for (let i=0; i<themevarnames.length; i++) {
         cssvars.setProperty(themevarnames[i], newtheme[i])
     }
@@ -172,10 +208,13 @@ async function updateTheme() {
 
 async function updatePFPs() {
     const settings = await new Promise(resolve =>
-            chrome.storage.local.get('settings', data => resolve(data.settings?.padEnd(8, "0") || "00000000"))
-        ) ?? "00000000";
+            chrome.storage.local.get('settings', data => resolve(data.settings?.padEnd(16, "0") || "0000000000000000"))
+        ) ?? "0000000000000000";
     if (settings[5] == '1') {
         document.body.classList.toggle('make-circular');
+    }
+    if (settings[7] == '1') {
+        document.body.classList.toggle('remove-borders');
     }
 }
 

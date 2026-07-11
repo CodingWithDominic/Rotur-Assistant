@@ -8,29 +8,29 @@
     --button: #4f46e5;
     --buttonhover: #4338ca;
     --popupbg: #03009C;
+    --customcolor: #FFFFFF;
 }
 html {
     scrollbar-color: var(--scrollbar-bar) var(--scrollbar-bg);
 }
 body {
-    width: 400px;
+    min-width: 400px;
     height: 600px;
     min-height: 100vh;
     margin: 0;
-    background-color: var(--bg-color);
+    background-color: color-mix(in oklab, var(--bg-color), black 35%);
     font-family: "Golos Text";
     font-style: normal;
     font-weight: 400;
     display: flex;
     flex-direction: column;
+    transform-origin: top left;
 }
-
 /*/ Header and Footer /*/
-
 .header {
     display: flex;
     flex-direction: row;
-    width: 400px;
+    min-width: 400px;
     background: var(--headerandfooter)
 }
 .headerbtns {
@@ -49,13 +49,19 @@ body {
     padding: 0;
     cursor: pointer;
 }
+#headerbuttonrow {
+    display: flex;
+    flex-direction: row;
+    flex: 5;
+    max-width: 800px;
+}
 .headerbtns:hover {
     background: rgba(255, 255, 255, 0.219)
 }
-
 .headerflyout {
     position: absolute;
-    width: 120px;
+    width: calc(120px * calc(100vw / 400px));
+    max-width: 200px;
     height: auto;
     top: 40px;
     background: var(--scrollbar-bar);
@@ -65,7 +71,6 @@ body {
     border-bottom-left-radius: 4px;
     border-bottom-right-radius: 4px;
 }
-
 .headerflyout ul {
     padding-left: 0;
     list-style-type: none;
@@ -75,47 +80,51 @@ body {
     justify-content: center;
     width: 100%;
 }
-
 .headerflyout ul li {
     text-align: center;
     padding-top: 5px;
     padding-bottom: 5px;
     font-size: 12px;
 }
-
 .headerflyout ul li:hover {
     background: rgba(255, 255, 255, 0.1);
     cursor: pointer;
 }
-
 a {
     color: white;
 }
-
+[data-headermenu="utilityflyout"] { anchor-name: --utility-btn; }
+[data-headermenu="socialflyout"]  { anchor-name: --social-btn; }
+[data-headermenu="otherflyout"]   { anchor-name: --other-btn; }
+#accountarea                      { anchor-name: --account-btn; }
 .headerflyout ul li a {
     color: white;
     text-decoration: none;
 }
-
 #utilityflyout {
-    left: 60px;
+    position-anchor: --utility-btn;
+    top: anchor(bottom);
+    left: anchor(center);
+    transform: translateX(-50%);
 }
-
 #socialflyout {
-    left: 140px;
+    position-anchor: --social-btn;
+    top: anchor(bottom);
+    left: anchor(center);
+    transform: translateX(-50%);
 }
-
 #otherflyout {
-    left: 220px;
+    position-anchor: --other-btn;
+    top: anchor(bottom);
+    left: anchor(center);
+    transform: translateX(-50%);
 }
-
 #accountflyout {
     right: 0px;
     max-height: 500px;
     overflow-y: auto;
     overflow-x: hidden;
 }
-
 #accountandarrow {
     flex: 1;
     width: 100%;
@@ -123,11 +132,9 @@ a {
     display: flex;
     flex-direction: row;
 }
-
 #accpanelflyout {
     flex: 1;
 }
-
 #accountarea {
     flex: 1;
     display: flex;
@@ -157,7 +164,7 @@ a {
     align-items: center;
     justify-content: center;
     text-align: center;
-    width: 400px;
+    min-width: 400px;
     color: white;
     padding: 10px;
     padding-top: 0px;
@@ -173,12 +180,14 @@ a {
     flex-direction: row;
     gap: 25px;
 }
-
 #auth-container {
-    width: 400px;
+    display: flex;
+    width: 100%;
+    min-width: 400px;
+    max-width: 800px;
     height: 600px;
-    border: 1px solid #ccc;
-    margin: auto;
+    border: 1px solid #cccccc;
+    justify-self: center;
 }
 #auth-iframe {
     width: 100%;
@@ -190,18 +199,31 @@ a {
 }
 #systemselector {
     padding: 2px;
-    padding-left: 5px;
+    padding-left: 0;
+    padding-right: 0;
+    width: 100%;
+    max-width: 800px;
+    align-self: center;
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    align-items: center;
+    justify-content: center;
 }
 #systemselector label {
     color: white;
     font-size: 14px;
 }
-
 /*/ Container /*/
-
 .container {
-    padding: 15px;
     text-align: center;
+    width: calc(100% - 30px);
+    min-width: 370px; /* Min-width can't be 400 due to the padding */
+    max-width: 600px;
+    align-self: center;
+    padding: 15px;
+    background-color: var(--bg-color);
+    flex-grow: 1;
 }
 .container h1 {
     font-size: 24px;
@@ -243,14 +265,12 @@ a {
     text-align: center;
     font-weight: 400;
 }
-
 .container p a {
     color: white;
     font-size: 12px;
     text-align: center;
     font-weight: 400;
 }
-
 .container h2 a:not([class='underline']) {
     color: white;
     text-decoration: none;
@@ -274,6 +294,8 @@ a {
     display: block;
     width: 80%;
     margin: 4px;
+    max-width: 400px;
+    align-self: center;
 }
 .container input[type='text'], .container input[type='number'], .container input[type='search'], .container input[type='password'] {
     font-size: 14px;
@@ -288,6 +310,7 @@ textarea {
     font-size: 14px;
     font-family: "Golos Text", sans-serif;
     resize: vertical;
+    border-radius: 4px;
 }
 button img {
     pointer-events: none;
@@ -309,7 +332,7 @@ summary {
 input[title], label[title] {
     cursor: help;
 }
-.container button:hover:not([class='tab']):not([class='tab2']):not([class*='hoverexempt']), .popup button:hover {
+.container button:hover:not([class='tab']):not([class='tab2']):not([class*='hoverexempt']), .popup button:hover, #requiredperms:hover {
     background: var(--buttonhover);
 }
 .container label, .container li, .popup label, .popup p {
@@ -317,6 +340,10 @@ input[title], label[title] {
 }
 .popup h1 {
     font-size: 24px;
+    font-weight: 600;
+}
+.popup h2 {
+    font-weight: 500;
 }
 .container button:disabled, .popup button:disabled {
     opacity: 0.7;
@@ -378,7 +405,7 @@ input[title], label[title] {
     background: rgba(255, 255, 255, 0.1);
     cursor: pointer;
 }
-#roturassistanttitle {
+#roturassistanttitle, #ra_headertitle {
     width: 100%;
     display: flex;
     flex-direction: row;
@@ -388,7 +415,24 @@ input[title], label[title] {
     text-align: center;
     gap: 5px;
 }
-
+#raheaderlogo {
+    flex: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+}
+#raheaderlogoimg {
+    text-decoration: none;
+    align-items: center;
+    display: inline-block;
+    margin-left: 20%;
+}
+#ra_headertitle {
+    margin: 0;
+    padding: 0;
+    font-weight: 500;
+}
 #securitystatement, #securityanswer {
     font-size: 14px;
     border-radius: 5px;
@@ -396,11 +440,9 @@ input[title], label[title] {
     padding: 5px;
     width: 100%;
 }
-
 #securitycontainer {
     margin-bottom: 5px;
 }
-
 #deletedisclaimercredits {
     margin-bottom: 0;
 }
@@ -447,14 +489,14 @@ p img, h2 img, li img {
     margin-bottom: 5;
 }
 #popup-x {
-  position: absolute;
-  right: 0px;
-  top: 0px;
-  background: transparent;
-  border: none;
-  color: white;
-  cursor: pointer;
-  font-size: 16px;
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    background: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 16px;
 }
 #popup-choices {
     display: flex;
@@ -484,7 +526,7 @@ p img, h2 img, li img {
     margin-top: 5px;
     margin-bottom: 5px;
 }
-#transactionpanel, #statspanel, #dangerzone, #followingpanel, #followerspanel, #economicstats, #userclawposts, #useritems, .followingpanel, #dangerousoptionscontainer, #loginhistory, #blacklisted_ips {
+#transactionpanel, #statspanel, #dangerzone, #followingpanel, #followerspanel, #economicstats, #userclawposts, #useritems, .followingpanel, #dangerousoptionscontainer, #loginhistory, #blacklisted_ips, #standinghistory {
     font-size: 24px;
 }
 
@@ -567,7 +609,6 @@ p[class='partialsuccess'] {
     width: 100%;
     box-sizing: border-box;
 }
-
 #transfersubwindow input[id='transferuser'] {
     flex: 6;
 }
@@ -596,7 +637,7 @@ p[class='partialsuccess'] {
     padding: 0px;
     display: flex;
     flex-direction: column;
-    border: 2px solid white;
+    border: none;
     border-radius: 8px;
     overflow: hidden;
     list-style-type: none;
@@ -608,6 +649,9 @@ p[class='partialsuccess'] {
     gap: 10px;
     margin-bottom: 3px;
     align-items: center;
+}
+#wallet-container .transactionentry h1 {
+    text-align: left;
 }
 #transactionpanel ul li p a {
     font-size: 14px;
@@ -693,7 +737,6 @@ p[class='specialtransfercase'] {
     padding-left: 0;
     border-radius: 5px;
 }
-
 #accountsbysum li {
     padding: 8px;
     padding-left: 12px;
@@ -709,13 +752,11 @@ p[class='specialtransfercase'] {
     border: 2px solid gray;
     border-radius: 4px;
 }
-
 #accountsbysum li h4 {
     margin: 0;
     padding: 0;
     font-size: 16px;
 }
-
 #accountsbysum li div {
     display: flex;
     flex-direction: row;
@@ -724,32 +765,27 @@ p[class='specialtransfercase'] {
     margin-right: 8px;
     width: 120px;
 }
-
 #accountsbysum li div hr {
     margin-top: -30px;
     margin-bottom: -30px;
     margin-right: 0;
     margin-left: 0;
 }
-
 #accountsbysum li div p {
     text-align: left;
     font-size: 14px;
     margin: 0;
 }
-
 #accountsbysum li:last-child:not(:first-child) {
     border-bottom: none;
     border-top: 2px solid white;
 }
-
 #breakdownoptions {
     display: flex;
     flex-direction: column;
     align-items: left;
     gap: 3px;
 }
-
 #breakdownoptions label {
     display: flex;
     flex-direction: row;
@@ -757,20 +793,17 @@ p[class='specialtransfercase'] {
     gap: 4px;
 }
 /* TOS CSS */
-
 #toscontainer {
     display: flex;
     flex-direction: column;
     gap: 5px;
     justify-content: center;
 }
-
 #tosiframe {
-    width: 400px;
+    min-width: 400px;
     height: 400px;
     margin-left: -15px;
 }
-
 #toscontainer label, #dailycreditnotifsect {
     display: flex;
     flex-direction: row;
@@ -780,16 +813,17 @@ p[class='specialtransfercase'] {
     justify-self: center;
     text-align: center;
 }
-
 #toscontainer a {
     text-decoration: underline;
 }
-
 /*/ Account list CSS /*/
 #account_list {
     border: 2px solid white;
     border-radius: 8px;
     overflow: hidden;
+}
+#accsearchbar {
+    margin-bottom: 8px;
 }
 #account_list h2 {
     margin-top: 10px;
@@ -838,14 +872,12 @@ p[class='specialtransfercase'] {
 .drag-handle:active {
     cursor: grabbing;
 }
-
 .drag-handle span {
     width: 3px;
     height: 3px;
     background-color: rgba(255, 255, 255, 0.6);
     border-radius: 50%;
 }
-
 .drag-handle:hover span {
     background-color: rgba(255, 255, 255, 0.9);
 }
@@ -857,7 +889,6 @@ p[class='specialtransfercase'] {
     align-items: center;
     user-select: none;
 }
-
 .accountpanel button {
     width: 32px;
     height: 32px;
@@ -872,7 +903,6 @@ p[class='specialtransfercase'] {
     margin: 0;
     padding: 0;
 }
-
 .acclistimage {
     width: 40px;
     height: 40px;
@@ -906,7 +936,6 @@ input[type="radio"] {
 .addaccbtn:hover, #wikibackbtn:hover, #overlaypngdownload:hover, #overlaypdndownload:hover {
     background: var(--buttonhover);
 }
-
 #tokenloginbox, #rostername, #icnfilename {
     font-size: 14px;
     border-radius: 5px;
@@ -915,7 +944,6 @@ input[type="radio"] {
     width: 100%;
     margin-bottom: 8px;
 }
-
 #switchaccbtn:disabled {
     cursor: not-allowed;
     box-shadow: none;
@@ -941,7 +969,6 @@ input[type="radio"] {
     flex-direction: row;
     gap: 5px;
 }
-
 #switchaccountpanel {
     display: flex;
     flex-direction: row;
@@ -959,14 +986,12 @@ input[type="radio"] {
     justify-content: center;
     gap: 6px;
 }
-
 #switchaccbtn img {
     width: 24px;
     height: 24px;
     margin: 0;
     padding: 0;
 }
-
 #switchaccinfo {
     flex: 1;
     padding: 0;
@@ -976,7 +1001,6 @@ input[type="radio"] {
     flex-direction: row;
     gap: 5px;
 }
-
 #syncsection label {
     display: flex;
     flex-direction: row;
@@ -985,7 +1009,6 @@ input[type="radio"] {
     gap: 4px;
 }
 /*/ Lookup CSS /*/
-
 #usersearchbar, #giftsearch, #postsearchbar, #keylookup, #itemsearch {
     display: flex;
     flex-direction: row;
@@ -993,7 +1016,6 @@ input[type="radio"] {
     margin-top: 8px;
     margin-bottom: 8px;
 }
-
 #usersearchbar input, #giftsearch input, #postsearchbar input, #keylookup input, #itemsearch input {
     flex: 8;
     box-sizing: border-box;
@@ -1001,11 +1023,9 @@ input[type="radio"] {
     font-size: 16px;
     padding-left: 5px;
 }
-
 #usersearchbar button, #giftsearch button, #postsearchbar button, #keylookup button, #itemsearch button {
     flex: 1;
 }
-
 #typeofsearch {
     color: white;
     display: flex;
@@ -1017,21 +1037,18 @@ input[type="radio"] {
 #typeofsearch label, #preview1 label, #preview2 label {
     vertical-align: middle;
 }
-
 #typeofsearch input, .giftfilter input, .radiochoices input, #preview1 input, #rpctype input {
     width: 12px;
     height: 12px;
 }
-
 hr[class='beforeprofile'] {
     margin: -15px;
     margin-top: 15px;
     margin-bottom: 10px;
 }
-
 /*/ Profile card /*/
 #lookupplaceholder {
-    width: 360px;
+    width: 100%;
     height: auto;
     display: flex;
     flex-direction: column;
@@ -1041,25 +1058,21 @@ hr[class='beforeprofile'] {
     overflow: hidden;
     justify-self: center;
 }
-
 .userinfo3 ul:not([class*='itemmetadata']) {
     margin-top: 10px;
     margin-bottom: 10px;
 }
-
 .userinfo3 ul:not([id='clawpostslist']) li[class='listuser']:hover, li[class='listip']:hover, #accountsbysum li:hover {
     background: rgba(255, 255, 255, 0.1);
 }
-
 .userbanner {
-    width: 360px;
-    height: 120px;
+    width: 100%;
+    aspect-ratio: 3;
     background: #5865F2;
     border-bottom: 2px solid white;
     overflow: hidden;
     position: relative;
 }
-
 .useravatar {
     width: 64px;
     height: 64px;
@@ -1070,7 +1083,6 @@ hr[class='beforeprofile'] {
     border-radius: 8px;
     position: relative;
 }
-
 .userinfo, .userinfoedit {
     display: flex;
     flex-direction: column;
@@ -1080,7 +1092,6 @@ hr[class='beforeprofile'] {
     align-items: left;
     position: relative;
 }
-
 .socialactionbar {
     width: 250px;
     position: absolute;
@@ -1094,7 +1105,6 @@ hr[class='beforeprofile'] {
     justify-content: right;
     pointer-events: none;
 }
-
 .socialactionbarbuttons {
     width: 100%;
     display: flex;
@@ -1103,21 +1113,18 @@ hr[class='beforeprofile'] {
     gap: 3px;
     pointer-events: all;
 }
-
 #lookupplaceholder p[class='socialstatus'] {
     margin: 2px;
     padding: 0;
     justify-self: right;
     text-align: right;
 }
-
 #followuser {
     flex: 2;
     max-width: 96px;
     padding-left: 0;
     padding-right: 0;
 }
-
 #profilereload, #profileeditbutton, #addfriend, #profileblockbutton {
     flex: 1;
     max-width: 32px;
@@ -1127,41 +1134,34 @@ hr[class='beforeprofile'] {
     justify-content: center;
     padding: 0;
 }
-
 #profilereload, #profilereloadedit, #reloadfeed {
     font-size: 18px;
 }
-
 #reloadfeed {
     display: flex;
     align-items: center;
     justify-content: center;
     max-height: 32px;
 }
-
 .userinfo p, .userinfoedit p {
     margin-top: 10px;
     margin-bottom: 0px;
     text-align: left;
 }
-
 .userinfo2 p, .userinfoedit2 p {
     margin: 0;
     margin-top: 3px;
 }
-
 .userinfo2 hr, .userinfoedit2 hr {
     margin: 0;
     margin-top: 8px;
     margin-bottom: 8px;
     width: 100%;
 }
-
 h1[id='usertitle'] {
     text-align: left;
     margin-bottom: 3px;
 }
-
 p.userstatus {
     text-align: left;
     font-size: 12px;
@@ -1170,7 +1170,6 @@ p.userstatus {
     margin-bottom: 6px;
     overflow-wrap: break-word;
 }
-
 .statusicon {
     width: 12px;
     height: 12px;
@@ -1181,16 +1180,14 @@ p.userstatus {
     right: -4px;
     background: rgb(48, 48, 48);
 }
-
-h3[id='pronouns'] {
+h3#pronouns {
     font-size: 16px;
     margin: 0;
     text-align: left;
     white-space: pre-wrap;
-    text-overflow: wrap;
+    width: 100%;
     overflow-wrap: break-word;
 }
-
 #pronounsandbadges {
     display: flex;
     flex-direction: horizontal;
@@ -1208,7 +1205,6 @@ h3[id='pronouns'] {
     flex-wrap: wrap;
     align-items: center;
 }
-
 .userinfo2, .userinfoedit2 {
     display: flex;
     flex-direction: column;
@@ -1217,13 +1213,11 @@ h3[id='pronouns'] {
     padding-top: 10px;
     align-items: center;
 }
-
 p[class='bio'] {
     display: block;
     white-space: pre-wrap;
     text-overflow: wrap;
 }
-
 ul[id='morebasicinfo'] {
     list-style-type: none;
     display: flex;
@@ -1234,7 +1228,6 @@ ul[id='morebasicinfo'] {
     margin-top: 5px;
     margin-bottom: 0px;
 }
-
 ul[id='evenmorebasicinfo'] {
     list-style-type: none;
     display: flex;
@@ -1245,18 +1238,15 @@ ul[id='evenmorebasicinfo'] {
     margin-top: 0px;
     margin-bottom: 5px;
 }
-
 h3[class='infolabel'] {
     margin: 0;
     padding: 0;
 }
-
 p.supplementaryinfo {
     margin: 3px;
     padding: 0;
     overflow-wrap: anywhere; /* Added in case a group name gets too long and it screws up the layout */
 }
-
 ul[id='morebasicinfo'] li, ul[id='evenmorebasicinfo'] li {
     flex: 1;
     width: 100%;
@@ -1267,15 +1257,12 @@ ul[id='morebasicinfo'] li, ul[id='evenmorebasicinfo'] li {
     padding-top: 3px;
     padding-bottom: 3px;
 }
-
 ul[id='morebasicinfo'] li {
     border-top: 1px solid white;
 }
-
 ul[id='morebasicinfo'] li:last-child, ul[id='evenmorebasicinfo'] li:last-child {
     border-right: none;
 }
-
 ul[class='followuserlist'] {
     list-style-type: none;
     display: flex;
@@ -1284,7 +1271,6 @@ ul[class='followuserlist'] {
     margin-left: 0;
     padding-left: 0;
 }
-
 ul[class='followuserlist'] li a, .listip {
     padding-top: 5px;
     padding-bottom: 5px;
@@ -1302,23 +1288,19 @@ ul[class='followuserlist'] li a p, .listip p{
     padding: 0;
     overflow-wrap: break-word;
 }
-
 ul[class='followuserlist'] li a img{
     border: 2px solid white;
     border-radius: 5px;
 }
-
 #economicplaceholder p {
     margin-left: 5px;
     margin-right: 5px;
 }
-
 #dangerousoptionscontainer {
     background: rgb(64, 0, 0);
     margin-bottom: 0;
     padding-bottom: 5px;
 }
-
 .blockextraoptions {
     margin-top: 5px;
     display: flex;
@@ -1327,7 +1309,6 @@ ul[class='followuserlist'] li a img{
     text-align: left;
     padding-left: 15px;
 }
-
 #deleteacc_verydangerous, #copytoken, #changepass, #accrefreshtoken {
     display: flex;
     flex-direction: row;
@@ -1338,15 +1319,12 @@ ul[class='followuserlist'] li a img{
     margin-top: 5px;
     margin-bottom: 5px;
 }
-
 #deleteacc_verydangerous, #finalfinaldeleteacc_extremelydangerous_theresnogoingback {
     background: rgb(173, 0, 0);
 }
-
 #deleteacc_verydangerous:hover, #finalfinaldeleteacc_extremelydangerous_theresnogoingback:hover {
     background: rgb(129, 0, 0);
 }
-
 #roturassistantnote {
     position: relative;
     display: flex;
@@ -1355,31 +1333,26 @@ ul[class='followuserlist'] li a img{
     padding-left: 8px;
     padding-right: 8px;
 }
-
 #noteactionbar {
     display: flex;
     flex-direction: row;
     gap: 5px;
 }
-
 #rasavenotebtn {
     margin-top: 4px;
     margin-bottom: 4px;
 }
-
 #ranotefineprint {
     font-size: 10px;
     margin: 0;
     padding: 0;
     margin-bottom: 8px;
 }
-
 #password-container {
     display: flex;
     flex-direction: column;
     gap: 5px;
 }
-
 #securitycheckheader {
     display: flex;
     flex-direction: row;
@@ -1387,7 +1360,6 @@ ul[class='followuserlist'] li a img{
     justify-content: center;
     gap: 8px;
 }
-
 #securitycheckheader button {
     display: flex;
     align-items: center;
@@ -1397,7 +1369,6 @@ ul[class='followuserlist'] li a img{
     max-width: 32px;
     max-height: 32px;
 }
-
 #togglepassvisibility {
     display: inline-flex;
     flex-direction: row;
@@ -1411,20 +1382,17 @@ ul[class='followuserlist'] li a img{
     justify-self: center;
     margin-bottom: 5px;
 }
-
 #password-container label {
     display: flex;
     flex-direction: row;
     align-items: center;
     gap: 4px;
 }
-
 #password-container label:last-child {
     margin-bottom: 8px;
     margin-left: -6px;
     font-size: 10px;
 }
-
 #password-container label input {
     font-size: 14px;
     border-radius: 5px;
@@ -1432,43 +1400,35 @@ ul[class='followuserlist'] li a img{
     padding: 5px;
     margin-left: auto;
 }
-
 #password-container label:last-child input {
     margin-left: 0;
 }
 #discordidcontainer {
     width: 100%;
 }
-
 .blockipfield {
     margin: 5px;
     display: flex;
     flex-direction: row;
     gap: 4px;
 }
-
 .blockipfield input {
     flex: 9;
 }
-
 .blockipfield button {
     flex: 1;
 }
-
 .ip_disclaimer {
     padding-left: 5px;
     padding-right: 5px;
 }
-
 #blacklistedipslist {
     list-style-type: none;
     padding-left: 0;
 }
-
 #prorfileitemlist {
     margin-bottom: 0;
 }
-
 .repostbadge {
     background-color: #ea00ff;
     color: white;
@@ -1476,17 +1436,14 @@ ul[class='followuserlist'] li a img{
     padding-bottom: 4px;
     border-radius: 3px;
 }
-
 #profileitemlist li {
     padding-bottom: 0;
     margin-bottom: 0;
 }
-
 #loginsplaceholder {
     padding-left: 0;
     list-style-type: none;
 }
-
 #loginsplaceholder li {
     display: flex;
     flex-direction: column;
@@ -1494,11 +1451,9 @@ ul[class='followuserlist'] li a img{
     padding: 8px;
     border-top: 1px solid white;
 }
-
 #loginsplaceholder li:last-child {
     padding-bottom: 0;
 }
-
 #loginsplaceholder li p {
     text-align: left;
     margin: 0;
@@ -1507,8 +1462,18 @@ ul[class='followuserlist'] li a img{
 #statusselectorlabel {
     align-self: flex-start;
 }
+#standinghistory ul {
+    padding-left: 0;
+    list-style-type: none;
+}
+#standinghistory li[class='standingcard']:not(:last-child) {
+    border-bottom: 2px solid white;
+}
+#standinghistory li ul li {
+    text-align: left;
+    margin-left: 8px;
+}
 /*/ Gifts CSS /*/
-
 #giftsplaceholder ul {
     margin: 0px;
     padding: 0px;
@@ -1528,7 +1493,6 @@ ul[class='followuserlist'] li a img{
     margin-bottom: 5px;
     align-items: center;
 }
-
 #giftsplaceholder ul li {
     border-bottom: 2px solid white;
     padding: 10px;
@@ -1542,7 +1506,6 @@ ul[class='followuserlist'] li a img{
 #giftsplaceholder ul li:last-child {
     border-bottom: none;
 }
-
 p[class='claim_user'] {
     display: flex;
     flex-direction: row;
@@ -1550,18 +1513,15 @@ p[class='claim_user'] {
     margin-top: 20px;
     gap: 4px;
 }
-
 p[class='claim_user'] a {
     display: flex;
     flex-direction: row;
     align-items: center;
     gap: 4px;
 }
-
 #giftsplaceholder p[class='giftfineprint'] {
     font-size: 8px;
 }
-
 .giftfilter {
     color: white;
     display: flex;
@@ -1571,7 +1531,6 @@ p[class='claim_user'] a {
     gap: 10px;
     position: relative;
 }
-
 #giftreload {
     position: absolute;
     width: 34px;
@@ -1585,12 +1544,10 @@ p[class='claim_user'] a {
     right: 0px;
     top: -25px;
 }
-
 #giftsplaceholder ul li [id^='giftrevokestatus'] p {
     text-align: center;
     font-size: 12px;
 }
-
 .giftcreatepanel {
     display: flex;
     flex-direction: row;
@@ -1599,42 +1556,34 @@ p[class='claim_user'] a {
     gap: 5px;
     margin-bottom: 5px;
 }
-
 #taxamt p {
     margin: 5px;
 }
-
 #giftlookupheader, #giftmanagerheader {
     margin-top: 15px;
 }
-
 #giftcreatestatusplaceholder {
     display: flex;
     flex-direction: column;
     gap: 3px;
 }
-
 #giftcreatestatusplaceholder button {
     width: 50%;
 }
-
 #giftlookupplaceholder {
     padding: 0px;
     border-radius: 8px;
     text-align: left;
 }
-
 #giftlookupplaceholder p {
     margin: 3px;
     text-align: left;
     font-size: 14px;
 }
-
 #giftlookupplaceholder p[class='failure'] {
     text-align: center;
     font-size: 12px;
 }
-
 #giftlookupplaceholder h2 {
     display: flex;
     flex-direction: row;
@@ -1642,31 +1591,32 @@ p[class='claim_user'] a {
     justify-content: center;
     gap: 5px;
 }
-
 #giftlookupplaceholder p[class='giftfineprint'] {
     font-size: 10px;
     text-align: center;
 }
-
 .claimgiftbtn {
     margin-top: 10px;
 }
-
 #giftclaimstatusplaceholder p {
     font-size: 12px;
     text-align: center;
 }
-
 /*/ Claw /*/
 #systemandsend {
     margin: 5px;
     display: flex;
     flex-direction: row;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     gap: 10px;
 }
-
+#clawsystemoption {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    align-items: center;
+}
 #feedcontrols {
     display: flex;
     flex-direction: row;
@@ -1675,11 +1625,9 @@ p[class='claim_user'] a {
     gap: 15px;
     margin-bottom: 5px;
 }
-
 #feedcontrols button {
     flex: 1
 }
-
 #feedcontrols label {
     flex: 9;
     display: flex;
@@ -1687,11 +1635,9 @@ p[class='claim_user'] a {
     justify-content: left;
     align-items: center;
 }
-
 #feedcontrols label[id='feedlabel'] {
     flex: 9;
 }
-
 #feed ul, #userclawposts ul {
     margin: 0px;
     padding: 0px;
@@ -1703,20 +1649,17 @@ p[class='claim_user'] a {
     list-style-type: none;
     margin-bottom: 15px;
 }
-
 #feed ul li, #userclawposts ul li {
     border-bottom: 2px solid white;
     padding: 10px;
     padding-bottom: 0px;
 }
-
 #feed ul li p, #userclawposts ul li p {
     font-size: 14px;
     text-align: left;
     margin: 0px;
     margin-bottom: 3px;
 }
-
 #feed ul li img[class='clawattachment'], #userclawposts ul li img[class='clawattachment'] {
     margin-top: 3px;
     max-width: 100%;
@@ -1724,7 +1667,6 @@ p[class='claim_user'] a {
     border-radius: 5px;
     justify-self: center;
 }
-
 #feed ul li p[class='postmetadata'], #userclawposts ul li p[class='postmetadata'] {
     font-size: 10px;
     margin-top: 15px;
@@ -1737,7 +1679,6 @@ p[class='claim_user'] a {
 #feed ul li:last-child, #userclawposts ul li:last-child {
     border-bottom: none;
 }
-
 .postauthor {
     display: flex;
     flex-direction: row;
@@ -1753,24 +1694,20 @@ p[class='claim_user'] a {
     text-decoration: none;
     align-items: center;
 }
-
 .postauthor a h2 {
     margin: 0;
     padding: 0;
 }
-
 .postauthor img[class='clawpfp'] {
     border: 2px solid gray;
     border-radius: 5px;
 }
-
 .clawpostactionbar {
     display: flex;
     flex-direction: row;
     gap: 4px;
     margin-left: auto;
 }
-
 .clawpostactionbar button {
     width: 32px;
     height: 32px;
@@ -1782,42 +1719,35 @@ p[class='claim_user'] a {
     margin: 0;
     padding: 0;
 }
-
-.pinnedpostlabel {
+.pinnedpostlabel, .repostlabel {
     display: block;
     text-align: left;
     margin-bottom: 4px;
 }
-
 .feedbackbar {
     display: flex;
     flex-direction: row;
     gap: 5px;
 }
-
 #userclawposts .feedbackbar {
     gap: 3px;
 }
-
 #feed button[class='repliesbtn'], #userclawposts button[class='repliesbtn'] {
     background: transparent;
     font-size: 18px;
 }
-
 #feed ul[class='reply'], #userclawposts ul[class='reply'] {
     margin: 0;
     padding: 0;
     border: none;
     border-radius: 0px;
 }
-
 #feed ul[class='reply'] li, #userclawposts ul[class='reply'] li {
     margin: 0;
     border: none;
     border-top: 2px dashed gray;
     position: relative;
 }
-
 #feed ul[class='reply'] li button[class='copypostid'], #userclawposts ul[class='reply'] li button[class='copypostid'], #clawpostslist ul[class='reply'] li button[class='copypostid'] {
     position: absolute;
     width: 108px;
@@ -1830,20 +1760,16 @@ p[class='claim_user'] a {
     margin: 0;
     padding: 0;
 }
-
 #feed ul[class='reply'] li:last-child, #userclawposts ul[class='reply'] li:last-child {
     border-bottom: 2px dashed gray;
     margin-bottom: 10px;
 }
-
 .sendreply {
     margin-top: 2px;
 }
-
 .popup ul li {
     font-size: 12px;
 }
-
 .popup ul[class='likelist'] {
     list-style-type: none;
     display: flex;
@@ -1855,7 +1781,6 @@ p[class='claim_user'] a {
     overflow-y: auto;
     max-height: 400px;
 }
-
 .popup ul[class='likelist'] li a {
     display: flex;
     flex-direction: row;
@@ -1863,38 +1788,31 @@ p[class='claim_user'] a {
     align-items: center;
     text-decoration: none;
 }
-
 .popup ul[class='likelist'] li a img {
     border: 1px solid gray;
     border-radius: 4px;
 }
-
 .popup ul[class='likelist'] li a p {
     margin: 0;
 }
-
 .popup h1 {
     margin: 0;
 }
-
 #post .postcharlimit {
     margin: 0;
     margin-top: -3px;
     text-align: left;
 }
-
 #feed .postcharlimit {
     margin: 0;
     font-size: 12px;
     margin-top: -3px;
     text-align: left;
 }
-
 #feed .replyerrorplaceholder {
     margin-top: 5px;
     margin-bottom: 8px;
 }
-
 #feed .replyerrorplaceholder p {
     font-size: 12px;
     text-align: center;
@@ -1904,29 +1822,24 @@ p[class='claim_user'] a {
     font-size: 12px;
     text-align: center;
 }
-
-/*/ I feel like I'm using the flex container too much, like my thought process is "Oh something's mis-aligned? Throw a flex container at it. Problem solved."/*/
-
-#imagebar, #feed .replyimagebar {
+/*/ I feel like I'm using the flex container too much, like my thought process is "Oh something's mis-aligned? Throw a flex container at it. Problem solved." /*/
+#imagebar, #feed .replyimagebar, #reply_imagebar {
     margin: 0;
     padding: 0;
     display: flex;
     flex-direction: row;
     justify-content: space-between;
 }
-
 #feed .replyimagebar {
     margin-bottom: 5px;
 }
-
 .clawattachment {
     display: flex;
     flex-direction: row;
     align-items: center;
     gap: 10px;
 }
-
-#clearattachment, #feed .clearreplyattachment {
+#clearattachment, #feed .clearreplyattachment, #clearreplyattachment {
     width: 32px;
     height: 32px;
     max-width: 32px;
@@ -1936,7 +1849,6 @@ p[class='claim_user'] a {
     align-items: center;
     justify-content: center;
 }
-
 #profileonlyoption {
     display: flex;
     align-items: center;
@@ -1947,27 +1859,60 @@ p[class='claim_user'] a {
     justify-self: right;
     margin-top: -15px;
 }
-
-/* Talon Stuff */
-
-#clawtalonoption {
-    cursor: pointer;
-    background: transparent;
-    font-size: 24px;
-    font-family: "Golos Text", sans-serif;
-    font-weight: 500;
-    color: white;
-    border: none;
+#sendpost {
+    max-width: 50%;
+}
+#postcontent {
     margin-bottom: 5px;
 }
-
-#clawtalonoption option {
-    color: black;
+.clawpolloption {
+    position: relative;
+    height: 28px;
+    border-radius: 3px;
+}
+.clawpolloption:hover {
+    background: rgba(184, 184, 184, 0.15);
     cursor: pointer;
 }
-
+.clawpollprogressbar {
+    background: rgb(255, 255, 255, 0.15);
+    border-radius: 3px;
+}
+.clawpolloptioncontent {
+    width: 100%;
+    height: 28px;
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+    align-items: center;
+    position: absolute;
+    left: 0px;
+    top: 0px;
+}
+#feed .clawpolloptionslist, #userclawposts .clawpolloptionslist {
+    list-style-type: none;
+    padding-left: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    border-radius: 0px;
+}
+#feed .clawpolloptionslist li, #userclawposts .clawpolloptionslist li {
+    padding: 0;
+    border: none;
+}
+#feed .clawpolloptionslist input[type="radio"], #userclawposts .clawpolloptionslist input[type="radio"] {
+    width: 14px;
+    height: 14px;
+}
+button.pollsubmit {
+    width: 50%;
+}
+#clawrepostquote {
+    max-height: 400px;
+    margin-bottom: 5px;
+}
 /*/ Account Key Manager CSS /*/
-
 #mainkeys, #sys_keys, #readonlykeys, #otherkeys {
     display: flex;
     flex-direction: column;
@@ -1975,56 +1920,47 @@ p[class='claim_user'] a {
     padding: 0;
     border: none;
 }
-
 .keylistitem {
     padding: 0;
     display: flex;
     flex-direction: row;
     list-style-type: none;
 }
-
 .keylistname, .keylistvalue, .keylistactions {
     padding: 3px;
     border: 1px solid white;
 }
-
 .keylistname {
     text-align: left;
     flex: 2;
     display: flex;
     flex-direction: column;
 }
-
 .keylistvalue {
     flex: 3;
     display: flex;
     align-items: center;
 }
-
 .keylistvalue input:disabled, .customrpccontrolpanel input:disabled {
     color: black;
     opacity: 1;
     background: rgb(80, 80, 80)
 }
-
 h4[class='keynamelabel'] {
     font-size: 12px;
     text-align: left;
     margin: 0;
     padding: 0;
 }
-
 .keylistvalue textarea {
     font-size: 12px;
 }
-
 .keylistname .keyactionbar {
     display: flex;
     flex-direction: row;
     gap: 2px;
     margin-top: 2px;
 }
-
 .keyactionbar button {
     padding: 0;
     font-size: 10px;
@@ -2037,92 +1973,86 @@ h4[class='keynamelabel'] {
     margin: 0;
     padding: 0;
 }
-
 .keyactionbar button[class='keynamecopy'], .keyactionbar button[class='keyvaluecopy'] {
     flex: 2;
 }
-
 .keyactionbar button[class='keysave'], .keyactionbar button[class='keydelete'], .keyactionbar button[class='keyview'] {
     flex: 1;
 }
-
 #createkeybar {
     display: flex;
     flex-direction: row;
     gap: 5px;
 }
-
 #createkeybar input {
     flex: 3;
 }
-
 #createkeybar button {
     flex: 1;
 }
-
 #keyfineprint, #keyfineprint a {
     font-size: 10px;
 }
-
+#reloadkeys {
+    font-size: 18px;
+    position: absolute;
+    top: 12px;
+    right: 8px;
+    width: 32px;
+    aspect-ratio: 1;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 /*/ Key Manager (Economy) CSS /*/
-
 #createkeypanel {
     display: flex;
     flex-direction: column;
     gap: 5px;
 }
-
 #keytypeandprice {
     display: flex;
     flex-direction: row;
     gap: 5px;
 }
-
 #ecokeytype {
     flex: 3;
     display: flex;
     flex-direction: column;
 }
-
 #ecokeytypes {
     display: flex;
     flex-direction: row;
     gap: 5px;
     justify-content: center;
 }
-
 .radiochoices {
     display: flex;
     align-items: center;
 }
-
 #ecokeyprice {
     flex: 2;
 }
-
 #subfrequencysettings {
     display: flex;
     flex-direction: row;
     gap: 5px;
 }
-
 #subfrequencysettings select, #mainkeys select {
     width: 100%;
     border-radius: 5px;
     border: 1px solid gray;
 }
-
 #mainkeys select {
     padding-top: 5px;
     padding-bottom: 5px;
 }
-
 #ecokeyperiod:disabled {
     color: gray;
     opacity: 0.7;
     background: white;
 }
-
 .mykeyentry p, .ownedkeyentry p {
     text-align: left;
     margin: 5px;
@@ -2139,12 +2069,10 @@ h4[class='keynamelabel'] {
     gap: 10px;
     padding: 8px;
 }
-
 #createdkeyspanel ul, #boughtkeyspanel ul {
     list-style-type: none;
     padding: 0;
 }
-
 .ecokeyuser {
     display: flex;
     flex-direction: column;
@@ -2152,7 +2080,6 @@ h4[class='keynamelabel'] {
     gap: 5px;
     border-top: 1px solid white;
 }
-
 .ecokeyuserheader button {
     width: 30px;
     height: 30px;
@@ -2162,52 +2089,42 @@ h4[class='keynamelabel'] {
     justify-content: center;
     cursor: pointer;
 }
-
 .mykeyentry .ecokeyuser:last-child {
     border-bottom: 1px solid white;
 }
-
 .ownedkeyentry .ecokeyuser:last-child {
     border-bottom: none;
 }
-
 .ecokeyuser p {
     margin: 0;
     text-align: left;
     font-size: 14px;
 }
-
 .ecokeyusersowner summary {
     justify-self: center;
 }
-
 .ecokeyuserheader img {
     width: 32px;
     height: 32px;
     border: 1px solid gray;
     border-radius: 5px;
 }
-
 .ecokeyuserheader {
     display: flex;
     flex-direction: row;
     gap: 5px;
 }
-
 #ownedkeys, #boughtkeys {
     border-radius: 5px;
 }
-
 .mykeyentry:not(:last-child), .ownedkeyentry:not(:last-child) {
     border-bottom: 2px solid white;
 }
-
 .editpriceandhook {
     display: flex;
     flex-direction: column;
     gap: 5px;
 }
-
 .editpriceandhook label {
     font-size: 16px;
     display: flex;
@@ -2217,16 +2134,13 @@ h4[class='keynamelabel'] {
     margin-left: 5px;
     margin-right: 5px;
 }
-
 .ecokeypriceupdate {
     flex: 0.5;
     width: 50%;
 }
-
 .ecokeydetails {
     padding: 5px;
 }
-
 .ecokeycontrolpanel {
     display: flex;
     flex-direction: row;
@@ -2235,24 +2149,20 @@ h4[class='keynamelabel'] {
     margin-top: 10px;
     margin-bottom: 0;
 }
-
 .ecokeycontrolpanel button {
     padding-left: 0;
     padding-right: 0;
 }
-
 .ecokeyownerlabel {
     display: flex;
     flex-direction: row;
     align-items: center;
     gap: 4px;
 }
-
 .ecokeyownerlabel img {
     border: 1px solid gray;
     border-radius: 3px;
 }
-
 .editecokeyname {
     display: flex;
     flex-direction: row;
@@ -2262,7 +2172,6 @@ h4[class='keynamelabel'] {
     margin-right: 5px;
     font-size: 16px;
 }
-
 .ecokeysave, .ecokeycopy {
     padding: 0;
     max-width: 32px;
@@ -2271,7 +2180,6 @@ h4[class='keynamelabel'] {
     align-items: center;
     justify-content: center;
 }
-
 .ecokeywebhookdisplay {
     display: flex;
     flex-direction: row;
@@ -2281,18 +2189,15 @@ h4[class='keynamelabel'] {
     margin-left: 5px;
     align-items: center;
 }
-
 .ecokeywebhookurl {
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
 }
-
 .ecokeystatus p, .ecokeyadduserstatus p {
     text-align: center;
     font-size: 12px;
 }
-
 .refundcheckbox {
     margin-top: 8px;
     display: flex;
@@ -2301,24 +2206,19 @@ h4[class='keynamelabel'] {
     justify-content: center;
     gap: 5px;
 }
-
 #ecokeylookupplaceholder {
     border-radius: 8px;
     padding: 10px;
 }
-
 #ecokeylookupplaceholder button {
     margin-top: 10px;
 }
-
 #ecokeylookupinfo p {
     text-align: left;
     margin: 2px;
     font-size: 14px;
 }
-
 /*/ Profile Editor CSS /*/
-
 #toggleprofileview {
     position: absolute;
     right: 42px;
@@ -2331,7 +2231,6 @@ h4[class='keynamelabel'] {
     justify-content: center;
     padding: 0;
 }
-
 #profilereloadedit {
     position: absolute;
     right: 5px;
@@ -2343,24 +2242,20 @@ h4[class='keynamelabel'] {
     justify-content: center;
     padding: 0;
 }
-
 #editusername, #editpronouns {
     display: flex;
     flex-direction: row;
     gap: 4px;
     align-items: center;
 }
-
 #usernamebox {
     width: 50%;
 }
-
 .userinfoedit {
     padding-left: 10px;
     padding-right: 10px;
     gap: 5px;
 }
-
 .profilesavebtn {
     flex: 1;
     max-width: 32px;
@@ -2369,11 +2264,9 @@ h4[class='keynamelabel'] {
     align-items: center;
     justify-content: center;
 }
-
 .userinfoedit label, .userinfoedit2 label {
     font-size: 14px;
 }
-
 #editbio, #editstatus {
     display: flex;
     flex-direction: column;
@@ -2381,11 +2274,9 @@ h4[class='keynamelabel'] {
     gap: 3px;
     position: relative;
 }
-
 #editstatus {
     margin-top: 10px;
 }
-
 #editstatus label {
     width: 100%;
     display: flex;
@@ -2393,12 +2284,10 @@ h4[class='keynamelabel'] {
     gap: 4px;
     align-items: center;
 }
-
 #editbio label, #editstatus label {
     text-align: left;
     justify-self: left;
 }
-
 #editbio button, #editstatus button {
     width: 50%;
     display: flex;
@@ -2409,7 +2298,6 @@ h4[class='keynamelabel'] {
     padding-top: 4px;
     padding-bottom: 4px;
 }
-
 #rasavenotebtn, #raclearnotebtn {
     width: 100%;
     display: flex;
@@ -2420,12 +2308,10 @@ h4[class='keynamelabel'] {
     padding-top: 4px;
     padding-bottom: 4px;
 }
-
 .userbanneredit {
-    width: 360px;
-    height: 120px;
+    width: 100%;
+    aspect-ratio: 3;
 }
-
 .useravatarview, .useravataredit {
     position: absolute;
     top: 0px;
@@ -2436,7 +2322,6 @@ h4[class='keynamelabel'] {
     height: 64px;
     overflow: hidden;
 }
-
 #changeavatarbtn {
     background: transparent;
     color: transparent;
@@ -2450,7 +2335,6 @@ h4[class='keynamelabel'] {
     left: 2px;
     border-radius: 8px;
 }
-
 .useravataroverlay {
     width: 76.8px;
     height: 76.8px;
@@ -2460,25 +2344,23 @@ h4[class='keynamelabel'] {
     background: transparent;
     pointer-events: none;
 }
-
 #changeavatarbtn:hover, #changebannerbtn:hover {
     background: #00000054;
     color: white;
 }
-
 #changebannerbtn {
     background: transparent;
     color: transparent;
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 360px;
-    height: 120px;
+    width: 100%;
+    aspect-ratio: 3;
     position: absolute;
     top: 0px;
     left: 0px;
+    border-radius: 0px;
 }
-
 .profilesavebtn2 {
     flex: 1;
     max-width: 24px;
@@ -2487,7 +2369,6 @@ h4[class='keynamelabel'] {
     align-items: center;
     justify-content: center;
 }
-
 .editwidgets {
     width: 100%;
     display: flex;
@@ -2496,7 +2377,6 @@ h4[class='keynamelabel'] {
     align-items: left;
     gap: 5px;
 }
-
 .systemsedit, .privateacc, .editdisplayname, .editemail, .editphone {
     padding-left: 5px;
     padding-right: 5px;
@@ -2505,15 +2385,12 @@ h4[class='keynamelabel'] {
     gap: 4px;
     align-items: center;
 }
-
 #phonebox, #displaynamebox {
     width: 50%;
 }
-
 #emailbox {
     width: 75%;
 }
-
 p[class='profilefineprint'] {
     margin: 0;
     padding: 0;
@@ -2522,7 +2399,6 @@ p[class='profilefineprint'] {
     font-size: 10px;
     text-align: left;
 }
-
 .systemsedit .systemoptions, #statusselector {
     width: 50%;
     border-radius: 5px;
@@ -2530,7 +2406,6 @@ p[class='profilefineprint'] {
     padding: 4px;
     padding-left: 0;
 }
-
 .profileeditremoveuser, .profileeditremoveip {
     max-width: 32px;
     max-height: 32px;
@@ -2541,11 +2416,9 @@ p[class='profilefineprint'] {
     justify-content: center;
     cursor: pointer;
 }
-
 #dangerousoptionscontainer summary {
     width: 100%;
 }
-
 .saveallbtncontainer, #dangerousoptionscontainer {
     display: flex;
     flex-direction: column;
@@ -2554,7 +2427,6 @@ p[class='profilefineprint'] {
     padding-left: 8px;
     padding-right: 8px;
 }
-
 #profilesaveall {
     display: flex;
     justify-content: center;
@@ -2564,13 +2436,11 @@ p[class='profilefineprint'] {
     margin-left: 5px;
     margin-right: 5px;
 }
-
 .badgelabel {
     display: flex;
     flex-direction: row;
     gap: 4px;
 }
-
 .profilerequestactions {
     margin-left: auto;
     margin-right: 10px;
@@ -2579,7 +2449,6 @@ p[class='profilefineprint'] {
     align-items: center;
     gap: 4px;
 }
-
 .profilerequestactions button {
     max-width: 32px;
     max-height: 32px;
@@ -2588,63 +2457,64 @@ p[class='profilefineprint'] {
     justify-content: center;
     cursor: pointer;
 }
-
 #profilebiocharlimit {
     position: absolute;
     bottom: 20px;
     left: 0;
     font-size: 12px;
 }
-
 #ranotecharlimit {
     text-align: left;
     font-size: 12px;
 }
-
 /*/ Rmail CSS /*/
-
 #rmailheader {
     display: flex;
     flex-direction: row;
     position: relative;
     margin-top: -6px;
+    margin-left: -8px;
+    margin-right: -8px;
 }
-
 #rmailimagefineprint {
     margin: 0;
     text-align: left;
 }
-
 #rmailheader button {
     border-radius: 0;
     background: transparent;
-    font-size: 18px;
+    font-size: 14px;
+    padding-left: 0;
+    padding-right: 0;
 }
-
-#rmailsenttab ul, #rmailreceivedtab ul {
+.rmailnavbtn {
+    flex: 0.5;
+    min-width: 32px;
+}
+.rmailfeed {
+    width: 100%;
+}
+.rmailfeed ul {
     list-style-type: none;
     padding-left: 0;
     border: none;
     border-radius: 5px;
     align-items: center;
 }
-
-#sentrmailslist li, #receivedrmailslist li {
+.rmailfeed ul li {
     display: flex;
     flex-direction: column;
     border-bottom: 1px solid white;
     padding: 8px;
+    max-width: 600px;
 }
-
-#sentrmailslist li:last-child, #receivedrmailslist li:last-child {
+.rmailfeed ul li:last-child {
     border-bottom: none;
 }
-
-#sentrmailslist li:hover, #receivedrmailslist li:hover {
+.rmailfeed ul li:hover {
     background: rgba(255, 255, 255, 0.1);
     cursor: pointer;
 }
-
 .rmailauthorheader {
     display: flex;
     flex-direction: row;
@@ -2652,46 +2522,39 @@ p[class='profilefineprint'] {
     align-items: center;
     pointer-events: none;
 }
-
 .rmailpreviewbody {
     margin-top: 5px;
     display: block;
     pointer-events: none;
 }
-
 .rmailtorecipient {
-    margin-left: auto;
     display: flex;
     flex-direction: row;
     gap: 4px;
     align-items: center;
     pointer-events: none;
 }
-
-.rmailauthorheader img, .viewrmailrecipientinfo img, #rmail_author img {
+.rmailauthorheader img, .viewrmailrecipientinfo img, .rmail_author img {
     border: 1px solid gray;
     border-radius: 4px;
 }
-
 h2.clawpostauthortitle {
     text-align: left;
 }
-
 .rmailpreviewtimestamp {
     margin: 0;
     margin-left: auto;
     pointer-events: none;
 }
-
 #rmailcontainerheader {
     display: flex;
+    margin-left: -8px;
+    margin-right: -8px;
 }
-
 #rmailcontainerheader button {
     width: 25%;
 }
-
-#rmail_author {
+.rmail_author {
     display: flex;
     flex-direction: row;
     gap: 5px;
@@ -2699,122 +2562,106 @@ h2.clawpostauthortitle {
     margin-top: 8px;
     margin-bottom: 5px;
 }
-
-#rmail_author a {
+.rmail_author a {
     display: flex;
     flex-direction: row;
     gap: 5px;
     align-items: center;
     text-decoration: none;
 }
-
-#viewrmailtitle {
+.viewrmailtitle {
     text-align: left;
     overflow-wrap: break-word;
 }
-
-#viewrmailbody {
+.viewrmailbody {
     display: flex;
     text-align: left;
     font-size: 12px;
     flex-direction: column;
     overflow-wrap: break-word;
 }
-
-#rmailimageplaceholder img {
+.rmailimageplaceholder img {
     margin-top: 3px;
     max-width: 100%;
     max-height: auto;
     border-radius: 5px;
     justify-self: center;
 }
-
-#viewrmailbody p {
+.viewrmailbody p {
     text-align: left;
     margin-top: 0;
     margin-bottom: 0;
 }
-
-.toandtimestamp {
-    margin-left: auto;
-    display: flex;
-    flex-direction: column;
-}
-
 .viewrmailrecipientinfo {
     display: flex;
     flex-direction: row;
     gap: 4px;
     align-items: center;
-    justify-content: right;
+    justify-content: left;
 }
-
 #rmailpage1, #rmailpage3 {
     position: relative;
 }
-
-#rmailcompositionbox {
+#rmailcompositionbox, #rmailreplycompositionbox {
     display: flex;
     flex-direction: column;
     gap: 5px;
     text-align: left;
 }
-
 .compositiontitle {
     display: flex;
     flex-direction: row;
     gap: 4px;
     align-items: center;
 }
-
 .rmailcompbodylabel {
     text-align: left;
 }
-
 #rmail_comp_body {
     height: 250px;
 }
-
-#rmailcompositionbox button {
-    width: 25%;
+#rmailcompositionbox button, #rmailreplycompositionbox button {
+    width: 30%;
+}
+#send_rmail_reply {
     margin-left: auto;
 }
-
-#compose_rmail {
+#sendrmailactionbar {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+    justify-content: right;
+}
+#viewbanreasonbtn {
     position: absolute;
     width: 25%;
     padding-left: 0;
     padding-right: 0;
-    right: 0px;
+    left: 0px;
     top: 0px;
 }
-
 #rmail_goback2 {
     width: 22%;
     position: absolute;
     top: 0px;
     left: 0px;
 }
-
 .rmailpreview .rmailpreviewtimestamp {
     margin-top: -15px;
 }
-
 .rmailactionbuttons {
     display: flex;
     flex-direction: row;
     gap: 4px;
     pointer-events: none;
 }
-
-#rmailactionbarbuttons {
+#rmailactionbarbuttons, .rmailreplyactionbar {
     margin-left: auto;
     display: flex;
     flex-direction: row;
-    gap: 5px;
+    gap: 4px;
 }
-
-.rmailactionbuttons button, #rmailactionbarbuttons button {
+.rmailactionbuttons button, #rmailactionbarbuttons button, .rmailreplyactionbar button, .rmailreplyactionlabel button {
     max-width: 32px;
     max-height: 32px;
     display: flex;
@@ -2822,40 +2669,218 @@ h2.clawpostauthortitle {
     justify-content: center;
     pointer-events: all;
 }
-
+.rmailreplyactionbar {
+    margin-top: 4px;
+}
 .rmailreply {
     transform: scaleY(-1)
 }
-
 .rmailreply img, .rmaildelete img {
     border: none;
 }
-
-.rmailpreviewbody h3, #viewrmailtitletext, #viewrmailbodytext h2 {
+.rmailpreviewbody h3, h2.viewrmailtitletext, h2.viewrmailbodytext {
     overflow-wrap: break-word;
     text-align: left;
 }
-
+#rmailreplies {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+#rmailreplies li {
+    border-bottom: 2px solid white;
+    margin-left: -15px;
+    margin-right: -15px;
+    padding-left: 15px;
+    padding-right: 15px;
+    padding-bottom: 8px;
+}
+#rmailreplies li:last-child {
+    border-bottom: none;
+}
+h3.viewrmailauthortext, .rmailauthorheader h2 {
+    text-align: left;
+    max-width: 90vw;
+    overflow-wrap: anywhere;
+}
+p.rmailto, p.viewrmailrecipient {
+    text-align: left;
+    width: 100%;
+    overflow-wrap: anywhere;
+}
+.rmail_fromandto {
+    display: flex;
+    flex-direction: column;
+}
+.rmail_fromandto h2, .rmail_fromandto h3, .rmail_fromandto p {
+    margin: 0;
+}
+p.viewrmailtimestamp {
+    margin: 0;
+    width: 100%;
+    text-align: right;
+    margin-top: -5px;
+}
+#rmailreportfield {
+    margin-bottom: 8px;
+}
+button.rmailpermadelete {
+    background: rgb(173, 0, 0);
+}
+#rmailtrashlist button.rmailpermadelete:hover, #rmailactionbarbuttons button.rmailpermadelete:hover {
+    background: rgb(129, 0, 0);
+}
+.rmailstar {
+    font-size: 20px;
+}
+button.rmailunstar {
+    font-size: 20px;
+    color: goldenrod;
+}
+.rmaildeleteforeveraltoption {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    align-items: center;
+    margin-bottom: 5px;
+    margin-top: -5px;
+    margin-left: 10px;
+}
+#reloadrmails {
+    font-size: 18px;
+    width: 32px;
+    aspect-ratio: 1;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+#rmailheaderactionbar {
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    justify-content: right;
+    width: 100%;
+    height: 32px;
+}
+#compose_rmail {
+    width: 25%;
+    padding-left: 0;
+    padding-right: 0;
+}
+#editrmailbody {
+    max-height: 300px;
+}
+#editrmailtitle, #rmailthreadadduserfield {
+    font-size: 14px;
+    border-radius: 5px;
+    box-sizing: border-box;
+    padding: 5px;
+    width: 100%;
+}
+.editrmailpopuplabels {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    align-items: center;
+    margin-top: 3px;
+    margin-bottom: 3px;
+}
+#editrmailbody {
+    margin-bottom: 4px;
+}
+.rmailthreadadduserrow {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+#rmailthreadpopuplist {
+    list-style-type: none;
+    padding: 0;
+}
+#rmailthreadpopuplist li a {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    text-decoration: none;
+    padding-left: 8px;
+    padding-right: 8px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+#rmailthreadpopuplist li:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+#rmailthreadpopuplist li a div {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    align-items: center;
+}
+#rmailthreadpopuplist li img {
+    border: 1px solid gray;
+    border-radius: 5px;
+}
+.rmailthreadremoveuser {
+    min-width: 28px;
+    min-height: 28px;
+    max-width: 28px;
+    max-height: 28px;
+    display: flex;
+    align-content: center;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+}
+#finalrmailadduser {
+    font-size: 18px;
+    min-width: 32px;
+    min-height: 32px;
+    max-width: 32px;
+    max-height: 32px;
+    display: flex;
+    align-content: center;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+}
+.rmailreplyactionlabel {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: left;
+    gap: 4px;
+    margin-top: 4px;
+}
+.rmailreplyactionlabel a {
+    text-decoration: none;
+}
+.rmailreplyactionlabel a img {
+    border: 1px solid gray;
+    border-radius: 5px;
+}
 /*/ Item Manager CSS /*/
-
 #itemmanagerheader {
     display: flex;
     flex-direction: row;
 }
-
 #itemmanagerheader button {
     border-radius: 0;
     background: transparent;
     font-size: 18px;
 }
-
 ul[class='roturuseritemlist'] {
     list-style-type: none;
     padding-left: 0;
     border: 2px solid white;
     border-radius: 5px;
 }
-
 .roturitem {
     border-bottom: 2px solid white;
     padding: 5px;
@@ -2863,16 +2888,13 @@ ul[class='roturuseritemlist'] {
     text-overflow: ellipsis;
     overflow: hidden;
 }
-
 .roturitem:last-child {
     border-bottom: none;
 }
-
 .roturitem p {
     margin: 0;
     padding: 0;
 }
-
 .roturitem ul:not([class='transferhistory']) {
     display: flex;
     flex-direction: row;
@@ -2881,16 +2903,13 @@ ul[class='roturuseritemlist'] {
     margin-left: -5px;
     margin-right: -5px;
 }
-
 .itemmetadatar1 {
     margin-top: 5px;
     margin-bottom: 0;
 }
-
 .itemmetadatar2 {
     margin-top: 0;
 }
-
 .roturitem ul:not([class='transferhistory']) li {
     flex: 1;
     border-top: 1px solid white;
@@ -2900,11 +2919,9 @@ ul[class='roturuseritemlist'] {
 .itemmetadatar2 li {
     border-bottom: 1px solid white;
 }
-
 .roturitem ul:not([class='transferhistory']) li:last-child {
     border-right: none;
 }
-
 .roturitemauthor {
     display: flex;
     flex-direction: row;
@@ -2912,18 +2929,15 @@ ul[class='roturuseritemlist'] {
     align-items: center;
     justify-content: center;
 }
-
 .roturitemdesc, #pronouns, .bio, .giftnote, .rmailpreviewbody, #viewrmailtitletext, #viewrmailbodytext {
     overflow-wrap: break-word;
 }
-
 .roturitem p[class='roturitemauthor'] {
     width: 100%;
     text-align: center;
     margin-bottom: 5px;
     margin-top: 15px;
 }
-
 .roturitem label {
     margin-top: 5px;
     margin-bottom: 5px;
@@ -2932,30 +2946,24 @@ ul[class='roturuseritemlist'] {
     gap: 4px;
     align-items: center;
 }
-
 .itemtransferownership {
     flex: 1
 }
-
 .beginitemtransfer {
     flex: 0.25
 }
-
 .buyitem {
     margin-top: 5px;
 }
-
 .itemtransferhistory ul {
     list-style-type: none;
     padding-left: 0;
     display: flex;
     flex-direction: column;
 }
-
 .transferhistory li {
     border-top: 1px solid white;
 }
-
 .transferhistory li p {
     font-size: 14px;
     margin-top: 3px;
@@ -2984,13 +2992,11 @@ ul[class='roturuseritemlist'] {
     right: 5px;
     top: 5px;
 }
-
 #create_item {
     flex-direction: column;
     gap: 5px;
     margin-top: 10px;
 }
-
 #itempriceandsale {
     display: flex;
     flex-direction: row;
@@ -2998,7 +3004,6 @@ ul[class='roturuseritemlist'] {
     align-items: center;
     justify-content: space-between;
 }
-
 #itempriceandsale label {
     flex: 1;
     display: flex;
@@ -3006,30 +3011,24 @@ ul[class='roturuseritemlist'] {
     align-items: center;
     gap: 4px;
 }
-
 #itempriceandsale .putupforsalebox {
     flex: 1.3;
 }
-
 .createitemnamelabel {
     display: flex;
     flex-direction: row;
     align-items: center;
     gap: 5px;
 }
-
 #useritems .roturuseritemlist {
     border: none;
 }
-
 #useritems .roturuseritemlist li:first-child {
     border-top: 1px solid white;
 }
-
 #item_marketplace {
     margin-top: 5px;
 }
-
 #item_marketplace label {
     display: flex;
     width: 100%;
@@ -3037,15 +3036,12 @@ ul[class='roturuseritemlist'] {
     gap: 4px;
     text-align: left;
 }
-
 /* Settings */
-
-#themepicker {
+#themepicker, #customthemes {
     display: flex;
     flex-direction: column;
     gap: 5px;
 }
-
 #themepicker label {
     display: flex;
     flex-direction: row;
@@ -3053,129 +3049,120 @@ ul[class='roturuseritemlist'] {
     align-items: center;
     font-size: 16px;
 }
-
+#customthemes label {
+    pointer-events: none;
+}
+#customthemes label input {
+    pointer-events: all;
+}
 .themepreviews {
     width: 32px;
     height: 32px;
     border: 2px solid gray;
     border-radius: 4px;
 }
-
 #oceanbluetheme {
     background-color: #0f0052;
 }
-
 #forestgreentheme {
     background-color: #0a3100;
 }
-
 #orangetheme {
     background-color: #6d4100;
 }
-
+#darkpinktheme {
+    background-color: #8b0242;
+}
 #blurpletheme {
     background-color: #200044;
 }
-
 #discorddarktheme {
     background-color: #323339;
 }
-
 #midnighttheme {
     background-color: #000000;
 }
-
 #blackouttheme {
     background-color: #000000;
     border-color: #000000;
 }
-
+#customtheme {
+    background: linear-gradient(red, blue);
+}
 #gensettings {
     margin-top: 5px;
     display: flex;
     flex-direction: column;
     gap: 4px;
 }
-
 #themessect {
     margin-top: 5px;
 }
-
 #createnotesect {
     display: flex;
     flex-direction: column;
     gap: 5px;
 }
-
 #preferredcdnlabel {
     margin-top: 5px;
 }
-
 #createnotecharlimit {
     text-align: left;
     margin: 0;
 }
-
 .gensettingssect {
     display: flex;
     flex-direction: column;
     justify-content: left;
     text-align: left;
 }
-
 .gensettingssect label, #popupsidebaroptions label, #canvasbgsettings label {
     display: flex;
     flex-direction: row;
     align-items: center;
     gap: 4px;
 }
-
+.gensettingssect span[class="fineprint"] {
+    margin-top: 5px;
+}
 #popupsidebaroptions {
     display: flex;
     flex-direction: column;
     gap: 2px;
     justify-content: left;
 }
-
 #popupsidebaroptions input[type='radio'], #canvasbgsettings input[type='radio'] {
     width: 14px;
     height: 14px;
 }
-
 .approwlabel {
     display: flex;
     flex-direction: row;
     gap: 4px;
     align-items: center;
 }
-
 #showcategories {
     display: flex;
     flex-direction: column;
     gap: 5px;
 }
-
 #showcategories label {
     display: flex;
     flex-direction: row;
     gap: 4px;
     align-items: center;
 }
-
 /* Note Manager CSS */
-
 #usernotelist {
     list-style-type: none;
     padding-left: 0;
 }
-
 #usernotelist li ul {
     display: flex;
     flex-direction: row;
     list-style-type: none;
     padding-left: 0;
 }
-
 #usernotelist li ul li {
     flex: 1;
     padding: 4px;
@@ -3184,11 +3171,9 @@ ul[class='roturuseritemlist'] {
     gap: 4px;
     border: 1px solid white;
 }
-
 #usernotelist li ul li:last-child {
     padding-right: 8px;
 }
-
 .notemanuserbar {
     display: flex;
     flex-direction: row;
@@ -3201,18 +3186,15 @@ ul[class='roturuseritemlist'] {
     margin: 0;
     pointer-events: none;
 }
-
 .notemancharlimit {
     display: flex;
     margin: 0;
 }
-
 .notemanuserbar img {
     border: 1px solid gray;
     border-radius: 4px;
     pointer-events: none;
 }
-
 #usernotelist button {
     display: flex;
     flex-direction: row;
@@ -3220,22 +3202,59 @@ ul[class='roturuseritemlist'] {
     justify-content: center;
     padding: 4px;
 }
+input[type='color'] {
+    background: transparent;
+    cursor: pointer;
+}
+#customthemes label {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    align-items: center;
+}
 
+body.customtextcolor h1, body.customtextcolor h2, body.customtextcolor h3, body.customtextcolor h4,
+body.customtextcolor p, body.customtextcolor label, body.customtextcolor a, body.customtextcolor span,
+body.customtextcolor button:not(.themeexempt), body.customtextcolor summary, body.customtextcolor li, body.customtextcolor hr {
+    color: var(--customcolor) !important; /* A pattern throughout Rotur Assistant's CSS is that !important is typically reserved for toggleable themes */
+}
+body.customtextcolor hr {
+    border-color: var(--customcolor) !important;
+}
+.customthemebuttons {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+    margin-top: 5px;
+}
+.notifmiscinfo {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+.notifmiscinfo p, .notifmiscinfo p a {
+    font-size: 10px;
+    margin: 0;
+}
+.notifmiscinfo a {
+    text-decoration: none;
+}
 /*/ Wiki CSS /*/
-
 .wiki-container {
     position: relative;
 }
-
+.wiki-container h1 {
+    padding-left: 32px; /* Account for the back button in the corner */
+    padding-right: 32px;
+}
 #subscribersplaceholder ul, .creditslist {
     padding-left: 0;
     list-style-type: none;
 }
-
 #subscribersplaceholder ul li, .creditslist li {
     margin: 5px;
 }
-
 #subscribersplaceholder ul li a, .creditslist li a, .creditslist li div{
     font-size: 16px;
     display: flex;
@@ -3244,27 +3263,22 @@ ul[class='roturuseritemlist'] {
     gap: 4px;
     text-decoration: none;
 }
-
 #subscribersplaceholder ul li a img, .creditslist li a img, .creditslist li div img {
     border: 1px solid gray;
     border-radius: 4px;
 }
-
-.wiki-container p[class='fineprint'], .wiki-container p[class='fineprint'] a, .container p[class='fineprint'], .container p[class='fineprint'] a {
+.wiki-container p[class='fineprint'], .wiki-container p[class='fineprint'] a, .container p[class='fineprint'], .container p[class='fineprint'] a, .container span[class='fineprint'] {
     font-size: 10px;
 }
-
 #wikibackbtn {
     width: 32px;
     position: absolute;
     top: -10px;
     left: -10px;
 }
-
 .systembadgelist {
     padding-left: 0;
 }
-
 .systembadgelist li {
     margin: 2px;
     display: flex;
@@ -3272,7 +3286,6 @@ ul[class='roturuseritemlist'] {
     gap: 2px;
     align-items: center;
 }
-
 h2[class^='badgeintitle'] {
     display: flex;
     flex-direction: row;
@@ -3281,20 +3294,16 @@ h2[class^='badgeintitle'] {
 h2[class='badgeintitle2'] {
     gap: 5px;
 }
-
 .creditslist {
     padding-left: 10px;
 }
-
 .systemswitch {
     flex: 0.6;
     padding-left: 0;
     padding-right: 0;
     white-space: nowrap;
 }
-
 /*/ Tab Utils /*/
-
 .tabheader {
     display: flex;
     flex-direction: row;
@@ -3304,7 +3313,6 @@ h2[class='badgeintitle2'] {
     margin-bottom: 10px;
     margin-top: -6px;
 }
-
 .tabheader button {
     border-radius: 0;
     background: transparent;
@@ -3314,22 +3322,18 @@ h2[class='badgeintitle2'] {
     padding-right: 0;
     padding-top: 8px;
 }
-
 .tabheader button:first-child {
     border-bottom: 2px solid white;
 }
-
 .tabheader button:hover, #rmailheader button:hover, #itemmanagerheader button:hover {
     background: #ffffff17;
 }
 /* Notifications CSS */
-
 #notificationslist, #notifsourcemanager, #notifendpointmanager {
     border-radius: 5px;
     list-style-type: none;
     padding-left: 0;
 }
-
 #notificationslist li {
     display: flex;
     flex-direction: column;
@@ -3351,11 +3355,9 @@ h2[class='badgeintitle2'] {
     text-align: left;
     overflow-wrap: break-word;
 }
-
 #notificationslist .fineprint {
     font-size: 10px;
 }
-
 .notiftitlebar {
     display: flex;
     flex-direction: row;
@@ -3363,7 +3365,6 @@ h2[class='badgeintitle2'] {
     align-items: center;
     text-decoration: none;
 }
-
 .notiftitlebar img {
     border: 2px solid gray;
     border-radius: 5px;
@@ -3388,6 +3389,7 @@ h2[class='badgeintitle2'] {
     top: -5px;
     max-width: 32px;
     max-height: 32px;
+    font-size: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -3408,39 +3410,32 @@ h2[class='badgeintitle2'] {
     justify-content: center;
     gap: 4px;
 }
-
 .sourcelist, .endpointlist {
     list-style-type: none;
     padding-left: 0;
     display: flex;
     flex-direction: column;
 }
-
 .endpointlist {
     gap: 6px;
 }
-
 .endpointlist li {
     text-align: left;
     overflow-wrap: break-word;
     padding-left: 5px;
     padding-right: 5px;
 }
-
 .sourcedatabody, .endpointdatabody {
     position: relative;
     border-bottom: 2px solid white;
     padding-bottom: 8px;
 }
-
 .sourcedatabody h2, .endpointdatabody h2 {
     margin: 12px;
 }
-
 .sourcedatabody:last-child, .endpointdatabody:last-child {
     border-bottom: none;
 }
-
 .sourcelist li {
     display: flex;
     flex-direction: row;
@@ -3448,36 +3443,30 @@ h2[class='badgeintitle2'] {
     justify-content: space-between;
     padding: 5px 10px;
 }
-
 .sourcelist li a {
     display: flex;
     flex-direction: row;
     gap: 4px;
     text-decoration: none;
 }
-
 .sourcelist li img {
     border: 2px solid gray;
     border-radius: 5px;
 }
-
 .sendertitle {
     display: flex;
     flex-direction: column;
     gap: 3px;
 }
-
 .sendertitle h4 {
     margin: 0;
     text-align: left;
 }
-
 .sendertitle p {
     margin: 0;
     font-size: 10px;
     text-align: left;
 }
-
 .removesource, .removeendpoint {
     max-width: 32px;
     max-height: 32px;
@@ -3490,7 +3479,6 @@ h2[class='badgeintitle2'] {
     margin: 0;
     padding: 0;
 }
-
 .removesender {
     max-width: 32px;
     max-height: 32px;
@@ -3501,16 +3489,13 @@ h2[class='badgeintitle2'] {
     cursor: pointer;
     margin-left: auto;
 }
-
 .removesource img {
     margin: 0;
     padding: 0;
 }
-
 .senderlistentry:hover {
     background: rgba(255, 255, 255, 0.1);
 }
-
 .globalremoveoption {
     display: flex;
     flex-direction: row;
@@ -3519,24 +3504,26 @@ h2[class='badgeintitle2'] {
     margin-top: 5px;
     margin-left: 10px;
 }
-
+.greedywarning {
+    background: orangered;
+    border-radius: 5px;
+    margin-top: 5px;
+    padding: 4px;
+}
 .patchnotelist li {
     margin-bottom: 5px;
 }
 /* ICN CSS */
-
 .highlight_yellow {
     background-color: #ffee00;
     color: black;
     padding: 0 4px;
     border-radius: 3px;
 }
-
 p[class='icnsyntaxfineprint'] {
     font-size: 10px;
     margin: 0;
 }
-
 #icn_canvas {
     border: 2px solid gray;
     background: white;
@@ -3544,7 +3531,6 @@ p[class='icnsyntaxfineprint'] {
     transform: scaleY(-1); /* This way, Y goes up, not down, for consistency with other renderers */
     cursor: all-scroll;
 }
-
 #canvasbgsettings {
     display: flex;
     flex-direction: column;
@@ -3557,20 +3543,16 @@ p[class='icnsyntaxfineprint'] {
     gap: 4px;
     margin-bottom: 5px;
 }
-
 #icneditorcontrolbar button {
     padding-left: 0;
     padding-right: 0;
 }
-
 #icnsettings {
     flex-direction: column;
 }
-
 #icnsettings hr {
     width: 100%;
 }
-
 #icnsettings label {
     text-align: left;
     display: flex;
@@ -3578,9 +3560,7 @@ p[class='icnsyntaxfineprint'] {
     gap: 4px;
     align-items: center;
 }
-
 /* Cosmetics CSS */
-
 #mycosmetics ul, #shopcosmetics ul, #profileoverlays {
     list-style-type: none;
     display: flex;
@@ -3590,7 +3570,6 @@ p[class='icnsyntaxfineprint'] {
     margin-top: 0;
     margin-bottom: 0;
 }
-
 #cosmeticlist li, #cosmeticshoplist li, #profileoverlays li {
     font-size: 12px;
     border: 2px solid white;
@@ -3604,36 +3583,29 @@ p[class='icnsyntaxfineprint'] {
     flex-direction: column;
     align-items: center;
 }
-
 .overlaycontainer, .shopoverlayimg {
     position: relative;
 }
-
 .shopoverlayimg {
     pointer-events: none;
 }
-
 .useravataroverlaypreview, .overlaytemplatepreview {
     position: absolute;
     left: 9px;
     top: 9px;
 }
-
 .overlaytemplatepreview:hover {
     opacity: 0;
 }
-
 .cosmeticbuybar {
     width: 100%;
     display: flex;
     flex-direction: row;
     gap: 3px;
 }
-
 .equipoverlay {
     flex: 6;
 }
-
 button[class='viewoverlayinfo'] {
     padding: 0;
     display: flex;
@@ -3643,7 +3615,6 @@ button[class='viewoverlayinfo'] {
     aspect-ratio: 1;
     flex: 1;
 }
-
 .cosmeticitem h3, .cosmeticitem p {
     margin: 2px;
 }
@@ -3656,7 +3627,6 @@ button[class='viewoverlayinfo'] {
     align-items: left;
     gap: 3px;
 }
-
 #cosmeticviewoptions label {
     display: flex;
     flex-direction: row;
@@ -3672,30 +3642,25 @@ button[class='viewoverlayinfo'] {
     align-items: center;
     margin-bottom: 4px;
 }
-
 .cosmeticavatarpreviewsettings form {
     display: flex;
     flex-direction: row;
     gap: 4px;
     align-items: center; 
 }
-
 #templatedownloadbuttons {
     display: flex;
     flex-direction: row;
     gap: 4px;
 }
-
 #templatedownloadbuttons a {
     margin: 0;
 }
-
 #overlaypreviewcontainer {
     margin-top: 10px;
     align-self: center;
     justify-self: center;
 }
-
 #createpreview {
     display: flex;
     flex-direction: column;
@@ -3703,39 +3668,39 @@ button[class='viewoverlayinfo'] {
     gap: 5px;
     justify-content: center;
 }
-
 #createpreview p {
     margin: 0;
 }
-
 #createpreview hr {
     width: 100%;
 }
-
 #overlayopacitylabel {
     display: flex;
     flex-direction: row;
     gap: 4px;
 }
-
 #useravataroverlaypfp, #useravataroverlaytemplate {
     left: 24px;
     top: 24px;
 }
-
+#randomoverlay {
+    margin-top: 4px;
+    width: 75%;
+    justify-self: center;
+}
 /* New toggle */
 body.make-circular img[src^="https://avatars.rotur.dev/"]:not([src^="https://avatars.rotur.dev/."]):not([class="useravataroverlaypreview"]), body.make-circular .useravatar {
     border-radius: 50% !important; /* A bad practice, but it's easier than redoing a lot of code */
     object-fit: cover; 
 }
-
+body.remove-borders img[src^="https://avatars.rotur.dev/"]:not([src^="https://avatars.rotur.dev/."]):not([class="useravataroverlaypreview"]):not([class="useravatarview"]):not([class="useravataredit"]) {
+    border: none !important; /* Still a bad practice, but it's easier than redoing even more code */
+}
 body.make-circular #changeavatarbtn {
     border-radius: 50%;
     object-fit: cover; 
 }
-
 /* RPC */
-
 .rpcheadersettings {
     display: flex;
     flex-direction: row;
@@ -3756,7 +3721,6 @@ body.make-circular #changeavatarbtn {
     padding: 0;
     margin-top: 8px;
 }
-
 .rpctypeoptions {
     width: 100%;
     display: flex;
@@ -3766,14 +3730,12 @@ body.make-circular #changeavatarbtn {
     align-items: center;
     margin-bottom: 4px;
 }
-
 .rpctypeoptions form {
     display: flex;
     flex-direction: row;
     gap: 4px;
     align-items: center; 
 }
-
 .customrpccontrolpanel {
     border: 2px solid white;
     border-radius: 5px;
@@ -3783,13 +3745,11 @@ body.make-circular #changeavatarbtn {
     gap: 4px;
     margin-bottom: 8px;
 }
-
 .rpc_modal_container {
     display: flex;
     flex-direction: row;
     gap: 4px;
 }
-
 .rpc_image_container {
     border: 2px solid white;
     border-radius: 5px;
@@ -3797,14 +3757,14 @@ body.make-circular #changeavatarbtn {
     overflow: hidden;
     flex: 1;
     aspect-ratio: 1;
+    max-width: 140px;
+    max-height: 140px;
 }
-
 .rpcimg {
     width: 100%;
     height: 100%;
     aspect-ratio: 1;
 }
-
 button[class*='uploadrpcimg'] {
     background: transparent;
     color: transparent;
@@ -3818,25 +3778,21 @@ button[class*='uploadrpcimg'] {
     left: 0px;
     border-radius: 0px;
 }
-
 button[class*='uploadrpcimg']:hover {
     background: #00000054;
     color: white;
 }
-
 .rpc_fields {
     flex: 1.6;
     display: flex;
     flex-direction: column;
     gap: 4px;
 }
-
 .rpcnamecontainer {
     display: flex;
     flex-direction: row;
     gap: 4px;
 }
-
 button[class='removemodal'] {
     min-width: 32px;
     min-height: 32px;
@@ -3848,11 +3804,9 @@ button[class='removemodal'] {
     align-items: center;
     padding: 0;
 }
-
 #addmodalbtn {
     margin-top: 2px;
 }
-
 #refreshrpc {
     width: 24px;
     aspect-ratio: 1;

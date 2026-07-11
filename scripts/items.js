@@ -14,12 +14,14 @@ const flagged = await new Promise(resolve =>
 if (!activeacc.uuid) {
     document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(
         `<h1>Item Manager</h1>
+        <hr class="full-size">
         <h3>You are not signed in! Please sign in using the account manager to access this page.</h3>`
     ))
 }
 if (flagged.includes(activeacc.uuid)) {
     document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
         <h1>Item Manager</h1>
+        <hr class="full-size">
         <h3>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h3>
     `))
 }
@@ -136,9 +138,18 @@ function formatTransferHistory(transferdata) {
 }
 
 async function getItems(user) {
+    if (!navigator.onLine) {
+        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+            <h1>Item Manager</h1>
+            <hr class="full-size">
+            <h3>A communication error has occurred. If you're sure it's not your connection, then Rotur may be down right now.</h3>
+        `))
+        return;
+    }
     const myitems = await fetch(`https://api.rotur.dev/items/list/${user}`).then(res => res.json()).catch(err => {
         document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
-            <h1>Items</h1>
+            <h1>Item Manager</h1>
+            <hr class="full-size">
             <h3>A communication error has occurred. If you're sure it's not your connection, then Rotur may be down right now.</h3>
         `))
         return;
@@ -257,12 +268,14 @@ if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
                 return;
             }
         }
-        const finalobject = {"name":document.getElementById('createitemname').value,
-                            "description":document.getElementById('createitemdesc').value,
-                            "price":parseInt(document.getElementById('createitemprice').value),
-                            "selling":document.getElementById('sellitemimmediately').checked,
-                            "data":(jsondata || {})
-                            }
+        const finalobject = 
+        {
+            "name": document.getElementById('createitemname').value,
+            "description": document.getElementById('createitemdesc').value,
+            "price": parseInt(document.getElementById('createitemprice').value),
+            "selling": document.getElementById('sellitemimmediately').checked,
+            "data": (jsondata || {})
+        }
         const itemcreatesuccess = await fetch(`https://api.rotur.dev/items/create?auth=${activeacc.token}&item=${encodeURIComponent(JSON.stringify(finalobject))}`).then(res => res.json())
 
         if (itemcreatesuccess.error) {
@@ -279,6 +292,7 @@ if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
         e.preventDefault()
         document.getElementById('itemlookupstatusplaceholder').replaceChildren()
         if (document.getElementById('itemsearchbar').value == '') {
+            document.getElementById('itemlookupstatusplaceholder').replaceChildren(MiniError('failure', "Enter an item name to search for"))
             return;
         }
         const itemquery = await fetch(`https://api.rotur.dev/items/get/${document.getElementById('itemsearchbar').value}`).then(res => res.json())

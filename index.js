@@ -8,15 +8,15 @@ const sanitizer = new Sanitizer(config)
 
 const default_app_settings =
 {
-    rows: 3,
+    size: 2,
     utils: true,
     social: true,
     misc: true
 }
 
 const settings = await new Promise(resolve =>
-        chrome.storage.local.get('settings', data => resolve(data.settings?.padEnd(8, "0") || "00000000"))
-) ?? "00000000";
+        chrome.storage.local.get('settings', data => resolve(data.settings?.padEnd(16, "0") || "0000000000000000"))
+) ?? "0000000000000000";
 
 const app_settings = await new Promise(resolve =>
     chrome.storage.local.get('app_settings', data => resolve(data.app_settings || default_app_settings))
@@ -150,7 +150,7 @@ export function generateRandomString(length) {
     return result;
 }
 
-export async function UploadImage(imagedata) {
+export async function UploadImage(imagedata, cdnoverride, rawdata) {
     const preferredcdn = await new Promise(resolve =>
         chrome.storage.local.get('preferredcdn', data => resolve(data.preferredcdn || "roturcdn"))
     ) ?? "roturcdn";
@@ -160,7 +160,7 @@ export async function UploadImage(imagedata) {
 
     let potentialattachment = ''
     try {
-        switch (preferredcdn) {
+        switch (cdnoverride ?? preferredcdn) {
             case (undefined): // Failsafe
             case ('roturcdn'): {
                 const response = await fetch('https://roturcdn.milosantos.com/api/image/upload?public=true', {
@@ -201,7 +201,7 @@ export async function UploadImage(imagedata) {
                     validator: validator.validator,
                     validator_key: `originChats-${randkey}`,
                     file: imagedata,
-                    name: `RA_image.${imagedata.type.split('/')[1]}`,
+                    name: imagedata.name,
                     mime_type: imagedata.type,
                     channel: 'bots'
                 };
@@ -216,36 +216,34 @@ export async function UploadImage(imagedata) {
                 if (!image || image.error) {
                     return;                    
                 } else {
-                    potentialattachment = image.attachment.url
+                    potentialattachment = rawdata ? image.attachment : image.attachment.url
                 }                     
                 break;
             }
-            /* Temporarily deprecated since Rotur Photos changed its API to be a lot more locked-down; Thankfully, this happened before 1.2 made it to production.
+            case ('ochost'): {
+                const validator = await fetch(`https://api.rotur.dev/generate_validator?auth=${activeacc.token}&key=RoturAssistantImage`).then(res => res.json())
+                const json = {
+                    validator: validator.validator,
+                    validator_key: `RoturAssistantImage`,
+                    file: imagedata,
+                    name: imagedata.name,
+                    mime_type: imagedata.type,
+                };
+                const formData = new FormData();
 
-            case ('roturphotos'): {
-                const headers = {
-                    "Accept": "* / *",
-                    "Content-Type": imagedata.type,
-                    "Cookie": ''
+                for (const key in json) {
+                    formData.append(key, json[key]);
                 }
-                const validator = await fetch(`https://api.rotur.dev/generate_validator?auth=${activeacc.token}&key=rotur-photos`).then(res => res.json()).then(res => res.validator)
-                const response = await fetch(`https://photos.rotur.dev/api/image/upload?public=true`, {
-                    method: 'POST',
-                    body: imagedata,
-                    headers: validator
-                }).then(res => res.json()).catch((err) => {
+                const image = await fetch(`https://cdn.ochost.tech/attachments/upload`, {method: 'POST', body: formData}).then(res => res.json()).catch((err) => {
                     return;
                 });
-                if (!response) {
-                    return;
-                }
-                potentialattachment = `https://photos.rotur.dev/${activeacc.uuid}/${response.id}`;
-                if (potentialattachment.includes('undefined')) {
-                    return;
-                }                
+                if (!image || image.error) {
+                    return;                    
+                } else {
+                    potentialattachment = rawdata ? image.attachment : image.attachment.url
+                }                     
                 break;
             }
-            */
         }
         return potentialattachment;
     } catch (err) {
@@ -268,24 +266,24 @@ if (!navigator.onLine) {
     chrome.storage.session.remove('isOffline')
 }
 
-switch (app_settings.rows) {
+switch (app_settings.size ?? 2) {
+    case (1): {
+        Array.from(document.getElementsByClassName('appgridbtn')).forEach(app => {
+            app.style = "flex: 1 1 70px; max-width: 70px; min-width: 70px; height: 80px; font-size: 10px;"
+            app.querySelector('img').width = 55
+            app.querySelector('img').height = 55
+        })
+        break;
+    }
     case (2): {
+        break;
+    }
+    case (3): {
         Array.from(document.getElementsByClassName('appgridbtn')).forEach(app => {
             app.style = "flex: 1 1 150px; max-width: 150px; min-width: 150px; height: 150px; font-size: 14px;"
             app.querySelector('img').width = 100
             app.querySelector('img').height = 100
             app.querySelector('img').style = 'max-width: 150px; max-height: 150px;'
-        })
-        break;
-    }
-    case (3): {
-        break;
-    }
-    case (4): {
-        Array.from(document.getElementsByClassName('appgridbtn')).forEach(app => {
-            app.style = "flex: 1 1 70px; max-width: 70px; min-width: 70px; height: 80px; font-size: 10px;"
-            app.querySelector('img').width = 55
-            app.querySelector('img').height = 55
         })
         break;
     }
@@ -335,11 +333,17 @@ chrome.runtime.getContexts({ contextTypes: ['SIDE_PANEL'] }, async (contexts) =>
         let ui_mode = await new Promise(resolve =>
             chrome.storage.local.get('ui_mode', data => resolve(data.ui_mode || "popup"))
         ) ?? "popup";
-        if (ui_mode == 'popup') {
-            ui_mode = 'sidebar'
-            chrome.storage.local.set({ui_mode: ui_mode})
-            await chrome.action.setPopup({ popup: 'index.html' });
+        if (ui_mode != 'sidebar') {
+            await chrome.action.setPopup({ popup: '' });
             await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false });
+            if (ui_mode == 'sidebar') {
+                await chrome.action.setPopup({ popup: '' });
+                await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+                await chrome.sidePanel.setOptions({ enabled: true });
+            } else if (ui_mode == 'popup') {
+                await chrome.action.setPopup({ popup: 'index.html' });
+                await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false });
+            }
         }
     }
-}); // Failsafe in case Rotur Assistant is opened as a side panel via Chrome's right-click context menu
+}); // Failsafe in case Rotur Assistant is opened as a side panel via Chrome's right-click context menu, overriding the user's settings inside the extension.

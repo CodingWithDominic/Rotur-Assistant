@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Rotur Assistant Iframe Auth</title>
+    <title>Add Account - Rotur Assistant</title>
     <meta charset="UTF-8" />
     <link rel="stylesheet" href="../style.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11,23 +11,25 @@
 <body>
     <header id="header-placeholder"></header>
     <script src="../header.js"></script>
-    <div id="systemselector">
-        <label>
-            System if creating account: <select id="authselectscreen">
-                <option value="Rotur Assistant">Rotur Assistant</option>
-            </select>
-        </label>
-    </div>
-    <script type="module" src="../scripts/auth-systems.js"></script>
-    <div class="requiredpermsbtncontainer">
-        <button id="requiredperms">See Rotur Assistant's required permissions</button>
-    </div>
-    <div id="auth-container">
-        <iframe id="auth-iframe" src="https://rotur.dev/auth?system=Rotur%20Assistant" style="display: none;"></iframe>
-        <div id="loading">Loading authentication...</div>
-        <div id="success" class="hidden">
-            <h3>Authentication Successful!</h3>
-            <p>Token: <span id="token-display"></span></p>
+    <div class="container" style="width: 100%; padding: 0; max-width: 830px;">
+        <div id="systemselector">
+            <label>
+                System if creating account: <select id="authselectscreen">
+                    <option value="Rotur Assistant">Rotur Assistant</option>
+                </select>
+            </label>
+        </div>
+        <script type="module" src="../scripts/auth-systems.js"></script>
+        <div class="requiredpermsbtncontainer">
+            <button id="requiredperms">See Rotur Assistant's required permissions</button>
+        </div>
+        <div id="auth-container">
+            <iframe id="auth-iframe" src="https://rotur.dev/auth?system=Rotur%20Assistant" style="display: none;"></iframe>
+            <div id="loading">Loading authentication...</div>
+            <div id="success" class="hidden">
+                <h3>Authentication Successful!</h3>
+                <p>Token: <span id="token-display"></span></p>
+            </div>
         </div>
     </div>
     <div id="overlay" class="overlay">

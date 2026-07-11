@@ -30,7 +30,7 @@ if (!activeacc.uuid) {
         <p>Manage your cosmetics and shop for new ones</p>
         <hr class="full-size">
         <h3>You are not signed in! Please head over to the account manager to add an account first.</h3>
-    `)
+    `, {sanitizer: sanitizer})
 }
 if (flagged.includes(activeacc.uuid)) {
     document.getElementsByClassName('container')[0].setHTML(`
@@ -38,7 +38,7 @@ if (flagged.includes(activeacc.uuid)) {
         <p>Manage your cosmetics and shop for new ones</p>
         <hr class="full-size">
         <h3>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h3>
-    `)
+    `, {sanitizer: sanitizer})
 }
 
 let cosmetic_cache = ''
@@ -52,13 +52,22 @@ let canbuycosmetics = true
 let user_balance = 0
 let mistium_balance = 0
 async function getBalances() {
+    if (!navigator.onLine) {
+        document.getElementsByClassName('container')[0].setHTML(`
+            <h1>Cosmetics</h1>
+            <p>Manage your cosmetics and shop for new ones</p>
+            <hr class="full-size">
+            <h3>A communication error has occurred. If you're sure it's not your connection, then Rotur may be down right now.</h3>
+        `, {sanitizer: sanitizer})
+        return;
+    }
     user_balance = await fetch(`https://api.rotur.dev/get_user?auth=${activeacc.token}`).then(res => res.json()).catch(err => {
         document.getElementsByClassName('container')[0].setHTML(`
             <h1>Cosmetics</h1>
             <p>Manage your cosmetics and shop for new ones</p>
             <hr class="full-size">
             <h3>A communication error has occurred. If you're sure it's not your connection, then Rotur may be down right now.</h3>
-        `)
+        `, {sanitizer: sanitizer})
         return;
     })
     if ((user_balance.error && (user_balance.error == 'Invalid authentication credentials') && !user_balance.username) || (user_balance['sys.banned'])) { // Extra check in place in case someone decides to set a key named "error" to "Invalid authentication credentials"
@@ -69,7 +78,7 @@ async function getBalances() {
             <p>Manage your cosmetics and shop for new ones</p>
             <hr class="full-size">
             <h3>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h3>
-        `)
+        `, {sanitizer: sanitizer})
         canbuycosmetics = false
         return;
     }
@@ -227,7 +236,7 @@ function CreateShopCosmeticElement(cosmetic) {
     cosmeticcard.querySelector('.overlayname').textContent = cosmetic.name
     cosmeticcard.querySelector('.overlayname').title = cosmetic.description
     cosmeticcard.querySelector('.overlaytype').textContent = cosmetic.cosmetic_type
-    cosmeticcard.querySelector('.overlaycreator').setHTML(`By: <img src='https://avatars.rotur.dev/${cosmetic.creator}' alt='${cosmetic.creator}' width='16' height='16'> ${cosmetic.creator}`, {sanitizer: sanitizer})
+    cosmeticcard.querySelector('.overlaycreator').setHTML(`By: <img src='https://avatars.rotur.dev/${cosmetic.creator}' alt='${cosmetic.creator}' width='16' height='16' class="creatorpfp"> ${cosmetic.creator}`, {sanitizer: sanitizer})
     cosmeticcard.querySelector('.viewoverlayinfo').dataset.cosmeticid = cosmetic.id
     cosmeticcard.querySelector('.buyoverlay').dataset.cosmeticid = cosmetic.id
     cosmeticcard.querySelector('.buyoverlay').textContent = `Buy (${(cosmetic.price ?? 0) == 0 ? "Free" : (cosmetic.price + " RC")})`
@@ -256,7 +265,7 @@ async function GetMyCosmetics() {
                     <p>Manage your cosmetics and shop for new ones</p>
                     <hr class="full-size">
                     <h3>The sub-token you have granted for your current account does not allow you to view your cosmetics. To resolve this issue, please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> and reauthenticate.</h3>
-                `)
+                `, {sanitizer: sanitizer})
             }
             canbuycosmetics = false
             cosmetic_cache = ({"active_cosmetics":{},"owned_cosmetics":[]})
@@ -281,6 +290,7 @@ async function GetMyCosmetics() {
         h3.textContent = "You don't own any cosmetics yet"
         document.getElementById('cosmeticlist').replaceChildren(h3)
     }
+    document.getElementById('randomoverlay').style.display = (cosmetic_html.length > 1) ? 'block' : 'none'
     if (supportwarning) {
         const warning = document.createElement('p')
         warning.textContent = 'As of now, Rotur Assistant only supports the "Overlay" cosmetic type. Support for different cosmetic types will be added in future updates, once Rotur adds them, if they are added.'
@@ -292,7 +302,13 @@ async function GetMyCosmetics() {
 
 async function GetShopCosmetics() {
     if (shop_cache == '') {
-        shop_cache = await fetch(`https://api.rotur.dev/cosmetics/shop`).then(res => res.json())
+        shop_cache = await fetch(`https://api.rotur.dev/cosmetics/shop`).then(res => res.json()).catch(err => {
+            return ({error: 'An unknown error occurred'})
+        })
+        if (shop_cache.error) {
+            openErrorPopup(shop_cache.error)
+            return;
+        }
         shop_cache = shop_cache.items
     }
     const shopdata = [ ...shop_cache ] // While the Rotur API does have queries that does this for me, it's faster to manually calculate the order than to re-fetch from the API.
@@ -343,10 +359,9 @@ async function GetShopCosmetics() {
 }
 
 async function UnequipCosmetic(cosmetic) {
-    const cosmeticdata = shop_cache[shop_cache.findIndex(cosmetic2 => cosmetic2.id == cosmetic)]
+    const cosmeticdata = shop_cache.find(cosmetic2 => cosmetic2.id == cosmetic)
     const cosmeticsuccess = await fetch(`https://api.rotur.dev/cosmetics/unequip?type=${cosmeticdata.cosmetic_type}&auth=${activeacc.token}`, {method: 'POST'}).then(res => res.json()).catch(err => {
-        openErrorPopup("An unknown error occurred")
-        return;
+        return ({error: 'An unknown error occurred'})
     })
     if (cosmeticsuccess.error) {
         openErrorPopup(cosmeticsuccess.error)
@@ -360,15 +375,17 @@ async function UnequipCosmetic(cosmetic) {
     }
 }
 
-async function EquipCosmetic(cosmetic) {
-    const cosmeticsuccess = await fetch(`https://api.rotur.dev/cosmetics/equip/${cosmetic}?auth=${activeacc.token}`, {method: 'POST'}).then(res => res.json())
+async function EquipCosmetic(cosmetic, isRNG) {
+    const cosmeticsuccess = await fetch(`https://api.rotur.dev/cosmetics/equip/${cosmetic}?auth=${activeacc.token}`, {method: 'POST'}).then(res => res.json()).catch(err => {
+        return ({error: 'An unknown error occurred'})
+    })
     if (cosmeticsuccess.error) {
         openErrorPopup(cosmeticsuccess.error)
     } else {
-        if (document.getElementById('mycosmetics').style.display == 'none') {
-            openSuccessPopup(`Successfully equipped the cosmetic "${shop_cache[shop_cache.findIndex(cosmetic2 => cosmetic2.id == cosmetic)].name}"!`)
+        if ((document.getElementById('mycosmetics').style.display == 'none') || isRNG) {
+            openSuccessPopup(`Successfully equipped the cosmetic "${shop_cache.find(cosmetic2 => cosmetic2.id == cosmetic).name}"!`)
         }
-        active_cache = shop_cache[shop_cache.findIndex(cosmetic2 => cosmetic.id == cosmetic)]
+        active_cache.overlay = shop_cache.find(cosmetic2 => cosmetic2.id == cosmetic)
         if (document.querySelector('[data-equipped="true"]')) {
             document.querySelector('[data-equipped="true"]').closest('.cosmeticitem').style.background = ''
             document.querySelector('[data-equipped="true"]').textContent = "Equip"
@@ -378,7 +395,6 @@ async function EquipCosmetic(cosmetic) {
         document.getElementById(`mine_${cosmetic}`).querySelector('.equipoverlay').dataset.equipped = 'true'
         document.getElementById(`mine_${cosmetic}`).style.background = '#00a2ff4b'
     }
-
 }
 
 if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
@@ -409,7 +425,7 @@ async function BuyCosmetic(cosmetic) {
         equipnowbtn.textContent = 'Equip Now'
         equipnowbtn.id = 'equipcosmeticnow'
         equipnowbtn.dataset.cosmeticid = cosmetic
-        openSuccessPopup(`Successfully purchased the cosmetic "${shop_cache[shop_cache.findIndex(cosmetic2 => cosmetic2.id == cosmetic)].name}"!`)
+        openSuccessPopup(`Successfully purchased the cosmetic "${shop_cache.find(cosmetic2 => cosmetic2.id == cosmetic).name}"!`)
         document.getElementById('popup-choices').appendChild(equipnowbtn)
         document.getElementById('cosmeticlist').appendChild(CreateMyCosmeticElement(cosmeticdata))
     }
@@ -442,7 +458,7 @@ document.addEventListener('click', async function(e) {
             break;
         }
         case ('buyoverlay'): {
-            const cosmetic_data = shop_cache[shop_cache.findIndex(cosmetic => cosmetic.id == e.target.dataset.cosmeticid)]
+            const cosmetic_data = shop_cache.find(cosmetic => cosmetic.id == e.target.dataset.cosmeticid)
             if (cosmetic_data.price > 0) {
                 if (user_balance < cosmetic_data.price) {
                     openErrorPopup('Loading...')
@@ -467,7 +483,7 @@ document.addEventListener('click', async function(e) {
             break;
         }
         case ('viewoverlayinfo'): {
-            const cosmetic_data = shop_cache[shop_cache.findIndex(cosmetic => cosmetic.id == e.target.dataset.cosmeticid)]
+            const cosmetic_data = shop_cache.find(cosmetic => cosmetic.id == e.target.dataset.cosmeticid)
             OpenCosmeticInfoPopup(cosmetic_data)
             break;
         }
@@ -513,6 +529,21 @@ document.addEventListener('click', async function(e) {
                     openErrorPopup('No image was detected on your clipboard.')
                 }
             }
+            break;
+        }
+        case ('randomoverlay'): {
+            const random_overlay = (cosmetic_cache[Math.floor(Math.random() * cosmetic_cache.length)] ?? cosmetic_cache[0])
+            const target = e.target
+            target.disabled = true
+            target.textContent = 'Equipping...'
+            if (active_cache?.overlay?.id != random_overlay.id) {
+                await EquipCosmetic(random_overlay.id, true)
+            } else {
+                openSuccessPopup(`Successfully equipped the cosmetic "${random_overlay.name}"!`)
+            }
+            target.textContent = 'Equip Random Overlay'
+            target.disabled = false
+            break;
         }
     }
 })
@@ -523,7 +554,7 @@ document.getElementById('cosmeticsortselect')?.addEventListener('change', functi
 })
 
 document.getElementById('preview1')?.addEventListener('change', function(e) {
-    document.querySelectorAll('img[src^="https://avatars.rotur.dev"]:not(img[src^="https://avatars.rotur.dev/.overlay"]):not([class="creatorpfp"])').forEach(img => {
+    document.querySelectorAll('img[src^="https://avatars.rotur.dev"]:not(img[src^="https://avatars.rotur.dev/.overlay"]):not(.creatorpfp)').forEach(img => {
         if (e.target.value == 'circle') {
             img.style = 'border-radius: 50%;'
         } else {

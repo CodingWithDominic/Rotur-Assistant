@@ -6,6 +6,7 @@
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+        <title>Settings - Rotur Assistant</title>
     </head>
     <body>
         <header id="header-placeholder"></header>
@@ -20,16 +21,8 @@
                 <button id='settingsnotestab' class="tab">Manage Notes</button>
             </div>
             <div id="gensettings">
-                <h2>General Settings</h2>
+                <h3>General Settings</h3>
                 <div class="gensettingssect">
-                    <label>
-                        <input type="checkbox" id="renderoverlays">
-                        Don't render avatar overlays
-                    </label>
-                    <label title="This may require a page reload on sites that use avatar overlays if you have any site that supports overlays open">
-                        <input type="checkbox" id="renderoverlaysglobal">
-                        Also block overlay rendering outside of Rotur Assistant
-                    </label>
                     <label>
                         <input type="checkbox" id="anchorheader">
                         Anchor header to top
@@ -46,26 +39,53 @@
                         <input type="checkbox" id="circular">
                         Use circular PFPs
                     </label>
+                    <label title="Removes borders from profile pictures across most of Rotur Assistant, providing further parity with other Rotur services. This refers to the solid CSS borders Rotur Assistant adds around PFPs across a lot of Rotur Assistant, not avatar overlays. The setting to turn off avatar overlays can be found under the Chat Controls category.">
+                        <input type="checkbox" id="noborders">
+                        Remove borders from PFPs
+                    </label>
                     <label title="This will only affect the circular status icon in the bottom-right corner of PFPs. Status text (if any) will not be affected.">
                         <input type="checkbox" id="showstatusicons">
                         Don't show status icons on profiles
                     </label>
-                    <label id="preferredcdnlabel">
+                    <hr class="full-size">
+                    <h3>Chat controls</h3>
+                    <p style="margin: 4px; margin-top: -3px;">For people who are frequent users of <a href="https://originchats.com/" target="_blank" rel="noopener noreferrer">OriginChats</a>.</p>
+                    <hr class="full-size dotted_separator">
+                    <label>
+                        <input type="checkbox" id="renderoverlays">
+                        Don't render avatar overlays
+                    </label>
+                    <label title="This may require a page reload on sites that use avatar overlays if you have any site that supports overlays open">
+                        <input type="checkbox" id="renderoverlaysglobal">
+                        Also block overlay rendering outside of Rotur Assistant
+                    </label>
+                    <label title="Is the chat being chaotic? Enable this option to make things a little more bearable. A page refresh may be required for this setting to fully take effect. This may come with the side effect of making the GIFs service completely unusable.">
+                        <input type="checkbox" id="blockgifs">
+                        Block GIFs from https://gifs.originchats.com
+                    </label>
+                    <label title="This setting may require a page refresh to fully take effect. Right now, this setting only works on the official OriginChats client, found at https://originchats.com/app">
+                        <input type="checkbox" id="overridegeneral">
+                        Override #general channel nicknames on OriginChats
+                    </label>
+                    <hr class="full-size">
+                    <label id="preferredcdnlabel" title="The CDN Rotur Assistant will upload photos to when doing something such as creating a Claw post">
                         Preferred CDN:
                         <select id="preferredcdnoptions">
                             <option name='cdnoption' value="roturcdn">RoturCDN</option>
                             <option name='cdnoption' value="fluficdn">Flufi's CDN*</option>
-                            <option name='cdnoption' value="mistiums3">Mistium's S3</option>
+                            <option name='cdnoption' value="mistiums3">Mistium's S3**</option>
+                            <option name='cdnoption' value="ochost">OCHost</option>
                             <!-- The API for this became a lot more locked down before 1.2 hit production
                             <option name='cdnoption' value="roturphotos">Rotur Photos**</option>
                             -->
                         </select>
                     </label>
-                    <p class="fineprint" id='fluficdnwarning' style="display: none; text-align: left;">*GIFs and transparent images may not work with this CDN (this CDN converts all uploaded images to jpegs).</p>
-                    <p class="fineprint" id='roturphotoswarning' style="display: none; text-align: left;">**Unlike all the other CDNs listed, Rotur Photos has a limited capacity of 10 MB across all photos you upload to it. The developer of Rotur Assistant would recommend only using this as a last resort if none of the other listed CDNs aren't working.</p>
+                    <span class="fineprint" id='fluficdnwarning' style="display: none; text-align: left;">*GIFs and transparent images may not work with this CDN (this CDN converts all uploaded images to jpegs).</span>
+                    <span class="fineprint" id='roturphotoswarning' style="display: none; text-align: left;">**Unlike all the other CDNs listed, Rotur Photos has a limited capacity of 10 MB across all photos you upload to it. The developer of Rotur Assistant would recommend only using this as a last resort if none of the other listed CDNs aren't working.</span>
+                    <span class="fineprint" id='mistiumwarning' style="display: none; text-align: left;">**Attachments sent via this CDN may disappear at random.</span>
                 </div>
                 <hr class="full-size">
-                <form id="popupsidebaroptions" title="These settings will apply next time you open Rotur Assistant">
+                <form id="popupsidebaroptions">
                     <h3 style="text-align: left;">Open Rotur Assistant as:</h3>
                     <label>
                         <input type="radio" name="ra_displayoption" value="popup">
@@ -75,13 +95,18 @@
                         <input type="radio" name="ra_displayoption" value="sidebar">
                         Sidebar
                     </label>
+                    <label title="The layout of Rotur Assistant was initially designed around its viewport having a fixed width of 400px. Layout issues, such as overly stretched objects, may arise. I hope to improve the full-site layout in future updates.">
+                        <input type="radio" name="ra_displayoption" value="site">
+                        Full Site
+                    </label>
                 </form>
+                <span style="text-align: left;">These settings will apply next time you open Rotur Assistant.</span>
                 <hr class="full-size">
                 <h3 style="text-align: left;">Customize App Layout</h3> <!-- You're welcome, DarkDot. I'll probably improve this in a later update. -->
                 <label class="approwlabel">
-                    Apps per row:
-                    <input id="approwinput" type="range" min="2" max="4" value="3">
-                    <span id="approwlabel">3</span>
+                    App Size:
+                    <input id="appsizeinput" type="range" min="1" max="3" value="2">
+                    <span id="appsizelabel">100%</span>
                 </label>
                 <span style="text-align: left;">This applies on both the home page and the wiki page</span>
                 <hr class="full-size dotted_separator">
@@ -122,6 +147,11 @@
                         Mesa Orange
                     </label>
                     <label>
+                        <input type="radio" name='themeselect' value="darkpink">
+                        <div id="darkpinktheme" class="themepreviews"></div>
+                        Hot Pink
+                    </label>
+                    <label>
                         <input type="radio" name='themeselect' value="blurple">
                         <div id="blurpletheme" class="themepreviews"></div>
                         Blurple
@@ -141,7 +171,53 @@
                         <div id="blackouttheme" class="themepreviews"></div>
                         Blackout
                     </label>
+                    <hr class="full-size dotted_separator">
+                    <label>
+                        <input type="radio" name='themeselect' value="custom">
+                        <div id="customtheme" class="themepreviews"></div>
+                        Custom
+                    </label>
                 </form>
+                <hr class="full-size">
+                <h3>Customize your theme here</h3>
+                <form id="customthemes">
+                    <label>
+                        <input type="color" id="customthemecolor1">
+                        Background Color
+                    </label>
+                    <label>
+                        <input type="color" id="customthemecolor2">
+                        Scroll Bar
+                    </label>
+                    <label>
+                        <input type="color" id="customthemecolor3">
+                        Scroll Bar Background
+                    </label>
+                    <label>
+                        <input type="color" id="customthemecolor4">
+                        Header and Footer
+                    </label>
+                    <label>
+                        <input type="color" id="customthemecolor5">
+                        Button Color
+                    </label>
+                    <label>
+                        <input type="color" id="customthemecolor6">
+                        Button Color (Hovered)
+                    </label>
+                    <label>
+                        <input type="color" id="customthemecolor7">
+                        Pop-up Background Color
+                    </label>
+                    <label>
+                        <input type="color" id="customthemecolor8">
+                        Text Color
+                    </label>
+                </form>
+                <div class="customthemebuttons">
+                    <button id="randomizetheme">Randomize Theme</button>
+                    <button id="examplepopup">Example Pop-up</button>
+                </div>
             </div>
             <div id="notemanager" style="display: none;">
                 <p>Manage user notes here. Only you can see user notes. To get around needing a Rotur subscription, Rotur Assistant uses its own notes system, stored in the extension's sync storage. Unlike Rotur's notes, you are also not limited to friends either.</p>

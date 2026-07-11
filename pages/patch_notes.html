@@ -6,107 +6,179 @@
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+        <title>Patch Notes - Rotur Assistant</title>
     </head>
     <body>
         <header id="header-placeholder"></header>
         <script src="../header.js"></script>
         <div class="container">
+            <h1>Patch notes</h1>
+            <p>See how Rotur Assistant came to be today.</p>
+            <hr class="full-size dotted_separator">
             <div class="wiki-container">
-                <h1>Patch notes</h1>
-                <p>See how Rotur Assistant came to be today.</p>
-                <h2>1.0</h2>
-                <ul>
-                    <li>Rotur Assistant was finally released to the chrome web store (May 5, 2026), with the extension being approved the next day (May 6, 2026)</li>
-                </ul>
-                <hr class="full-size dotted_separator">
-                <h2>1.0.1</h2>
-                <p class="fineprint">May 7, 2026 - A day 1 emergency fix</p>
-                <ul class="patchnotelist">
-                    <li>Fixed a possible XSS vulnerability reported by <a href="lookup.html?user=furina">furina</a>. Turns out, .replace() only replaces the first instance of a charater, rather than all of them. I was also unaware of the .replaceAll() function at the time, which does what I initially thought .replace() did.</li>
-                    <li>Added support for pasting images into image pickers via shift + click, mainly to address an issue on some browsers / systems (such as firefox) where the extension would close once the file picker was open.</li>
-                    <li>Some wiki corrections</li>
-                    <li>Add more tooltips in some places</li>
-                </ul>
+                <details>
+                    <summary>Table of Contents</summary>
+                    <p>As more versions release, the patch notes will naturally get longer and longer, increasing scroll times. To save you time, here's some jump links</p>
+                    <ul class="patchnotelist">
+                        <li><a href="patch_notes.html#RA_1.0">1.0</a>
+                            <ul>
+                                <li><a href="patch_notes.html#RA_1.0.1">1.0.1</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="patch_notes.html#RA_1.1">1.1</a></li>
+                        <li><a href="patch_notes.html#RA_1.2">1.2</a>
+                            <ul>
+                                <li><a href="patch_notes.html#RA_1.2.1">1.2.1</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </details>
                 <hr class="full-size">
-                <h2>1.1</h2>
-                <p class="fineprint">May 20, 2026 - The first real update</p>
-                <ul class="patchnotelist">
-                    <li>Fixed a bug where the send button would persist upon sharing a claw post. Turns out, I created a logical error while fixing another bug in 1.0.1 where having a blank post with an image attached would still upload the image to Milo's RoturCDN server, but would still abort the post due to the post being blank, effectively creating a way to waste Milo's server space.</li>
-                    <li>Claw's "Update in real time" option now only refreshes the feed when it receives a message from the claw websocket, rather than every 5 seconds.</li>
-                    <li>Added an option to scramble account tokens when uploading to sync.</li>
-                    <li>Added an option to export and import account rosters.</li>
-                    <li>Added a timer for when daily credits become available to claim, alongside an option to receive a system notification when they become available.</li>
-                    <li>The Themes app on the home screen has been replaced by a general settings app, with themes being moved to be a tab in the settings app.</li>
-                    <li>Added user notes, though Rotur Assistant uses its own notes system to get around needing a Rotur subscription. User notes are synced to your Google (or Firefox) Account. Due to sync limitations, you can only save notes on up to 100 users. You can manage your notes in the new settings app.</li>
-                    <li>Rmail reply chains now superscript the index in the chain, rather than reply chains being a lot of nesting of "(Re: (Re: ...))"</li>
-                    <li>Added image support (sort of) to Rmail. However, images sent via Rmail will only be visible by other Rotur Assistant users using version 1.1 or higher, due to the fact that Rotur Assistant uses special markdown.</li>
-                    <li>Added a notifications manager</li>
-                    <li>General Wallet app improvements, mainly caching the account balance and the sum balance, thus reducing load on the Rotur API (gets around potential rate limits too).</li>
-                    <li>Added account switcher support for <a href="https://git.rotur.dev" target="_blank" rel="noopener noreferrer">https://git.rotur.dev</a> (This would've been included in 1.0, but at the time, I couldn't figure out how to get it to work).<br><p class='fineprint'>Mini-trivia: While testing the feature, I accidentally created a security hole with my Forgejo Rotur account, where logging into <a href="lookup.html?user=huopathrowaway">huopathrowaway</a> on roturGIT would log into my main Forgejo account (Dominic). I did fix this issue on Rotur Assistant's side by having it clear your cookies on RoturGIT before performing the switch. I tried to remove the link, but I couldn't. I eventually gave up and told Mistium about it, and she helped me break the link.</p></li>
-                    <li>Gift data is now cached, meaning switching filters will no longer re-fetch the gift data. As compensation, a refresh button was added.</li>
-                    <li>Fixed some bugs regarding profile editing.</li>
-                    <li>Pressing "Shift" when clicking on the "Add account" button in the account manager will prompt you to add an account using a token, in case you forget your account's credentials or get locked out of it.</li>
-                    <li>Added a new danger zone section at the bottom of the profile editor. Only mess with stuff in there if you know what you are doing.</li>
-                    <li>When managing claw posts through the profile editor, you now interact on behalf of the account you are currently editing, rather than your current active account.</li>
-                    <li>Attempting to save a JSON object in the account key manager will attempt to save the value as an object, rather as a stringified object (if it fails to detect a potential object, then it will fall back to saving it as a string). This property only applies to keys in the "Other" category.</li>
-                    <li>Fixed a bug in the account key manager where copying a key that was a JSON object would instead copy a series of [object Object]s instead.</li>
-                    <li>Graceful handling in case the TOS gets updated and accounts have to re-accept.</li>
-                    <li>Similarly, graceful handling for any account whose email isn't verified (assuming it makes it past rotur.dev/auth without validating). This was added pretty much at the last minute right when 1.1 was being tested.</li>
-                    <li>Added more fill-in badges for systems that don't come with a badge, including futureproofing for 2 potential new Rotur 'system's (Fluoride and originChats).</li>
-                    <li>Removed and centralized a lot of redundant code.</li>
-                    <li>Fixed bugs in some places regarding Rotur accounts with spaces</li>
-                    <li>Several other small/minor bug fixes</li>
-                </ul>
-                <hr class="full-size">
-                <h2>1.2</h2>
-                <p class="fineprint">June 18, 2026 - Keeping up with an overhaul</p>
-                <ul class="patchnotelist">
-                    <li>Added an ICN Editor. No need to deal with the funkiness of OriginOS's one anymore.</li>
-                    <li>Added support for Rotur RPC</li>
-                    <li>Added a manager for cosmetics, as well as a manager for owned cosmetics on the profile editor.</li>
-                    <li>Added statuses to profiles in Lookup</li>
-                    <li>Made some of the &lt;hr&gt; lines throughout Rotur Assistant ignore the container's padding, allowing them to span the entire viewport of the extension end-to-end</li>
-                    <li>Fixed a bug with searching up profiles of users under the "PassNet" system that don't have any other badges.</li>
-                    <li title='Turns out, Rotur Assistant submits the system as "PassNet", while Rotur looks for "passNet", since the /systems endpoint has the system name as both its JSON key and a JSON value. While the two values match for most systems, PassNet is the only system where the two are mis-matched, resulting in this inconsistency.'>Fixed a bug with trying to change your system to "PassNet".</li>
-                    <li>Corrected a typo regarding Fluoride (I had it spelt as "Flouride" throughout Rotur Assistant and its entire codebase)</li>
-                    <li>Added the option to have Rotur Assistant display as a side panel instead of a pop-up. This allows Rotur Assistant to remain open for extended periods of time, even if you switch tabs or click outside its window. Thanks to <a href="lookup.html?user=darkdot">darkdot</a> for making me aware of its existence.</li>
-                    <li>Fixed a bug where Claw post search queries that returned only one result instead don't return anything at all, throwing an error in the console instead.</li>
-                    <li>Added account switcher support for <a href="https://authenticator.rotur.dev" target="_blank" rel="noopener noreferrer">https://authenticator.rotur.dev</a>.</li>
-                    <li>Added account switcher support for <a href="https://gate.rotur.dev" target="_blank" rel="noopener noreferrer">https://gate.rotur.dev</a>. This was added last minute before 1.2 rolled off the production line. (its auth looping indefinitely was fixed during the final stages of Rotur Assistant 1.2's review process)</li>
-                    <li>Fixed a bug where buying an item on someone's profile wouldn't update the item count.</li>
-                    <li>Added a repost button on Claw posts on profiles.</li>
-                    <li>Also added an indicator on profiles on whether Claw posts are reposts or profile-only posts.</li>
-                    <li>Added the ability to pin and unpin claw posts to your profile</li>
-                    <li>Added the repost button to your own claw posts. Turns out, the API lets you repost your own posts. I assumed it was false, since other Claw clients just hide the repost button in favor of the delete button.</li>
-                    <li>Corrected some bad coding practices, including any issues that came up in devtools (such as label tags that weren't associated with form elements), as well as having the header and footer use their own dedicated HTML tags, rather than being just &lt;div&gt;s. In other words, I cleaned up some of the div-itis throughout Rotur Assistant.</li>
-                    <li>Added an option in settings that lets you choose your preferred CDN server. This is a failsafe in case Milo's CDN server stops working.</li>
-                    <li>Double-clicking on an account in the account manager will now trigger an account switch if you're on a supported site.</li>
-                    <li>Several wiki corrections, mainly to update any now-outdated information.</li>
-                    <li>Any inline images, such as the one in the daily credit notice, now display aligned to the middle, rather than aligned to the bottom.</li>
-                    <li>Added an option to show legacy notifications (the notifications found at https://api.rotur.dev/notifications as opposed to https://api.rotur.dev/notify/log), since thanks to orion, I found out that there are 2 notification endpoints, rather than one.</li>
-                    <li>Since the option to show legacy notifications created some room for it, there's now a refresh button for notifications now.</li>
-                    <li>Modified the layout of (non-legacy) notifications to prioritize emphasis more on the source, rather than the user associated with that source.</li>
-                    <li>Fixed some layout issues regarding quotes and really long words in Rmail titles.</li>
-                    <li>Added multiple-image support for images in Rmails, in response to orion adopting the same markdown Rotur Assistant use for its Rmail images.</li>
-                    <li>Rewrote lookup and the profile editor so that the HTML behind the entire card is not appended all at once, and instead appends based on a template in the HTML file, which should theoretically improve performance slightly.</li>
-                    <li>While I was at it, I added a section to the profile editor to view login history and manage blocked IPs</li>
-                    <li>Similar to the profile rewrite, since I feel that Rotur Assistant gets a bit of a bad rep for directly parsing strings as HTML when dealing with repetitive elements (such as claw posts), a lot of Rotur Assistant was rewritten to instead clone and use &lt;template&gt; tags. This should improve performance in some spots too. I debated doing this, since it would take a very long time, given the complexity of some of the repetitive elements (example being claw posts, and their many attributes, including replies and their attributes) I decided to go through with it after the discovery of &lt;template&gt; tags.</li>
-                    <li>Items are now cached.</li>
-                    <li>Made the footer a little less bloated.</li>
-                    <li>The sum cache will now account for the 0.25 credit bonus when claiming a daily credit while the owner account of the system of your active account is also on your roster.</li>
-                    <li>Added a breakdown section to the Wallet app, allowing you to see individual balances of all your added accounts. This will only be visible if you have more than one account added in the account manager.</li>
-                    <li>Added a warning and somewhat graceful support in case Rotur Assistant is given a sub-token, rather than the main token (Rotur Assistant is and will continue to be designed primarily around the main token).</li>
-                    <li>Revoking a gift no longer uses a workaround that requires an alt, since I found out about an endpoint that lets you cancel gifts (Before, it had an alt claim a gift, then send the amount back to your active account). This also means that revoking gifts no longer requires at least 2 accounts to be added on your roster.</li>
-                    <li>Updated kyrOS's badge to use a badge that better resembles its actual logo, rather than an improvised one, as per request by NubbinsRuz themselves.</li>
-                    <li>Added the ability to cancel friend requests.</li>
-                    <li>Moved Notifications to be in the "Social" category in the header</li>
-                    <li>Added an option to use circular PFPs across Rotur Assistant, for parity with most other Rotur services (including many official ones).</li>
-                    <li>Added the option to clear any cached data (mainly session storage data).</li>
-                    <li>Added basic customization to the app's layout on the home page.</li>
-                    <li>Several other small/minor tweaks and bug fixes.</li>
-                    <br>
-                    <li>Overall, this update mainly focused on cleaning up a lot of "tech debt", fixing even more bugs, and correcting a lot of bad coding practices.</li>
-                </ul>
+                <section id="RA_1.0">
+                    <h2>1.0</h2>
+                    <ul>
+                        <li>Rotur Assistant was finally released to the chrome web store (May 5, 2026), with the extension being approved the next day (May 6, 2026)</li>
+                    </ul>
+                    <hr class="full-size dotted_separator">
+                </section>
+                <section id="RA_1.0.1">
+                    <h2>1.0.1</h2>
+                    <p class="fineprint">May 7, 2026 - A day 1 emergency fix</p>
+                    <ul class="patchnotelist">
+                        <li>Fixed a possible XSS vulnerability reported by <a href="lookup.html?user=furina">furina</a>. Turns out, .replace() only replaces the first instance of a charater, rather than all of them. I was also unaware of the .replaceAll() function at the time, which does what I initially thought .replace() did.</li>
+                        <li>Added support for pasting images into image pickers via shift + click, mainly to address an issue on some browsers / systems (such as firefox) where the extension would close once the file picker was open.</li>
+                        <li>Some wiki corrections</li>
+                        <li>Add more tooltips in some places</li>
+                    </ul>
+                    <hr class="full-size">
+                </section>
+                <section id="RA_1.1">
+                    <h2>1.1</h2>
+                    <p class="fineprint">May 20, 2026 - The first real update</p>
+                    <ul class="patchnotelist">
+                        <li>Fixed a bug where the send button would persist upon sharing a claw post. Turns out, I created a logical error while fixing another bug in 1.0.1 where having a blank post with an image attached would still upload the image to Milo's RoturCDN server, but would still abort the post due to the post being blank, effectively creating a way to waste Milo's server space.</li>
+                        <li>Claw's "Update in real time" option now only refreshes the feed when it receives a message from the claw websocket, rather than every 5 seconds.</li>
+                        <li>Added an option to scramble account tokens when uploading to sync.</li>
+                        <li>Added an option to export and import account rosters.</li>
+                        <li>Added a timer for when daily credits become available to claim, alongside an option to receive a system notification when they become available.</li>
+                        <li>The Themes app on the home screen has been replaced by a general settings app, with themes being moved to be a tab in the settings app.</li>
+                        <li>Added user notes, though Rotur Assistant uses its own notes system to get around needing a Rotur subscription. User notes are synced to your Google (or Firefox) Account. Due to sync limitations, you can only save notes on up to 100 users. You can manage your notes in the new settings app.</li>
+                        <li>Rmail reply chains now superscript the index in the chain, rather than reply chains being a lot of nesting of "(Re: (Re: ...))"</li>
+                        <li>Added image support (sort of) to Rmail. However, images sent via Rmail will only be visible by other Rotur Assistant users using version 1.1 or higher, due to the fact that Rotur Assistant uses special markdown.</li>
+                        <li>Added a notifications manager</li>
+                        <li>General Wallet app improvements, mainly caching the account balance and the sum balance, thus reducing load on the Rotur API (gets around potential rate limits too).</li>
+                        <li>Added account switcher support for <a href="https://git.rotur.dev" target="_blank" rel="noopener noreferrer">https://git.rotur.dev</a> (This would've been included in 1.0, but at the time, I couldn't figure out how to get it to work).<br><p class='fineprint'>Mini-trivia: While testing the feature, I accidentally created a security hole with my Forgejo Rotur account, where logging into <a href="lookup.html?user=huopathrowaway">huopathrowaway</a> on roturGIT would log into my main Forgejo account (Dominic). I did fix this issue on Rotur Assistant's side by having it clear your cookies on RoturGIT before performing the switch. I tried to remove the link, but I couldn't. I eventually gave up and told Mistium about it, and she helped me break the link.</p></li>
+                        <li>Gift data is now cached, meaning switching filters will no longer re-fetch the gift data. As compensation, a refresh button was added.</li>
+                        <li>Fixed some bugs regarding profile editing.</li>
+                        <li>Pressing "Shift" when clicking on the "Add account" button in the account manager will prompt you to add an account using a token, in case you forget your account's credentials or get locked out of it.</li>
+                        <li>Added a new danger zone section at the bottom of the profile editor. Only mess with stuff in there if you know what you are doing.</li>
+                        <li>When managing claw posts through the profile editor, you now interact on behalf of the account you are currently editing, rather than your current active account.</li>
+                        <li>Attempting to save a JSON object in the account key manager will attempt to save the value as an object, rather as a stringified object (if it fails to detect a potential object, then it will fall back to saving it as a string). This property only applies to keys in the "Other" category.</li>
+                        <li>Fixed a bug in the account key manager where copying a key that was a JSON object would instead copy a series of [object Object]s instead.</li>
+                        <li>Graceful handling in case the TOS gets updated and accounts have to re-accept.</li>
+                        <li>Similarly, graceful handling for any account whose email isn't verified (assuming it makes it past rotur.dev/auth without validating). This was added pretty much at the last minute right when 1.1 was being tested.</li>
+                        <li>Added more fill-in badges for systems that don't come with a badge, including futureproofing for 2 potential new Rotur 'system's (Fluoride and originChats).</li>
+                        <li>Removed and centralized a lot of redundant code.</li>
+                        <li>Fixed bugs in some places regarding Rotur accounts with spaces</li>
+                        <li>Several other small/minor bug fixes</li>
+                    </ul>
+                    <hr class="full-size">
+                </section>
+                <section id="RA_1.2">
+                    <h2>1.2</h2>
+                    <p class="fineprint">June 18, 2026 - Keeping up with an overhaul</p>
+                    <ul class="patchnotelist">
+                        <li>Added an ICN Editor. No need to deal with the funkiness of OriginOS's one anymore.</li>
+                        <li>Added support for Rotur RPC</li>
+                        <li>Added a manager for cosmetics, as well as a manager for owned cosmetics on the profile editor.</li>
+                        <li>Added statuses to profiles in Lookup</li>
+                        <li>Made some of the &lt;hr&gt; lines throughout Rotur Assistant ignore the container's padding, allowing them to span the entire viewport of the extension end-to-end</li>
+                        <li>Fixed a bug with searching up profiles of users under the "PassNet" system that don't have any other badges.</li>
+                        <li title='Turns out, Rotur Assistant submits the system as "PassNet", while Rotur looks for "passNet", since the /systems endpoint has the system name as both its JSON key and a JSON value. While the two values match for most systems, PassNet is the only system where the two are mis-matched, resulting in this inconsistency.'>Fixed a bug with trying to change your system to "PassNet".</li>
+                        <li>Corrected a typo regarding Fluoride (I had it spelt as "Flouride" throughout Rotur Assistant and its entire codebase)</li>
+                        <li>Added the option to have Rotur Assistant display as a side panel instead of a pop-up. This allows Rotur Assistant to remain open for extended periods of time, even if you switch tabs or click outside its window. Thanks to <a href="lookup.html?user=darkdot">darkdot</a> for making me aware of its existence.</li>
+                        <li>Fixed a bug where Claw post search queries that returned only one result instead don't return anything at all, throwing an error in the console instead.</li>
+                        <li>Added account switcher support for <a href="https://authenticator.rotur.dev" target="_blank" rel="noopener noreferrer">https://authenticator.rotur.dev</a>.</li>
+                        <li>Added account switcher support for <a href="https://gate.rotur.dev" target="_blank" rel="noopener noreferrer">https://gate.rotur.dev</a>. This was added last minute before 1.2 rolled off the production line. (its auth looping indefinitely was fixed during the final stages of Rotur Assistant 1.2's review process)</li>
+                        <li>Fixed a bug where buying an item on someone's profile wouldn't update the item count.</li>
+                        <li>Added a repost button on Claw posts on profiles.</li>
+                        <li>Also added an indicator on profiles on whether Claw posts are reposts or profile-only posts.</li>
+                        <li>Added the ability to pin and unpin claw posts to your profile</li>
+                        <li>Added the repost button to your own claw posts. Turns out, the API lets you repost your own posts. I assumed it was false, since other Claw clients just hide the repost button in favor of the delete button.</li>
+                        <li>Corrected some bad coding practices, including any issues that came up in devtools (such as label tags that weren't associated with form elements), as well as having the header and footer use their own dedicated HTML tags, rather than being just &lt;div&gt;s. In other words, I cleaned up some of the div-itis throughout Rotur Assistant.</li>
+                        <li>Added an option in settings that lets you choose your preferred CDN server. This is a failsafe in case Milo's CDN server stops working.</li>
+                        <li>Double-clicking on an account in the account manager will now trigger an account switch if you're on a supported site.</li>
+                        <li>Several wiki corrections, mainly to update any now-outdated information.</li>
+                        <li>Any inline images, such as the one in the daily credit notice, now display aligned to the middle, rather than aligned to the bottom.</li>
+                        <li>Added an option to show legacy notifications (the notifications found at https://api.rotur.dev/notifications as opposed to https://api.rotur.dev/notify/log), since thanks to orion, I found out that there are 2 notification endpoints, rather than one.</li>
+                        <li>Since the option to show legacy notifications created some room for it, there's now a refresh button for notifications now.</li>
+                        <li>Modified the layout of (non-legacy) notifications to prioritize emphasis more on the source, rather than the user associated with that source.</li>
+                        <li>Fixed some layout issues regarding quotes and really long words in Rmail titles.</li>
+                        <li>Added multiple-image support for images in Rmails, in response to orion adopting the same markdown Rotur Assistant use for its Rmail images.</li>
+                        <li>Rewrote lookup and the profile editor so that the HTML behind the entire card is not appended all at once, and instead appends based on a template in the HTML file, which should theoretically improve performance slightly.</li>
+                        <li>While I was at it, I added a section to the profile editor to view login history and manage blocked IPs</li>
+                        <li>Similar to the profile rewrite, since I feel that Rotur Assistant gets a bit of a bad rep for directly parsing strings as HTML when dealing with repetitive elements (such as claw posts), a lot of Rotur Assistant was rewritten to instead clone and use &lt;template&gt; tags. This should improve performance in some spots too. I debated doing this, since it would take a very long time, given the complexity of some of the repetitive elements (example being claw posts, and their many attributes, including replies and their attributes) I decided to go through with it after the discovery of &lt;template&gt; tags.</li>
+                        <li>Items are now cached.</li>
+                        <li>Made the footer a little less bloated.</li>
+                        <li>The sum cache will now account for the 0.25 credit bonus when claiming a daily credit while the owner account of the system of your active account is also on your roster.</li>
+                        <li>Added a breakdown section to the Wallet app, allowing you to see individual balances of all your added accounts. This will only be visible if you have more than one account added in the account manager.</li>
+                        <li>Added a warning and somewhat graceful support in case Rotur Assistant is given a sub-token, rather than the main token (Rotur Assistant is and will continue to be designed primarily around the main token).</li>
+                        <li>Revoking a gift no longer uses a workaround that requires an alt, since I found out about an endpoint that lets you cancel gifts (Before, it had an alt claim a gift, then send the amount back to your active account). This also means that revoking gifts no longer requires at least 2 accounts to be added on your roster.</li>
+                        <li>Updated kyrOS's badge to use a badge that better resembles its actual logo, rather than an improvised one, as per request by NubbinsRuz themselves.</li>
+                        <li>Added the ability to cancel friend requests.</li>
+                        <li>Moved Notifications to be in the "Social" category in the header</li>
+                        <li>Added an option to use circular PFPs across Rotur Assistant, for parity with most other Rotur services (including many official ones).</li>
+                        <li>Added the option to clear any cached data (mainly session storage data).</li>
+                        <li>Added basic customization to the app's layout on the home page.</li>
+                        <li>Several other small/minor tweaks and bug fixes.</li>
+                        <br>
+                        <li>Overall, this update mainly focused on cleaning up a lot of "tech debt", fixing even more bugs, and correcting a lot of bad coding practices.</li>
+                    </ul>
+                    <hr class="full-size dotted_separator">
+                </section>
+                <section id="RA_1.2.1">
+                    <h2>1.2.1</h2>
+                    <p class="fineprint">July 10, 2026 - Rmail overhaul + Too many new services</p>
+                    <ul class="patchnotelist">
+                        <li>Updated Rmail to use the new HTTP APIs, rather than the now-outdated websocket. Thanks to Mistium for providing backwards-compatibility with the old websocket in the meantime so that older Rmail clients (mainly Rotur Assistant's client on versions prior to 1.2.1) can continue to function.</li>
+                        <li title="Any images that appear using the special markdown will appear before the actual attachments, for any Rmails that happen to use both the special markdown and have actual attachments.">Rmail replying and attachments now use the new official methods, rather than Rotur Assistant's special markdown. Attachments that were originally shared using the special markdown will continue to render properly on Rotur Assistant. As a side effect, the preferred CDN will no longer affect attachments sent when creating an Rmail. They will be fixed to using attachments.mistium.com (or OCHost if you have that selected).</li>
+                        <li>Overall, the Rmail app basically got a complete overhaul due to the drastic changes Rmail itself received.</li>
+                        <li>In response to to Mistium revamping Claw, as seen by the new official client, <a href="https://pounce.rotur.dev" target="_blank" rel="noopener noreferrer">Pounce</a>, Rotur Assistant adopted some of the new features, such as being able to view quoted reposts and vote on polls. Additional support for more features will come in 1.3, since this update primarily focused on bringing Rmail up to speed. Support for creating polls is up in the air, since creating polls requires a paid Rotur subscription, and since I don't have one, I can't test.</li>
+                        <li>Added a failsafe regarding Rotur Assistant erroring when it encounters a Claw post with data it doesn't recognize. Rotur Assistant will now instead skip that Claw post when rendering posts. This phenomenon made some profiles inaccessible on Rotur Assistant.</li>
+                        <li>The "Update in real time" option on Claw now persists.</li>
+                        <li>On top of that, a few bugs surrounding it were fixed.</li>
+                        <li>Fixed a bug where the breakdown tab would reappear after switching tabs in the wallet app with only one account added</li>
+                        <li>Fixed a bug where retrieving from sync data would not properly refresh the roster</li>
+                        <li>Fixed a bug with trying to send a Claw post that contained the "%" symbol</li>
+                        <li>Fixed a bug where opening the notifications app while not connected to the internet leaves you stuck on its loading screen, without properly displaying the communication error message</li>
+                        <li>Added error handling for Rotur RPC if Rotur Assistant fails to connect to the status websocket.</li>
+                        <li>Fixed a bug regarding a desync with the sum cache once an account roster is loaded from sync storage</li>
+                        <li>Fixed a bug where equipping an overlay in the profile editor would equip it on the active account shown in the header, rather than the account you are currently editing.</li>
+                        <li>Switching accounts using the header right-click menu while editing a profile will now open the editor of the profile of the new account you switched to, rather than the same profile.</li>
+                        <li>Added a number to the account manager that shows how many accounts you have added</li>
+                        <li>Economy keys now properly handle pending cancellaions.</li>
+                        <li title="Mistium was pumping out new services left and right during 1.2.1's development, like at least 1 new service per day for a good chunk of 1.2.1's development. She's a very fast coder, compared to me. Rotur Assistant would be on version 1.8 if Rotur Assistant development moved at her speed, rather than mine.">Added account switcher support for several new sites/services, and tweaked the login method for some existing sites that were rewritten.</li>
+                        <li>Rotur Assistant will no longer prevent you from posting a Claw post if you have just an attachment with no text in the textbox.</li>
+                        <li>The placeholder text on Claw's post and reply boxes will now tell you which account you're posting or replying as, to decrease the chance of sending a post or a reply from the wrong account.</li>
+                        <li>Since I happened to (unawaringly) be a test subject of Mistium testing standing, I added a section on profiles that lets you see standing history, since I now had something to reference for it. This is also the first (known) case of standing being seen in action.</li>
+                        <li>Added a search bar to the account key manager and the account manager. The searches are case-insensitive.</li>
+                        <li>Added a refresh button to the account key manager</li>
+                        <li>Tweaked the CSS to allow Rotur Assistant to have a variable width, rather than its width being fixed to 400px.</li>
+                        <li>Thanks to the change above, there's a new view mode: Full-site mode</li>
+                        <li title="In case the chat on OriginChats or whatever uses the GIF service becomes a little too chaotic for your liking. Do note that this does have the side effect of rendering the GIF service completely inaccessible and unusable.">Added an option to block GIFs from <a href="https://gifs.originchats.com" target="_blank" rel="noopener noreferrer">https://gifs.originchats.com</a>.</li>
+                        <li title="This was added in response to Mistium starting a service on there where people can pay her 20 credits to rename the general channel for a day.">Added an option to have the general channel on OriginChats appear as "general" no matter what its nickname is.</li>
+                        <li>Added a new theme: Dark Pink</li>
+                        <li>Added custom themes!</li>
+                        <li title="This was mainly driven by the fact that OSL has 2 versions">Split off OSL and ICN into their own wiki pages, rather than cramming them all under OriginOS's wiki page</li>
+                        <li>Added a new wiki page for Rmail</li>
+                        <li>Categorized some settings under "Chat Controls"</li>
+                        <li>Tweaked the layout of (non-legacy) notifications</li>
+                        <li title="The difference will be noticeable if you happen to have several accounts added">Greatly improved the speed of total sum calculation in the Wallet app by making the calculation process asynchronous.</li>
+                        <li>Using the same logic above, the loading times of looking up someone's profiles as well as opening the profile editor has been greatly reduced.</li>
+                        <li>Various extension-wide thematic tweaks</li>
+                        <li>And many more small changes</li>
+                    </ul>
+                </section>
             </div>
         </div>
         <footer id="footer-placeholder"></footer>
