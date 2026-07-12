@@ -328,11 +328,21 @@ async function sumBalances() {
         document.getElementById('breakdownoptions').style.display = 'block'
         suminprogress = false;
     }
-
 }
 
 function UpdateSumList(order, includezeros) {
     const sumdata = [ ...sum_cache[2] ]
+
+    const orderMap = {};
+    accounts.forEach((item, index) => {
+        orderMap[item.name] = index;
+    });
+
+    sumdata.sort((a, b) => {
+        const nameA = Object.keys(a)[0];
+        const nameB = Object.keys(b)[0];
+        return orderMap[nameA] - orderMap[nameB];
+    });
 
     switch (order) {
         case 'roster-r': {
@@ -600,6 +610,7 @@ document.addEventListener('click', async function(e) {
             }
         }
         chrome.storage.local.set({dailycreditsettings: dailycreditsettings})
+        return;
     }
     if (e.target.className == 'tab') {
         Array.from(document.getElementsByClassName('tab')).forEach(tab => {
@@ -622,6 +633,7 @@ document.addEventListener('click', async function(e) {
     if (e.target.id == 'excludenobals') {
         includezeroesinsort = !e.target.checked
         UpdateSumList(lastsort, includezeroesinsort)
+        return;
     }
     if (e.target.id == 'transactionreload') {
         document.getElementById('transactionreload').textContent = '…'
@@ -711,6 +723,7 @@ document.addEventListener('click', async function(e) {
         setTimeout(function() {
             document.getElementById('claimstatusplaceholder').replaceChildren()
         }, (dailysuccess == "Balance too high" ? 20000 : 10000))
+        return;
     }
     if (e.target.id == 'sendcredits') {
         const recipientdata = await fetch(`https://api.rotur.dev/profile?name=${document.getElementById('transferuser').value}&include_posts=no`).then(res => res.json())
@@ -740,7 +753,7 @@ document.addEventListener('click', async function(e) {
             }, 10000)
             return;
         }
-        openPopup(activeaccdata, recipientdata, transferamt, note);
+        openPopup(bal_cache, recipientdata, transferamt, note);
     }
 
     if (e.target.id == 'finaltransfer') {

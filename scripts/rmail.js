@@ -1,11 +1,5 @@
 import { sanitize, formatDate, openErrorPopup, openSuccessPopup, CreateEmptyPlaceholder, UploadImage } from "../index.js"
 
-let rmail_sent_cache = ''
-let rmail_inbox_cache = ''
-let rmail_starred_cache = ''
-let rmail_drafts_cache = ''
-let rmail_archive_cache = ''
-let rmail_trash_cache = ''
 let all_cache = ''
 let me_cache = ''
 let ban_reason_cache = ''
@@ -14,7 +8,6 @@ let draftprogressid = ''
 let replies_cache = []
 let current_rmail_view = ''
 let editinginprogress = false
-let finished_inboxes = 0
 
 const rmail_inbox_map =
 {
@@ -618,8 +611,8 @@ const starred = []
 const archived = []
 const trash = []
 
-    async function GetInbox(formdata) {
-        rmail_inbox_cache = await fetch(`https://mail.rotur.dev/api/v1/mailboxes/inbox/rmails?per_page=99999999`, {
+    async function GetAllRmails(formdata) {
+        all_cache = await fetch(`https://mail.rotur.dev/api/v1/rmails?per_page=99999999&box=all`, {
             headers: formdata
         }).then(res => res.json()).then(res => res.data).catch(err => {
             document.getElementsByClassName('container')[0].setHTML(
@@ -628,117 +621,6 @@ const trash = []
                 <h3>A communication error has occurred. If you're sure it's not your connection, then this part of Rotur may be down right now.</h3>`,
             {sanitizer: sanitizer})
         })
-        rmail_inbox_cache.forEach(rmail => {
-            all_cache.push(rmail)
-            received.push(CreateRmailFeedCard(rmail))
-        })
-        document.getElementById('rmail_received').textContent = `Received (${received.length})`
-        if (received.length == 0) {
-            document.getElementById('receivedrmailslist').replaceChildren(CreateEmptyPlaceholder(`You have not received any rmails yet.`, true))
-            document.getElementById('receivedrmailslist').style = 'border: none;'
-        } else {
-            document.getElementById('receivedrmailslist').replaceChildren(...received)
-            document.getElementById('receivedrmailslist').style = 'border: 2px solid white;'
-        }
-        finished_inboxes += 1
-    }
-
-    async function GetSent(formdata) {
-        rmail_sent_cache = await fetch(`https://mail.rotur.dev/api/v1/mailboxes/sent/rmails?per_page=99999999`, {
-            headers: formdata
-        }).then(res => res.json()).then(res => res.data).catch(err => {
-            document.getElementsByClassName('container')[0].setHTML(
-                `<h1>Rmail</h1>
-                <hr class="full-size">
-                <h3>A communication error has occurred. If you're sure it's not your connection, then this part of Rotur may be down right now.</h3>`,
-            {sanitizer: sanitizer})
-        })
-        rmail_sent_cache.forEach(rmail => {
-            all_cache.push(rmail)
-            sent.push(CreateRmailFeedCard(rmail))
-        })
-        document.getElementById('rmail_sent').textContent = `Sent (${sent.length})`
-        if (sent.length == 0) {
-            document.getElementById('sentrmailslist').replaceChildren(CreateEmptyPlaceholder(`You have not sent any rmails yet.`, true))
-            document.getElementById('sentrmailslist').style = 'border: none;'
-        } else {
-            document.getElementById('sentrmailslist').replaceChildren(...sent)
-            document.getElementById('sentrmailslist').style = "border: 2px solid white;"
-        }
-        finished_inboxes += 1
-    }
-
-    async function GetDrafts(formdata) {
-        rmail_drafts_cache = await fetch(`https://mail.rotur.dev/api/v1/drafts?per_page=99999999`, {
-            headers: formdata
-        }).then(res => res.json()).then(res => res.data).catch(err => {
-            document.getElementsByClassName('container')[0].setHTML(
-                `<h1>Rmail</h1>
-                <hr class="full-size">
-                <h3>A communication error has occurred. If you're sure it's not your connection, then this part of Rotur may be down right now.</h3>`,
-            {sanitizer: sanitizer})
-        })
-        rmail_drafts_cache.forEach(rmail => {
-            all_cache.push(rmail)
-            drafts.push(CreateRmailFeedCard(rmail))
-        })
-        document.getElementById('rmail_drafts').textContent = `Drafts (${drafts.length})`
-        if (drafts.length == 0) {
-            document.getElementById('rmaildraftslist').replaceChildren(CreateEmptyPlaceholder(`You have no drafts right now.`, true))
-            document.getElementById('rmaildraftslist').style = 'border: none;'
-        } else {
-            document.getElementById('rmaildraftslist').replaceChildren(...drafts)
-            document.getElementById('rmaildraftslist').style = "border: 2px solid white;"
-        }
-        finished_inboxes += 1
-    }
-    async function GetArchive(formdata) {
-        rmail_archive_cache = await fetch(`https://mail.rotur.dev/api/v1/mailboxes/archive/rmails?per_page=99999999`, {
-            headers: formdata
-        }).then(res => res.json()).then(res => res.data).catch(err => {
-            document.getElementsByClassName('container')[0].setHTML(
-                `<h1>Rmail</h1>
-                <hr class="full-size">
-                <h3>A communication error has occurred. If you're sure it's not your connection, then this part of Rotur may be down right now.</h3>`,
-            {sanitizer: sanitizer})
-        })
-        rmail_archive_cache.forEach(rmail => {
-            all_cache.push(rmail)
-            archived.push(CreateRmailFeedCard(rmail))
-        })
-        document.getElementById('rmail_archive').textContent = `Archived (${archived.length})`
-        if (archived.length == 0) {
-            document.getElementById('rmailarchivelist').replaceChildren(CreateEmptyPlaceholder(`You have not archived any rmails yet.`, true))
-            document.getElementById('rmailarchivelist').style = 'border: none;'
-        } else {
-            document.getElementById('rmailarchivelist').replaceChildren(...archived)
-            document.getElementById('rmailarchivelist').style = "border: 2px solid white;"
-        }
-        finished_inboxes += 1
-    }
-    async function GetTrash(formdata) {
-        rmail_trash_cache = await fetch(`https://mail.rotur.dev/api/v1/mailboxes/trash/rmails?per_page=99999999`, {
-            headers: formdata
-        }).then(res => res.json()).then(res => res.data).catch(err => {
-            document.getElementsByClassName('container')[0].setHTML(
-                `<h1>Rmail</h1>
-                <hr class="full-size">
-                <h3>A communication error has occurred. If you're sure it's not your connection, then this part of Rotur may be down right now.</h3>`,
-            {sanitizer: sanitizer})
-        })
-        rmail_trash_cache.forEach(rmail => {
-            all_cache.push(rmail)
-            trash.push(CreateRmailFeedCard(rmail))
-        })
-        document.getElementById('rmail_trash').textContent = `Trash (${trash.length})`
-        if (trash.length == 0) {
-            document.getElementById('rmailtrashlist').replaceChildren(CreateEmptyPlaceholder(`The trash can is empty right now.`, true))
-            document.getElementById('rmailtrashlist').style = 'border: none;'
-        } else {
-            document.getElementById('rmailtrashlist').replaceChildren(...trash)
-            document.getElementById('rmailtrashlist').style = 'border: 2px solid white;'
-        }
-        finished_inboxes += 1
     }
     async function CheckIfBanned(formdata) {
         me_cache = await fetch(`https://mail.rotur.dev/api/v1/me`, {
@@ -784,7 +666,6 @@ const trash = []
         starred.length = 0
         archived.length = 0
         trash.length = 0
-        finished_inboxes = 0
 
         let formdata = new FormData()
         let validator = await fetch(`https://api.rotur.dev/generate_validator?auth=${encodeURIComponent(activeacc.token)}&key=rotur-mail`).then(res => res.json()).catch(err => {
@@ -807,36 +688,54 @@ const trash = []
             validator = validator.validator
             formdata.append("Authorization", `Bearer ${validator}`)
         }
-        const promises = []
-        if (rmail_inbox_cache == '') {
-            promises.push(GetInbox(formdata))
-        }
-        if (rmail_sent_cache == '') {
-            promises.push(GetSent(formdata))
-        }
-        if (rmail_drafts_cache == '') {
-            promises.push(GetDrafts(formdata))
-        }
-        if (rmail_archive_cache == '') {
-            promises.push(GetArchive(formdata))
-        }
-        if (rmail_trash_cache == '') {
-            promises.push(GetTrash(formdata))
-        }
-        if (me_cache == '') {
-            promises.push(CheckIfBanned(formdata))
-        }
+
+        const promises = [GetAllRmails(formdata), CheckIfBanned(formdata)]
+
         await Promise.all(promises)
 
-        rmail_starred_cache = []
         all_cache.forEach(rmail => {
             if (rmail.is_starred) {
-                rmail_starred_cache.push(rmail)
+                starred.push(CreateRmailFeedCard(rmail))
+            }
+            switch (rmail.mailbox) {
+                case ('inbox'): {
+                    received.push(CreateRmailFeedCard(rmail))
+                    break;
+                }
+                case ('sent'): {
+                    sent.push(CreateRmailFeedCard(rmail))
+                    break;
+                }
+                case ('drafts'): {
+                    drafts.push(CreateRmailFeedCard(rmail))
+                    break;
+                }
+                case ('archive'): {
+                    archived.push(CreateRmailFeedCard(rmail))
+                    break;
+                }
+                case ('trash'): {
+                    trash.push(CreateRmailFeedCard(rmail))
+                    break;
+                }
             }
         })
-        rmail_starred_cache.forEach(rmail => {
-            starred.push(CreateRmailFeedCard(rmail))
-        })
+        document.getElementById('rmail_sent').textContent = `Sent (${sent.length})`
+        if (sent.length == 0) {
+            document.getElementById('sentrmailslist').replaceChildren(CreateEmptyPlaceholder(`You have not sent any rmails yet.`, true))
+            document.getElementById('sentrmailslist').style = 'border: none;'
+        } else {
+            document.getElementById('sentrmailslist').replaceChildren(...sent)
+            document.getElementById('sentrmailslist').style = "border: 2px solid white;"
+        }
+        document.getElementById('rmail_received').textContent = `Received (${received.length})`
+        if (received.length == 0) {
+            document.getElementById('receivedrmailslist').replaceChildren(CreateEmptyPlaceholder(`You have not received any rmails yet.`, true))
+            document.getElementById('receivedrmailslist').style = 'border: none;'
+        } else {
+            document.getElementById('receivedrmailslist').replaceChildren(...received)
+            document.getElementById('receivedrmailslist').style = 'border: 2px solid white;'
+        }
         document.getElementById('rmail_starred').textContent = `Starred (${starred.length})`
         if (starred.length == 0) {
             document.getElementById('rmailstarredlist').replaceChildren(CreateEmptyPlaceholder(`You have not starred any rmails yet.`, true))
@@ -845,13 +744,32 @@ const trash = []
             document.getElementById('rmailstarredlist').replaceChildren(...starred)
             document.getElementById('rmailstarredlist').style = 'border: 2px solid white;'
         }
-        rmail_archive_cache = ''
-        rmail_drafts_cache = ''
-        rmail_inbox_cache = ''
-        rmail_sent_cache = ''
-        rmail_starred_cache = ''
-        rmail_trash_cache = ''
+        document.getElementById('rmail_drafts').textContent = `Drafts (${drafts.length})`
+        if (drafts.length == 0) {
+            document.getElementById('rmaildraftslist').replaceChildren(CreateEmptyPlaceholder(`You have no drafts right now.`, true))
+            document.getElementById('rmaildraftslist').style = 'border: none;'
+        } else {
+            document.getElementById('rmaildraftslist').replaceChildren(...drafts)
+            document.getElementById('rmaildraftslist').style = "border: 2px solid white;"
+        }
+        document.getElementById('rmail_archive').textContent = `Archived (${archived.length})`
+        if (archived.length == 0) {
+            document.getElementById('rmailarchivelist').replaceChildren(CreateEmptyPlaceholder(`You have not archived any rmails yet.`, true))
+            document.getElementById('rmailarchivelist').style = 'border: none;'
+        } else {
+            document.getElementById('rmailarchivelist').replaceChildren(...archived)
+            document.getElementById('rmailarchivelist').style = "border: 2px solid white;"
+        }
+        document.getElementById('rmail_trash').textContent = `Trash (${trash.length})`
+        if (trash.length == 0) {
+            document.getElementById('rmailtrashlist').replaceChildren(CreateEmptyPlaceholder(`The trash can is empty right now.`, true))
+            document.getElementById('rmailtrashlist').style = 'border: none;'
+        } else {
+            document.getElementById('rmailtrashlist').replaceChildren(...trash)
+            document.getElementById('rmailtrashlist').style = 'border: 2px solid white;'
+        }
     }
+    
     GetRmails()
 
     // Document Code
@@ -950,13 +868,6 @@ const trash = []
                 target.textContent = '...'
                 target.disabled = true
                 all_cache = ''
-                rmail_archive_cache = ''
-                rmail_drafts_cache = ''
-                rmail_inbox_cache = ''
-                rmail_sent_cache = ''
-                rmail_starred_cache = ''
-                rmail_trash_cache = ''
-                finished_inboxes = 0
                 await GetRmails()
                 target.textContent = '⟳'
                 target.disabled = false

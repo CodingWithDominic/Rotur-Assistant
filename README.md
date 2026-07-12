@@ -159,3 +159,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 - Greatly improved the speed of total sum calculation in the Wallet app by making the calculation process asynchronous. The difference will me mainly noticeable if you have several accounts added.
 - Using the same logic above, the loading times of looking up someone's profiles as well as opening the profile editor has been greatly reduced.
 - And many more small changes
+
+### 1.2.2
+- Fixed a bug with the confirmation screen when sending credits in the wallet app
+- Fixed a CSS bug on Firefox regarding the header menus
+- Fixed a bug when updating your status on your profile
+- Fixed a bug where the order of accounts in the wallet's "Breakdown" section would sometimes not match the order of the accounts on your roster if you chose "Account roster order". This was a leftover side effect from the asynchronous fetching the Wallet app now uses to improve performance speed.
+- Added account switcher support for <a href="https://sable.rotur.dev">https://sable.rotur.dev</a>
+- Fixed a bug with user note management in the settings app
+- Optimized Rmail to only use 1 /all request for all the inboxes, combined with manual sorting, rather than fetching each inbox individually
+- Fixed a bug with searching a key in the account key manager, then creating or deleting a key that matched the search query

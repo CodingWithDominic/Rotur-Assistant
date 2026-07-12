@@ -6,7 +6,7 @@ const whitelisted_urls = ['https://apps.rotur.dev', 'https://origin.mistium.com'
                             "https://runnova.github.io/orion", "https://adthoughtsglobal.github.io/Orla", "https://antiviiris.github.io/originChats",
                             'https://git.rotur.dev', 'https://authenticator.rotur.dev', 'https://gate.rotur.dev', 'https://rotur.dev', "https://pounce.rotur.dev",
                             "https://mail.rotur.dev", "https://beam.rotur.dev", "https://place.rotur.dev", "https://gifs.originchats.com",
-                            "https://runnova.github.io/indigo", "https://warp.mistium.com"]
+                            "https://sable.rotur.dev", "https://runnova.github.io/indigo", "https://warp.mistium.com"]
                             
 const parser = new DOMParser();
 

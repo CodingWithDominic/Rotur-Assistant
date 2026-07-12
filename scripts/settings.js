@@ -260,15 +260,14 @@ function updateNotes() {
     const notelist = document.getElementById('usernotelist')
     if (note_users.length == 0) {
         notelist.replaceChildren(CreateEmptyPlaceholder("You haven't created any notes yet!"))
-        notelist.style = 'border: none;'
+        notelist.style.border = 'none'
     } else {
         const notes_html = []
         note_users.forEach(user => {
             notes_html.push(CreateNoteElement(user))
         })
-
         notelist.replaceChildren(...notes_html)
-        notelist.style = 'border: 1px solid white;'
+        notelist.style.border = '1px solid white'
     }
 }
 
@@ -434,6 +433,7 @@ document.addEventListener('click', async function(e) {
         const notelist = document.getElementById('usernotelist')
         if (notelist.childElementCount == 0) {
             notelist.replaceChildren(CreateEmptyPlaceholder("You haven't created any notes yet!"))
+            notelist.style.border = 'none'
         }
         return;
     }
@@ -477,6 +477,10 @@ document.addEventListener('click', async function(e) {
         } else {
             notes[user] = note.replaceAll(`'`, `\'`)
             setNotes(notes)
+            if (document.getElementById('usernotelist').querySelector('h2')) {
+                document.getElementById('usernotelist').replaceChildren()
+                document.getElementById('usernotelist').style.border = "1px solid white"
+            }
             document.getElementById('usernotelist').appendChild(CreateNoteElement(user))
             document.getElementById('createnotestatusplaceholder').replaceChildren(MiniError('success', `Note for ${user} was created successfully!`))
             document.getElementById('createusernoteuser').value = ''

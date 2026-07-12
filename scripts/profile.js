@@ -1496,13 +1496,14 @@ document.addEventListener('click', async function(e) {
                 status: newstatus
             })
         }).then(res => res.json()).catch(err => {
-            return ({error: err})
+            return ({error: String(err)})
+            target.disabled = false
         })
         if (statussuccess.error) {
             openErrorPopup(statussuccess.error)
         } else {
             openSuccessPopup('Status successfully updated!')
-            profile.querySelector('.statusicon').style.background = presencecolors[newpresence] ?? 'rgb(48, 48, 48)'
+            document.querySelector('.statusicon').style.background = presencecolors[newpresence] ?? 'rgb(48, 48, 48)'
             userdata_cache['sys.status'] = {presence: newpresence, status: newstatus}
         }
         target.disabled = false
@@ -1574,7 +1575,7 @@ document.addEventListener('click', async function(e) {
             })
             if (!statussuccess.error) {
                 successlogger += 1
-                profile.querySelector('.statusicon').style.background = presencecolors[newpresence] ?? 'rgb(48, 48, 48)'
+                document.querySelector('.statusicon').style.background = presencecolors[newpresence] ?? 'rgb(48, 48, 48)'
                 userdata_cache['sys.status'] = {presence: newpresence, status: newstatus}
             } else {
                 errorlogger += 1

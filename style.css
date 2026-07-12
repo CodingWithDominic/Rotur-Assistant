@@ -60,7 +60,8 @@ body {
 }
 .headerflyout {
     position: absolute;
-    width: calc(120px * calc(100vw / 400px));
+    width: 30vw;
+    min-width: 120px;
     max-width: 200px;
     height: auto;
     top: 40px;
@@ -3505,7 +3506,7 @@ h2[class='badgeintitle2'] {
     margin-left: 10px;
 }
 .greedywarning {
-    background: orangered;
+    background: rgb(102, 0, 0);
     border-radius: 5px;
     margin-top: 5px;
     padding: 4px;

@@ -2,6 +2,7 @@
 <html>
     <head>
         <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="stylesheet" href="../../style.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -29,6 +30,7 @@
                         <li><a href="patch_notes.html#RA_1.2">1.2</a>
                             <ul>
                                 <li><a href="patch_notes.html#RA_1.2.1">1.2.1</a></li>
+                                <li><a href="patch_notes.html#RA_1.2.2">1.2.2</a></li>
                             </ul>
                         </li>
                     </ul>
@@ -39,8 +41,8 @@
                     <ul>
                         <li>Rotur Assistant was finally released to the chrome web store (May 5, 2026), with the extension being approved the next day (May 6, 2026)</li>
                     </ul>
-                    <hr class="full-size dotted_separator">
                 </section>
+                <hr class="full-size dotted_separator">
                 <section id="RA_1.0.1">
                     <h2>1.0.1</h2>
                     <p class="fineprint">May 7, 2026 - A day 1 emergency fix</p>
@@ -50,8 +52,8 @@
                         <li>Some wiki corrections</li>
                         <li>Add more tooltips in some places</li>
                     </ul>
-                    <hr class="full-size">
                 </section>
+                <hr class="full-size">
                 <section id="RA_1.1">
                     <h2>1.1</h2>
                     <p class="fineprint">May 20, 2026 - The first real update</p>
@@ -82,8 +84,8 @@
                         <li>Fixed bugs in some places regarding Rotur accounts with spaces</li>
                         <li>Several other small/minor bug fixes</li>
                     </ul>
-                    <hr class="full-size">
                 </section>
+                <hr class="full-size">
                 <section id="RA_1.2">
                     <h2>1.2</h2>
                     <p class="fineprint">June 18, 2026 - Keeping up with an overhaul</p>
@@ -134,8 +136,8 @@
                         <br>
                         <li>Overall, this update mainly focused on cleaning up a lot of "tech debt", fixing even more bugs, and correcting a lot of bad coding practices.</li>
                     </ul>
-                    <hr class="full-size dotted_separator">
                 </section>
+                <hr class="full-size dotted_separator">
                 <section id="RA_1.2.1">
                     <h2>1.2.1</h2>
                     <p class="fineprint">July 10, 2026 - Rmail overhaul + Too many new services</p>
@@ -177,6 +179,21 @@
                         <li>Using the same logic above, the loading times of looking up someone's profiles as well as opening the profile editor has been greatly reduced.</li>
                         <li>Various extension-wide thematic tweaks</li>
                         <li>And many more small changes</li>
+                    </ul>
+                </section>
+                <hr class="full-size dotted_separator">
+                <section id="RA_1.2.2">
+                    <h2>1.2.2</h2>
+                    <p class="fineprint">July 12, 2026 - Further smoothing things out</p>
+                    <ul class="patchnotelist">
+                        <li>Fixed a bug with the confirmation screen when sending credits in the wallet app</li>
+                        <li>Fixed a CSS bug on Firefox regarding the header menus</li>
+                        <li>Fixed a bug when updating your status on your profile</li>
+                        <li title="This was a leftover side effect from the asynchronous fetching the Wallet app now uses to improve performance speed">Fixed a bug where the order of accounts in the wallet's "Breakdown" section would sometimes not match the order of the accounts on your roster if you chose "Account roster order"</li>
+                        <li>Added account switcher support for <a href="https://sable.rotur.dev">https://sable.rotur.dev</a></li>
+                        <li>Fixed a bug with user note management in the settings app</li>
+                        <li>Optimized Rmail to only use 1 /all request for all the inboxes, combined with manual sorting, rather than fetching each inbox individually</li>
+                        <li>Fixed a bug with searching a key in the account key manager, then creating or deleting a key that matched the search query</li>
                     </ul>
                 </section>
             </div>

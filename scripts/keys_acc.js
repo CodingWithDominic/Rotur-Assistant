@@ -89,7 +89,7 @@ function checkBlanks() {
         document.getElementById('sys_keys').style.border = 'none'
         const hr = document.createElement('hr')
         const h2 = document.createElement('h2')
-        h2.innerText = 'No keys exist in this section yet.'
+        h2.textContent = 'No keys exist in this section yet.'
         document.getElementById('sys_keys').appendChild(hr)
         document.getElementById('sys_keys').appendChild(h2)
     } else {
@@ -99,7 +99,7 @@ function checkBlanks() {
         document.getElementById('readonlykeys').style.border = 'none'
         const hr = document.createElement('hr')
         const h2 = document.createElement('h2')
-        h2.innerText = 'No keys exist in this section yet.'
+        h2.textContent = 'No keys exist in this section yet.'
         document.getElementById('readonlykeys').appendChild(hr)
         document.getElementById('readonlykeys').appendChild(h2)
     } else {
@@ -109,10 +109,10 @@ function checkBlanks() {
         document.getElementById('otherkeys').style.border = 'none'
         const hr = document.createElement('hr')
         const h2 = document.createElement('h2')
-        h2.innerText = 'No keys exist in this section yet.'
+        h2.textContent = 'No keys exist in this section yet.'
         document.getElementById('otherkeys').appendChild(hr)
         document.getElementById('otherkeys').appendChild(h2)
-    } else {
+    } else if (!document.getElementById('otherkeys').querySelector('h2')) {
         document.getElementById('otherkeys').style.border = '1px solid white'
     }
 }
@@ -355,6 +355,9 @@ document.addEventListener('click', async function(e) {
     }
 
     if (e.target.id == 'createkeybtn') {
+        const target = e.target
+        target.disabled = true
+        target.textContent = "Creating..."
         const error_element = document.getElementById('createkeystatusplaceholder')
         const keyname = document.getElementById('createkeyname').value
         const keyvalue = (() => {
@@ -384,14 +387,22 @@ document.addEventListener('click', async function(e) {
                 error_element.replaceChildren(MiniError('failure', keycreate.error))
                 return;
             } else {
+                const searchevent = new Event('input')
                 document.getElementById('createkeyname').value = ''
                 document.getElementById('createkeyvalue').value = ''
                 error_element.replaceChildren(MiniError('success', `Key ${keyname} with value ${String((typeof keyvalue == "object") ? JSON.stringify(keyvalue) : keyvalue)} was created successfully!`))
                 document.getElementById('otherkeys').appendChild(CreateKeyElement(keyname, keyvalue, "Rotur Assistant"))
+                key_names.push(keyname)
+                accdata[keyname] = keyvalue
+                document.getElementById('otherkeysearch').dispatchEvent(searchevent)
+                target.disabled = false
+                target.textContent = "Create"
                 return;
             }
         }
         setTimeout(function() { error_element.replaceChildren() }, 10000)
+        target.disabled = false
+        target.textContent = "Create"
         return;
     }
     if (e.target.id == "reloadkeys") {
@@ -465,6 +476,7 @@ document.addEventListener('click', async function(e) {
                     error_element.replaceChildren(MiniError('failure', keyupdate.error))
                 } else {
                     error_element.replaceChildren(MiniError('success', `Key ${keyname} updated successfully!`))
+                    accdata[keyname] = keyvalue
                     if (keyname == 'username') {
                         const old_name = activeacc.name
                         activeacc.name = keyvalue
@@ -503,6 +515,10 @@ document.addEventListener('click', async function(e) {
             } else {
                 error_element.replaceChildren(MiniError('success', `Key ${deleted_key} deleted successfully!`))
                 document.getElementById(`roturkey-${deleted_key.replaceAll(' ', '~')}`).remove()
+                delete accdata[deleted_key]
+                key_names = key_names.filter(name => name != deleted_key)
+                const updatesearch = new Event('input')
+                document.getElementById('otherkeysearch').dispatchEvent(updatesearch)
                 checkBlanks()
             }
             setTimeout(function() { error_element.replaceChildren() }, 10000)
@@ -551,6 +567,9 @@ if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
         if (document.getElementById('otherkeys').childElementCount == 0) {
             document.getElementById('otherkeys').replaceChildren(CreateEmptyPlaceholder('No keys match your current search', true))
             document.getElementById('otherkeys').style.border = 'none'
+            if (newquery == '') {
+                document.getElementById('otherkeys').querySelector('h2').textContent = 'No keys exist in this section yet.'
+            }
         } else {
             document.getElementById('otherkeys').style.border = '1px solid white'
         }

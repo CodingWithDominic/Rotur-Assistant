@@ -254,7 +254,7 @@ function updateToken(site, subspace, newToken) {
 }
 
 const rotursdk_sites = ["https://beam.rotur.dev", "https://place.rotur.dev", "https://devfund.rotur.dev", "https://photos.rotur.dev", "https://mail.rotur.dev",
-                      "https://rotur.dev", "https://pounce.rotur.dev", "https://gifs.originchats.com"] // All these sites share the exact same method of storing your token, so to optimize code, I put them in an array
+                      "https://rotur.dev", "https://pounce.rotur.dev", "https://gifs.originchats.com", "https://sable.rotur.dev"] // All these sites share the exact same method of storing your token, so to optimize code, I put them in an array
 
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     if (message.action === "switchacc") {

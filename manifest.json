@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Rotur Assistant",
-    "version": "1.2.1",
+    "version": "1.2.2",
     "description": "Manage and keep up with most of your Rotur things in one place. Anywhere on the web, anytime.",
     "browser_specific_settings": {
         "gecko": {
