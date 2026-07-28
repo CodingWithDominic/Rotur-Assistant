@@ -1,4 +1,10 @@
-import { sanitize, formatDate, parseHTML, openErrorPopup, openSuccessPopup, FixDecimal, MiniError } from "../index.js"
+import { sanitize, formatDate, openErrorPopup, openSuccessPopup, FixDecimal, MiniError } from "../index.js"
+
+const config = {
+    removeElements: ['iframe', 'script', 'style', 'object', 'embed', 'applet', 'meta', 'link', 'base', 'form'],
+    removeAttributes: ['onload', 'onclick', 'onerror', 'onmouseover', 'onfocus', 'onblur', 'onkeydown', 'onchange', 'onsubmit', 'srcdoc', 'formaction']
+}
+const sanitizer = new Sanitizer(config)
 
 let last_sort = 'newest'
 let items_cache = ''
@@ -7,30 +13,35 @@ const activeacc = await new Promise(resolve =>
     chrome.storage.local.get('activeacc', data => resolve(data.activeacc || {}))
 ) ?? {};
 
+const authform = new FormData()
+if (activeacc.uuid) {
+    authform.append("Authorization", `Bearer ${activeacc.token}`)
+}
+
 const flagged = await new Promise(resolve =>
     chrome.storage.local.get('flagged', data => resolve(data.flagged || []))
 ) ?? [];
 
 if (!activeacc.uuid) {
-    document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(
+    document.getElementsByClassName('container')[0].setHTML(
         `<h1>Item Manager</h1>
         <hr class="full-size">
-        <h3>You are not signed in! Please sign in using the account manager to access this page.</h3>`
-    ))
+        <h3>You are not signed in! Please sign in using the <a href="accounts.html">account manager</a> to access this page.</h3>
+        `, {sanitizer: sanitizer})
 }
 if (flagged.includes(activeacc.uuid)) {
-    document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('container')[0].setHTML(`
         <h1>Item Manager</h1>
         <hr class="full-size">
         <h3>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h3>
-    `))
+    `, {sanitizer: sanitizer})
 }
 
 // Functions (reserved)
 
 function openDeletePopup(itemname) {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Delete Item</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -40,27 +51,27 @@ function openDeletePopup(itemname) {
             <button id="cancel" class="closebtn">No</button>
             <button class="finaldelete" data-itemname='${sanitize(itemname)}'>Yes</button>
         </div>
-    `))
+    `, {sanitizer: sanitizer})
 }
 
 function openConfirmTransferPopup(user, itemname) {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Confirm Transfer</h1>
             <button id="popup-x" class="closebtn">✕</button>
         </div>
         <p id="deleteconfirmdialogue">Are you sure you want to transfer this item over to <img src='https://avatars.rotur.dev/${user}' width=16 height=16> ${user}? This item will officially belong to them, and you will no longer be able to edit its properties.</p>
         <div id="popup-choices">
-            <button id="cancel" class="closebtn">Cencel</button>
+            <button id="cancel" class="closebtn">Cancel</button>
             <button class="finalitemtransfer" data-name="${user}" data-itemname="${sanitize(itemname)}">Transfer</button>
         </div>
-    `))
+    `, {sanitizer: sanitizer})
 }
 
 function openConfirmPurchasePopup(senderdata, recipientdata, amt, itemname) {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Confirm Purchase</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -72,7 +83,7 @@ function openConfirmPurchasePopup(senderdata, recipientdata, amt, itemname) {
             <button id="cancel" class="closebtn">Cancel</button>
             <button class="finalitempurchase" data-itemname="${sanitize(itemname)}">Buy</button>
         </div>
-    `))
+    `, {sanitizer: sanitizer})
 }
 
 function closePopup() {
@@ -97,11 +108,6 @@ function switchTab(idx) {
 
 function formatTransferHistory(transferdata) {
     const transfer_html = []
-    const config = {
-        elements: ['p', 'img'],
-        attributes: ['src', 'width', 'height']
-    }
-    const sanitizer = new Sanitizer(config)
     transferdata.forEach(item => {
         if (!(item.from == null || item.from == "Null")) {
             const li = document.createElement('li')
@@ -139,30 +145,26 @@ function formatTransferHistory(transferdata) {
 
 async function getItems(user) {
     if (!navigator.onLine) {
-        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+        document.getElementsByClassName('container')[0].setHTML(`
             <h1>Item Manager</h1>
             <hr class="full-size">
             <h3>A communication error has occurred. If you're sure it's not your connection, then Rotur may be down right now.</h3>
-        `))
+        `, {sanitizer: sanitizer})
         return;
     }
-    const myitems = await fetch(`https://api.rotur.dev/items/list/${user}`).then(res => res.json()).catch(err => {
-        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+    const myitems = await fetch(`https://api.rotur.dev/v2/users/${user}/items`).then(res => res.json()).catch(err => {
+        document.getElementsByClassName('container')[0].setHTML(`
             <h1>Item Manager</h1>
             <hr class="full-size">
             <h3>A communication error has occurred. If you're sure it's not your connection, then Rotur may be down right now.</h3>
-        `))
+        `, {sanitizer: sanitizer})
         return;
     })
     myitems.reverse() // Newest to oldest
     const itemgroup = document.createElement('ul')
     itemgroup.className = 'roturuseritemlist'
     const item_html = []
-    const config = {
-        elements: ['p', 'img'],
-        attributes: ['src', 'width', 'height']
-    }
-    const sanitizer = new Sanitizer(config)
+
     myitems.forEach(item => {
         const roturitem = document.getElementById('itemtemplate').content.cloneNode(true)
         roturitem.querySelectorAll('[data-itemname]').forEach(itemcomponent => {
@@ -170,7 +172,7 @@ async function getItems(user) {
         })
         roturitem.querySelector('li').id = `roturitem_${encodeURIComponent(item.name)}`
         roturitem.querySelector('h2').textContent = item.name
-        roturitem.querySelector('.roturitemauthor').setHTML(`Creator: <img src='https://avatars.rotur.dev/${item.author}' width=20 height=20> ${item.author} | Current Owner: <img src='https://avatars.rotur.dev/${item.owner}' width=20 height=20> ${item.owner}`, {sanitizer: sanitizer})
+        roturitem.querySelector('.roturitemauthor').setHTML(`Creator: <a href="lookup.html?user=${item.author}"><img src='https://avatars.rotur.dev/${item.author}' width=20 height=20> ${item.author}</a> | Current Owner: <a href="lookup.html?user=${item.owner}"><img src='https://avatars.rotur.dev/${item.owner}' width=20 height=20> ${item.owner}</a>`, {sanitizer: sanitizer})
         roturitem.querySelector('.roturitemdesc').innerText = item.description
 
         roturitem.querySelector('.roturitemprice').textContent = `${item.price} RC`
@@ -197,7 +199,7 @@ async function getItems(user) {
 
 async function getSellingItems(filter) {
     if (items_cache == '') {
-        items_cache = await fetch(`https://api.rotur.dev/items/selling`).then(res => res.json())
+        items_cache = await fetch(`https://api.rotur.dev/v2/items/selling`).then(res => res.json())
     }
     const sellingitems = [ ...items_cache ]
     if (filter == 'oldest') {
@@ -212,16 +214,12 @@ async function getSellingItems(filter) {
     const itemgroup = document.createElement('ul')
     itemgroup.className = 'roturuseritemlist'
     const item_html = []
-    const config = {
-        elements: ['p', 'img'],
-        attributes: ['src', 'width', 'height']
-    }
-    const sanitizer = new Sanitizer(config)
+
     sellingitems.forEach(item => {
         const roturitem = document.getElementById('itemtemplate').content.cloneNode(true)
         roturitem.querySelector('li').id = `roturitem_${encodeURIComponent(item.name)}`
         roturitem.querySelector('h2').textContent = item.name
-        roturitem.querySelector('.roturitemauthor').setHTML(`Creator: <img src='https://avatars.rotur.dev/${item.author}' width=20 height=20> ${item.author} | Current Owner: <img src='https://avatars.rotur.dev/${item.owner}' width=20 height=20> ${item.owner}`, {sanitizer: sanitizer})
+        roturitem.querySelector('.roturitemauthor').setHTML(`Creator: <a href="lookup.html?user=${item.author}"><img src='https://avatars.rotur.dev/${item.author}' width=20 height=20> ${item.author}</a> | Current Owner: <a href="lookup.html?user=${item.owner}"><img src='https://avatars.rotur.dev/${item.owner}' width=20 height=20> ${item.owner}</a>`, {sanitizer: sanitizer})
         roturitem.querySelector('.roturitemdesc').innerText = item.description
 
         roturitem.querySelector('.roturitemprice').textContent = `${item.price} RC`
@@ -250,12 +248,19 @@ if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
     getItems(activeacc.name)
     getSellingItems(last_sort)
     document.getElementById('create_item').addEventListener('submit', async function(e) {
+        const createbtn = e.submitter
+        createbtn.disabled = true
+        createbtn.textContent = "Creating..."
         e.preventDefault()
         if (document.getElementById('createitemname').value == '') {
+            createbtn.disabled = false
+            createbtn.textContent = "Create Item"
             openErrorPopup('Please enter a valid name.')
             return;
         }
         if (document.getElementById('createitemprice').value == '' || isNaN(parseInt(document.getElementById('createitemprice').value))) {
+            createbtn.disabled = false
+            createbtn.textContent = "Create Item"
             openErrorPopup('Please enter a valid price.')
             return;
         }
@@ -264,6 +269,8 @@ if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
             try {
                 jsondata = JSON.parse(document.getElementById('itemjsonmetadata').value)
             } catch {
+                createbtn.disabled = false
+                createbtn.textContent = "Create Item"
                 openErrorPopup('The JSON in the metadata field is not valid JSON.')
                 return;
             }
@@ -276,16 +283,20 @@ if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
             "selling": document.getElementById('sellitemimmediately').checked,
             "data": (jsondata || {})
         }
-        const itemcreatesuccess = await fetch(`https://api.rotur.dev/items/create?auth=${activeacc.token}&item=${encodeURIComponent(JSON.stringify(finalobject))}`).then(res => res.json())
+        const itemcreatesuccess = await fetch(`https://api.rotur.dev/items/create?item=${encodeURIComponent(JSON.stringify(finalobject))}`, {headers: authform}).then(res => res.json())
 
         if (itemcreatesuccess.error) {
             openErrorPopup(itemcreatesuccess.error)
+            createbtn.disabled = false
+            createbtn.textContent = "Create Item"
             return;
         } else {
             openSuccessPopup(`Item ${document.getElementById('createitemname').value} was created successfully!`)
             getItems(activeacc.name)
         }
         this.reset()
+        createbtn.disabled = false
+        createbtn.textContent = "Create Item"
     })
 
     document.getElementById('itemsearch').addEventListener('submit', async function(e) {
@@ -301,15 +312,11 @@ if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
             document.getElementById('itemlookupstatusplaceholder').replaceChildren(MiniError('failure', "This item does not exist"))
         } else {
             document.getElementById('itemlookupplaceholder').style = 'border: 2px solid white; border-radius: 5px'
-            const config = {
-            elements: ['p', 'img'],
-            attributes: ['src', 'width', 'height']
-            }
-            const sanitizer = new Sanitizer(config)
+
             const roturitem = document.getElementById('itemtemplate').content.cloneNode(true)
             roturitem.querySelector('li').id = `roturitem_${encodeURIComponent(itemquery.name)}`
             roturitem.querySelector('h2').textContent = itemquery.name
-            roturitem.querySelector('.roturitemauthor').setHTML(`Creator: <img src='https://avatars.rotur.dev/${itemquery.author}' width=20 height=20> ${itemquery.author} | Current Owner: <img src='https://avatars.rotur.dev/${itemquery.owner}' width=20 height=20> ${itemquery.owner}`, {sanitizer: sanitizer})
+            roturitem.querySelector('.roturitemauthor').setHTML(`Creator: <a href="lookup.html?user=${itemquery.author}"><img src='https://avatars.rotur.dev/${itemquery.author}' width=20 height=20> ${itemquery.author}</a> | Current Owner: <a href="lookup.html?user=${itemquery.owner}"><img src='https://avatars.rotur.dev/${itemquery.owner}' width=20 height=20> ${itemquery.owner}</a>`, {sanitizer: sanitizer})
             roturitem.querySelector('.roturitemdesc').innerText = itemquery.description
 
             roturitem.querySelector('.roturitemprice').textContent = `${itemquery.price} RC`
@@ -358,9 +365,9 @@ document.addEventListener('click', async function(e) {
         let itemsellstatus = ''
         try {
             if (target.checked) {
-                itemsellstatus = await fetch(`https://api.rotur.dev/items/sell/${encodeURIComponent(target.dataset.itemname)}?auth=${activeacc.token}`).then(res => res.json())
+                itemsellstatus = await fetch(`https://api.rotur.dev/items/sell/${encodeURIComponent(target.dataset.itemname)}`, {headers: authform}).then(res => res.json())
             } else {
-                itemsellstatus = await fetch(`https://api.rotur.dev/items/stop_selling/${encodeURIComponent(target.dataset.itemname)}?auth=${activeacc.token}`).then(res => res.json())
+                itemsellstatus = await fetch(`https://api.rotur.dev/items/stop_selling/${encodeURIComponent(target.dataset.itemname)}`, {headers: authform}).then(res => res.json())
             }
             getSellingItems(last_sort)
             if (itemsellstatus.error) {
@@ -378,11 +385,11 @@ document.addEventListener('click', async function(e) {
     }
     if (e.target.className == 'updateitempricebtn') {
         const newprice = document.getElementById(`roturitem_${encodeURIComponent(e.target.dataset.itemname)}`).querySelector('[class="updateitemprice"]').value
-        if (isNaN(parseFloat(newprice)) || parseFloat(newprice) < 0.01) {
+        if (isNaN(parseFloat(newprice)) || parseFloat(newprice) < 0) {
             openErrorPopup('Invalid Number')
         } else {
             try {
-                const itemsellstatus = await fetch(`https://api.rotur.dev/items/set_price/${encodeURIComponent(e.target.dataset.itemname)}?auth=${activeacc.token}&price=${newprice}`).then(res => res.json())
+                const itemsellstatus = await fetch(`https://api.rotur.dev/items/set_price/${encodeURIComponent(e.target.dataset.itemname)}?price=${newprice}`, {headers: authform}).then(res => res.json())
                 if (itemsellstatus.error) {
                     openErrorPopup(itemsellstatus.error)
                 } else {
@@ -398,7 +405,7 @@ document.addEventListener('click', async function(e) {
     if (e.target.className == 'beginitemtransfer') {
         const target = e.target
         const user = document.getElementById(`roturitem_${encodeURIComponent(target.dataset.itemname)}`).querySelector('[class="itemtransferownership"]').value
-        const userdata = await fetch(`https://api.rotur.dev/exists?username=${user}`).then(res => res.json())
+        const userdata = await fetch(`https://api.rotur.dev/v2/users/${user}/exists`).then(res => res.json())
         if (!userdata.exists || userdata.error) {
             openErrorPopup('This user does not exist')
         } else {
@@ -421,7 +428,7 @@ document.addEventListener('click', async function(e) {
     if (e.target.className == 'finaldelete') {
         closePopup()
         try {
-            const itemdeletestatus = await fetch(`https://api.rotur.dev/items/delete/${encodeURIComponent(e.target.dataset.itemname)}?auth=${activeacc.token}`).then(res => res.json())
+            const itemdeletestatus = await fetch(`https://api.rotur.dev/items/delete/${encodeURIComponent(e.target.dataset.itemname)}`, {headers: authform}).then(res => res.json())
             if (itemdeletestatus.error) {
                 openErrorPopup(itemdeletestatus.error)
                 getItems(activeacc.name)
@@ -438,7 +445,7 @@ document.addEventListener('click', async function(e) {
         closePopup()
         const target = e.target
         try {
-            const itempurchasestatus = await fetch(`https://api.rotur.dev/items/buy/${encodeURIComponent(target.dataset.itemname)}?auth=${activeacc.token}`).then(res => res.json())
+            const itempurchasestatus = await fetch(`https://api.rotur.dev/items/buy/${encodeURIComponent(target.dataset.itemname)}`, {headers: authform}).then(res => res.json())
             if (itempurchasestatus.error) {
                 openErrorPopup(itempurchasestatus.error)
             } else {
@@ -457,7 +464,7 @@ document.addEventListener('click', async function(e) {
         const target = e.target
         closePopup()
         try {
-            const itemtransferstatus = await fetch(`https://api.rotur.dev/items/transfer/${encodeURIComponent(target.dataset.itemname)}?auth=${activeacc.token}&username=${target.dataset.name}`).then(res => res.json())
+            const itemtransferstatus = await fetch(`https://api.rotur.dev/items/transfer/${encodeURIComponent(target.dataset.itemname)}?username=${target.dataset.name}`, {headers: authform}).then(res => res.json())
             if (itemtransferstatus.error) {
                 openErrorPopup(itemtransferstatus.error)
             } else {

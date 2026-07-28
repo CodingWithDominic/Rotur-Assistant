@@ -35,6 +35,8 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 });
 
 let statusws = null
+let ws_active = false
+let wserrorflag = false
 let rpcdata = ''
 let nexhook = null
 let nexinterval = null
@@ -56,8 +58,6 @@ function startHeartbeat() {
         }
     }, 25000); 
 }
-
-
 
 function ActivateWebsockets(auth) { // This is why I don't like working with websockets
     // Websocket Stuff
@@ -124,10 +124,20 @@ function ActivateWebsockets(auth) { // This is why I don't like working with web
 
         }
     }
-
+    statusws.onclose = (event) => {
+        if (ws_active && !wserrorflag) {
+            stopHeartbeat()
+            startHeartbeat()
+            ActivateWebsockets(auth)
+        }
+        wserrorflag = false
+    }
     statusws.onerror = (event) => {
+        wserrorflag = true
         statusws.close()
+        stopHeartbeat()
         chrome.runtime.sendMessage({data: "RPC_ERROR", error: "Failed to connect to the status websocket. It may be down right now, or your connection isn't stable enough. Try again later and/or check your connection."})
+        chrome.storage.local.set({rpc_active: ''})
     }
 }
 
@@ -136,6 +146,7 @@ chrome.runtime.onMessage.addListener((msg) => {
         scheduleAlarm(msg.id, msg.label, msg.triggerAt);
     }
     if (msg.type === "RPC_ON") {
+        ws_active = true
         statusws?.close()
         nexhook?.close()
         stopHeartbeat()
@@ -148,6 +159,7 @@ chrome.runtime.onMessage.addListener((msg) => {
         ActivateWebsockets(msg.auth)
     }
     if (msg.type === "RPC_OFF") {
+        ws_active = false
         statusws?.close()
         nexdata?.close()
         stopHeartbeat()
@@ -171,7 +183,9 @@ chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIn
             });
         } else {
             const activeacc = accounts[activeaccindex]
-            const dailyclaimsuccess = await fetch(`https://api.rotur.dev/claim_daily?auth=${activeacc.token}`).then(res => res.json())
+            const formdata = new FormData()
+            formdata.append('Authorization', `Bearer ${activeacc.token}`)
+            const dailyclaimsuccess = await fetch(`https://api.rotur.dev/claim_daily`, {headers: formdata}).then(res => res.json())
             if (dailyclaimsuccess.error) {
                 chrome.notifications.create(String(Date.now()), {
                     type: "basic",
@@ -214,19 +228,17 @@ chrome.runtime.onStartup.addListener(async () => {
                     chrome.notifications.create(notifid, {
                         type: "basic",
                         iconUrl: "../images/icon128.png",
-                        title: `${alarm.label}: Daily Credit available!`,
-                        message: `Your Daily Credit is ready to claim for the account: ${alarm.label}`,
+                        title: `${meta.label}: Daily Credit available!`,
+                        message: `Your Daily Credit is ready to claim for the account: ${meta.label}`,
                         buttons: [
                             { title: 'Claim Daily Credit' },
                         ],
                         priority: 2,
                     });
                 }
-
                 delete alarms[id];
             }
         });
-
         chrome.storage.local.set({ alarms });
     });
 
@@ -292,7 +304,7 @@ chrome.action.onClicked.addListener(async (tab) => {
         chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
         if (tabs.length > 0) {
             const currentTabTitle = tabs[0].title;
-            if (!(currentTabTitle.includes(' - Rotur Assistant'))) {
+            if (!(currentTabTitle.endsWith(' - Rotur Assistant'))) {
                 switchToOrOpenTab("index.html") // To prevent tab clutter, switch to an existing Rotur Assistant tab if one is already open when you click the extension
             }
         }
@@ -305,4 +317,3 @@ chrome.storage.onChanged.addListener((changes) => {
         toggleExtensionMode(changes.ui_mode.newValue);
     }
 });
-

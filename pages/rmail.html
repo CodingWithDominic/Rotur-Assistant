@@ -2,6 +2,7 @@
 <html>
     <head>
         <meta charset="UTF-8" />
+        <script src="../initialize.js"></script>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="stylesheet" href="../style.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,10 +15,11 @@
         <script src="../header.js"></script>
         <div class="container" id="container_exemption">
             <div id="rmailpage1">
-                <h1>Rmail</h1>
+                <h1 style="padding-right: 32px;">Rmail</h1>
                 <button id="viewbanreasonbtn" style="display: none;">Ban Reason</button>
                 <div id="rmailheaderactionbar">
                     <button id="reloadrmails" title="Refresh Rmails">⟳</button>
+                    <button id="encryptionsettings" title="Manage Encryption Settings"><img src="../images/misc_icons/rmailsecurity.png" width="32" height="32"></button>
                     <button id="compose_rmail">+ Compose</button>
                 </div>
                 <hr class="full-size">
@@ -26,9 +28,11 @@
                     <button class="rmailtab" id="rmail_sent" style="border-bottom: 2px solid white;">Sent</button>
                     <button class="rmailtab" id="rmail_received">Received</button>
                     <button class="rmailtab" id="rmail_starred">Starred</button>
+                    <button class="rmailtab" id="rmail_other" style="display: none;">Other</button>
                     <button class="rmailtab" id="rmail_drafts" style="display: none;">Drafts</button>
-                    <button class="rmailtab" id="rmail_archive" style="display: none;">Archive (1)</button>
-                    <button class="rmailtab" id="rmail_trash" style="display: none;">Trash (1)</button>
+                    <button class="rmailtab" id="rmail_cached" style="display: none;">Cached</button>
+                    <button class="rmailtab" id="rmail_archive" style="display: none;">Archive</button>
+                    <button class="rmailtab" id="rmail_trash" style="display: none;">Trash</button>
                     <button class="rmailnavbtn" id="rmailnavright">&rarr;</button>
                 </div>
                 <div id="rmailsenttab" class="rmailfeed" style="display: block;">
@@ -46,8 +50,18 @@
                         <h2>Loading...</h2>
                     </ul>
                 </div>
+                <div id="rmailothertab" class="rmailfeed" style="display: none;">
+                    <ul id="rmailotherlist">
+                        <h2>Loading...</h2>
+                    </ul>
+                </div>
                 <div id="rmaildraftstab" class="rmailfeed" style="display: none;">
                     <ul id="rmaildraftslist">
+                        <h2>Loading...</h2>
+                    </ul>
+                </div>
+                <div id="rmailcachetab" class="rmailfeed" style="display: none;">
+                    <ul id="rmailcachelist">
                         <h2>Loading...</h2>
                     </ul>
                 </div>
@@ -77,32 +91,34 @@
                     <ul id="rmailreplies">
                         <h3>Loading Replies...</h3>
                     </ul>
-                    <hr class="full-size" id="rmailreplyhr">
-                    <h2>Add a reply</h2>
-                    <form id="rmailreplycompositionbox">
-                        <label class="compositiontitle">
-                            To: 
-                            <input type="text" placeholder="Original Sender" id="rmail_reply_receipient">
-                        </label>
-                        <label class="compositiontitle">
-                            Title: 
-                            <input type="text" placeholder="Re: (Original subject)" id="rmail_reply_title">
-                        </label>
-                        <label for="rmail_reply_comp_body">Body:</label>
-                        <textarea id="rmail_reply_comp_body" placeholder="Reply content"></textarea>
-                        <div id="reply_imagebar">
-                            <label class="rmailreplyattachment">
-                                Attachment(s): 
-                                <input type="file" id="rmailreplyimage" title="Shift-click to paste attachment instead" accept="*" multiple>
+                    <section id="rmail_replybox">
+                        <hr class="full-size" id="rmailreplyhr">
+                        <h2>Add a reply</h2>
+                        <form id="rmailreplycompositionbox">
+                            <label class="compositiontitle">
+                                To: 
+                                <input type="text" placeholder="Original Sender" id="rmail_reply_receipient" maxlength="100">
                             </label>
-                            <button id="clearreplyattachment" title="Clear Attachments" type="button">✕</button>
-                        </div>
-                        <label>
-                            <input type="checkbox" id="replyencrypted">
-                            Encrypted
-                        </label>
-                        <button id="send_rmail_reply">Send &rarr;</button>
-                    </form>
+                            <label class="compositiontitle">
+                                Title: 
+                                <input type="text" placeholder="Re: (Original subject)" id="rmail_reply_title" maxlength="100">
+                            </label>
+                            <label for="rmail_reply_comp_body">Body:</label>
+                            <textarea id="rmail_reply_comp_body" placeholder="Reply content"></textarea>
+                            <div id="reply_imagebar">
+                                <label class="rmailreplyattachment">
+                                    Attachment(s): 
+                                    <input type="file" id="rmailreplyimage" title="Shift-click to paste attachment instead" accept="*" multiple>
+                                </label>
+                                <button id="clearreplyattachment" title="Clear Attachments" type="button">✕</button>
+                            </div>
+                            <label class="labelandinput">
+                                <input type="checkbox" id="replyencrypted">
+                                Encrypted
+                            </label>
+                            <button id="send_rmail_reply">Send &rarr;</button>
+                        </form>
+                    </section>
                 </section>
             </div>
 
@@ -113,11 +129,11 @@
                 <form id="rmailcompositionbox">
                     <label class="compositiontitle">
                         To: 
-                        <input type="text" placeholder="Recipient" id="rmail_comp_receipient">
+                        <input type="text" placeholder="Recipient" id="rmail_comp_receipient" maxlength="100">
                     </label>
                     <label class="compositiontitle">
                         Title: 
-                        <input type="text" placeholder="Title" id="rmail_comp_title">
+                        <input type="text" placeholder="Title" id="rmail_comp_title" maxlength="100">
                     </label>
                     <label for="rmail_comp_body" class="rmailcompbodylabel">Body: </label>
                     <textarea id="rmail_comp_body" placeholder="Content"></textarea>
@@ -128,11 +144,11 @@
                         </label>
                         <button id="clearattachment" title="Clear Attachments" type="button">✕</button>
                     </div>
-                    <label title="This option's effectiveness will vary based on what client the recipient uses to read Rmails. If the recipient also uses Rotur Assistant, then the recipient will have to manually mark the Rmail as read in order for the burn to trigger.">
+                    <label class="labelandinput">
                         <input type="checkbox" id="burnafterreadoption">
                         Burn After Read
                     </label>
-                    <label>
+                    <label class="labelandinput">
                         <input type="checkbox" id="encrypted">
                         Encrypted
                     </label>

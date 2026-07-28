@@ -2,6 +2,7 @@
 <html>
     <head>
         <meta charset="UTF-8" />
+        <script src="../initialize.js"></script>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="stylesheet" href="../style.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -50,7 +51,7 @@
                     </label>
                     <hr class="full-size">
                     <h3>Chat controls</h3>
-                    <p style="margin: 4px; margin-top: -3px;">For people who are frequent users of <a href="https://originchats.com/" target="_blank" rel="noopener noreferrer">OriginChats</a>.</p>
+                    <p style="margin: 4px; margin-top: -3px;">For people who are frequent users of <a href="https://originchats.com/" target="_blank" rel="noopener noreferrer">OriginChats</a>. These options may require a page reload to fully take effect.</p>
                     <hr class="full-size dotted_separator">
                     <label>
                         <input type="checkbox" id="renderoverlays">
@@ -64,7 +65,7 @@
                         <input type="checkbox" id="blockgifs">
                         Block GIFs from https://gifs.originchats.com
                     </label>
-                    <label title="This setting may require a page refresh to fully take effect. Right now, this setting only works on the official OriginChats client, found at https://originchats.com/app">
+                    <label title="This setting may require a page refresh to fully take effect. Right now, this setting only works on either the official OriginChats client (found at https://originchats.com/app), or Indigo (found at https://runnova.github.io/indigo)">
                         <input type="checkbox" id="overridegeneral">
                         Override #general channel nicknames on OriginChats
                     </label>
@@ -74,7 +75,7 @@
                         <select id="preferredcdnoptions">
                             <option name='cdnoption' value="roturcdn">RoturCDN</option>
                             <option name='cdnoption' value="fluficdn">Flufi's CDN*</option>
-                            <option name='cdnoption' value="mistiums3">Mistium's S3**</option>
+                            <option name='cdnoption' value="mistiums3">Mistium's S3</option>
                             <option name='cdnoption' value="ochost">OCHost</option>
                             <!-- The API for this became a lot more locked down before 1.2 hit production
                             <option name='cdnoption' value="roturphotos">Rotur Photos**</option>
@@ -96,7 +97,7 @@
                         <input type="radio" name="ra_displayoption" value="sidebar">
                         Sidebar
                     </label>
-                    <label title="The layout of Rotur Assistant was initially designed around its viewport having a fixed width of 400px. Layout issues, such as overly stretched objects, may arise. I hope to improve the full-site layout in future updates.">
+                    <label>
                         <input type="radio" name="ra_displayoption" value="site">
                         Full Site
                     </label>
@@ -136,6 +137,11 @@
                         <input type="radio" name='themeselect' value="oceanblue">
                         <div id="oceanbluetheme" class="themepreviews"></div>
                         Ocean Blue
+                    </label>
+                    <label>
+                        <input type="radio" name='themeselect' value="crimsonred">
+                        <div id="crimsonredtheme" class="themepreviews"></div>
+                        Crimson Red
                     </label>
                     <label>
                         <input type="radio" name='themeselect' value="forestgreen">
@@ -219,6 +225,18 @@
                     <button id="randomizetheme">Randomize Theme</button>
                     <button id="examplepopup">Example Pop-up</button>
                 </div>
+                <!-- Coming soon in 1.3
+                <hr class="full-size">
+                <h3>Custom Style Sheet</h3>
+                <p>Paste a link to a custom style sheet here. Do note that Rotur Assistant's HTML and CSS were designed around one another, meaning support for stylesheets is very loose.</p>
+                <input type="text" placeholder="Style Sheet URL">
+                <div class="customthemebuttons">
+                    <button id="randomizetheme">Reset Style Sheet</button>
+                    <button id="examplepopup">Save Style Sheet</button>
+                </div>
+                <input type="checkbox" id="stylesheetenabled">
+                <label for="stylesheetenabled">Style Sheet Enabled</label>
+                -->
             </div>
             <div id="notemanager" style="display: none;">
                 <p>Manage user notes here. Only you can see user notes. To get around needing a Rotur subscription, Rotur Assistant uses its own notes system, stored in the extension's sync storage. Unlike Rotur's notes, you are also not limited to friends either.</p>

@@ -47,10 +47,12 @@ function parseHex(str) {
     return NaN;
 };
 
+const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
+
 let icn_cache = []
 let isDragging = false;
 let startX = 0, startY = 0;
-let offsetX = 185, offsetY = 120;
+let offsetX = 185, offsetY = 185;
 let scale = 5;
 let dragStartX = 0;
 let dragStartY = 0;
@@ -177,31 +179,40 @@ function renderICN(icn) {
                 icn_transformY = icn_arguments[1]
                 break
             }
+            case 'reset':
             case 'back': {
-                icn_transformX = 0
-                icn_transformY = 0
+                if (cmd == 'back' || icn_settings.exclusive) {
+                    icn_transformX = 0
+                    icn_transformY = 0
+                }
                 break
             }
+            case 'l': // Milo's AI gave me the idea to add this alias
             case 'line': {
-                ctx.beginPath()
-                ctx.lineWidth = width * icn_scale
-                ctx.strokeStyle = color;
-                ctx.moveTo((icn_arguments[0] + icn_transformX) * icn_scale, (icn_arguments[1] + icn_transformY) * icn_scale)
-                ctx.lineTo((icn_arguments[2] + icn_transformX) * icn_scale, (icn_arguments[3] + icn_transformY) * icn_scale)
-                ctx.stroke()
-                cont_cache_x = icn_arguments[2]
-                cont_cache_y = icn_arguments[3]
+                if (cmd == 'line' || icn_settings.exclusive) {
+                    ctx.beginPath()
+                    ctx.lineWidth = width * icn_scale
+                    ctx.strokeStyle = color;
+                    ctx.moveTo((icn_arguments[0] + icn_transformX) * icn_scale, (icn_arguments[1] + icn_transformY) * icn_scale)
+                    ctx.lineTo((icn_arguments[2] + icn_transformX) * icn_scale, (icn_arguments[3] + icn_transformY) * icn_scale)
+                    ctx.stroke()
+                    cont_cache_x = icn_arguments[2]
+                    cont_cache_y = icn_arguments[3]
+                }
                 break
             }
+            case 'continue':
             case 'cont': {
-                ctx.beginPath()
-                ctx.lineWidth = width * icn_scale
-                ctx.strokeStyle = color;
-                ctx.moveTo((cont_cache_x + icn_transformX) * icn_scale, (cont_cache_y + icn_transformY) * icn_scale)
-                ctx.lineTo((icn_arguments[0] + icn_transformX) * icn_scale, (icn_arguments[1] + icn_transformY) * icn_scale)
-                ctx.stroke()
-                cont_cache_x = icn_arguments[0]
-                cont_cache_y = icn_arguments[1]
+                if (cmd == 'cont' || icn_settings.exclusive) {
+                    ctx.beginPath()
+                    ctx.lineWidth = width * icn_scale
+                    ctx.strokeStyle = color;
+                    ctx.moveTo((cont_cache_x + icn_transformX) * icn_scale, (cont_cache_y + icn_transformY) * icn_scale)
+                    ctx.lineTo((icn_arguments[0] + icn_transformX) * icn_scale, (icn_arguments[1] + icn_transformY) * icn_scale)
+                    ctx.stroke()
+                    cont_cache_x = icn_arguments[0]
+                    cont_cache_y = icn_arguments[1]
+                }
                 break                
             }
             case 'curve': {
@@ -431,8 +442,8 @@ window.addEventListener('mouseup', () => {
 renderICN(parseICN(''))
 
 const config = {
-    elements: ['p', 'img', 'div', 'h1', 'h2', 'h3', 'h4', 'button', 'ul', 'li', 'select', 'option', 'input'],
-    attributes: ['src', 'alt', 'href', 'width', 'height', 'id', 'class', 'data', 'value', 'title', 'disabled', 'type']
+    elements: ['p', 'img', 'div', 'h1', 'h2', 'h3', 'h4', 'button', 'ul', 'li', 'select', 'option', 'input', 'a'],
+    attributes: ['src', 'alt', 'href', 'width', 'height', 'id', 'class', 'data', 'value', 'title', 'disabled', 'type', 'style']
 }
 const sanitizer = new Sanitizer(config)
 
@@ -578,8 +589,8 @@ document.addEventListener('click', async function(e) {
     if (e.target.id == 'resetcamera') {
         startX = 0
         startY = 0
-        offsetX = 185
-        offsetY = 120;
+        offsetX = Math.round((clamp(document.body.clientWidth, 400, 630) - 30) / 2)
+        offsetY = 185;
         scale = 5;
         initialOffsetX = 0;
         initialOffsetY = 0;
@@ -588,6 +599,19 @@ document.addEventListener('click', async function(e) {
         renderICN(icn_cache)
     }
 })
+
+function fixCanvasWidth() {
+    const newwidth = (clamp(document.body.clientWidth, 400, 630) - 30)
+    document.getElementById('icn_canvas').width = newwidth
+    offsetX = Math.round(newwidth / 2)
+    renderICN(icn_cache)
+}
+
+fixCanvasWidth()
+
+window.addEventListener('resize', () => {
+    fixCanvasWidth()
+});
 
 document.getElementById('canvasbgsettings').addEventListener('change', function(e) {
     const newbg = e.target.value

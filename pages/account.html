@@ -2,6 +2,7 @@
 <html>
     <head>
         <meta charset="UTF-8" />
+        <script src="../initialize.js"></script>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="stylesheet" href="../style.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -28,8 +29,12 @@
                 </div>
                 <input type="file" id="changeavatarfilebtn" accept="image/*" style="display: none;">
                 <div class="userinfoedit">
-                    <button id='toggleprofileview' title="Profile View (Changes will not be saved)"><img src='../images/misc_icons/usericon.png' width=24 height=24></button>
-                    <button id='profilereloadedit' title="Refresh Profile">⟳</button>
+                    <div class="profileeditactionbarbuttons">
+                        <button id='copyuserjson' title="Copy user JSON from the private /me (or /get_user) endpoint">{u}</button>
+                        <button id='copyprofilejson' title="Copy user JSON from the public /profile endpoint">{p}</button>
+                        <button id='toggleprofileview' title="Profile View (Changes will not be saved)"><img src='../images/misc_icons/usericon.png' width=24 height=24></button>
+                        <button id='profilereloadedit' title="Refresh Profile">⟳</button>
+                    </div>
                     <div id='editusername'>
                         <label for='usernamebox'>Name: </label>
                         <input type='text' class='profileeditinput' id='usernamebox' value='Template' placeholder='Username'>
@@ -96,7 +101,7 @@
                         <div class='saveallbtncontainer'>
                             <button id='profilesaveall' title='Save All'><img src='../images/misc_icons/save.png' width=24 height=24> Save All</button>
                         </div>
-                        <p class=profilefineprint>¹Display Name and Phone are unused so far. These fields mainly exist here for parity with https://rotur.dev/me/</p>
+                        <p class=profilefineprint>¹Display Name and Phone are unused so far. These fields mainly exist here for parity with https://rotur.dev/me (the older version)</p>
                         <p class=profilefineprint>²Setting your account to private does not stop any information, such as your balance, from being truly private, as it will still be available in the API.</p>
                     </div>
                     <ul id="morebasicinfo">
@@ -282,7 +287,7 @@
                     <div class='replyboxplaceholder'>
                         <textarea class='replybox' data-postid='postid' placeholder='Add a reply for User' name='userclawpostreplybox'></textarea>
                         <p class="postcharlimit" id="limit-id">0/300</p>
-                        <button class='sendreply' data-postid='postid'>Send</button>
+                        <button class='sendreply' data-postid='postid'>Send &rarr;</button>
                         <h2>Sign in to add a reply</h2>
                     </div>
                     <div class='replyerrorplaceholder'></div>

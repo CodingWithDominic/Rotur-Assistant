@@ -2,6 +2,7 @@
 <html>
     <head>
         <meta charset="UTF-8" />
+        <script src="../initialize.js"></script>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="stylesheet" href="../style.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -114,7 +115,7 @@
                     <p class="keybillinglabel">Bills every: 1 Month</p>
                     <div class='ecokeywebhookdisplay'>
                         <span class='ecokeywebhookurl'>Webhook URL: URL</span>
-                        <button type="button" class="ecokeycopy" id="copyhook-keyid" data-keyid='keyid' data-webhook='URL'><image src='../images/misc_icons/copy.png' width=24 height=24 alt='Copy'></button>
+                        <button type="button" title="Copy Webhook URL" class="ecokeycopy" id="copyhook-keyid" data-keyid='keyid' data-webhook='URL'><image src='../images/misc_icons/copy.png' width=24 height=24 alt='Copy'></button>
                         </div>
                     <div class='ecokeycontrolpanel'>
                         <button class="ecokeysubcancel" id="cancel-keyid" data-keyid='keyid' data-owner='Creator'>Cancel Subscription</button>
@@ -132,8 +133,10 @@
         <template id="keyusertemplate">
             <li class="ecokeyuser">
                 <div class='ecokeyuserheader'>
-                    <img src="https://avatars.rotur.dev/User" alt="User" width=32 height=32>
-                    <h2>User</h2>
+                    <a class="ecokeyuserhref">
+                        <img src="https://avatars.rotur.dev/User" alt="User" width=32 height=32>
+                        <h2>User</h2>
+                    </a>
                     <button class='removeacc' data-name="User" title="Remove user from key" data-nextbill="2100" data-refundprice="1" data-keyid="123">✕</button>
                 </div>
                 <p class="purchasedate">Purchased 5 BCE</p>

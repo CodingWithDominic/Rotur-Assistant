@@ -9,9 +9,10 @@ const flagged = await new Promise(resolve =>
 ) ?? [];
 
 const config = {
-    elements: ['p', 'img', 'div', 'h1', 'h2', 'h3', 'h4', 'button', 'ul', 'li', 'select', 'option', 'hr'],
-    attributes: ['src', 'alt', 'href', 'width', 'height', 'id', 'class', 'data', 'value', 'title', 'disabled']
+    elements: ['p', 'img', 'div', 'h1', 'h2', 'h3', 'h4', 'button', 'ul', 'li', 'select', 'option', 'hr', 'a'],
+    attributes: ['src', 'alt', 'href', 'width', 'height', 'id', 'class', 'data', 'value', 'title', 'disabled', 'style']
 }
+const authform = new FormData()
 const sanitizer = new Sanitizer(config)
 if (!navigator.onLine) {
     document.getElementsByClassName('container')[0].setHTML(`
@@ -25,8 +26,10 @@ if (!activeacc.uuid) {
     document.getElementsByClassName('container')[0].setHTML(`
         <h1>Donation page</h1>
         <hr class="full-size">
-        <h3>You are not signed in! Please head over to the account manager to add an account first.</h3>
+        <h3>You are not signed in! Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to add an account first.</h3>
     `, {sanitizer: sanitizer})
+} else {
+    authform.append("Authorization", `Bearer ${activeacc.token}`)
 }
 
 if (flagged.includes(activeacc.uuid)) {
@@ -61,8 +64,6 @@ function closePopup() {
 
 document.addEventListener('click', async function(e) {
     if (e.target.id == 'sendcredits') {
-
-
         const transferamt = parseFloat(document.getElementById('donateamount').value)
         const note = document.getElementById('transfernote').value
         let potentialerrormsg = ""
@@ -98,9 +99,10 @@ document.addEventListener('click', async function(e) {
     if (e.target.id == 'finaltransfer') {
         const transfervalue = parseFloat(document.getElementById('donateamount').value);
         const donatenote = document.getElementById('transfernote').value
-        const transferresult = await fetch(`https://api.rotur.dev/me/transfer?auth=${activeacc.token}`, {
+        const transferresult = await fetch(`https://api.rotur.dev/me/transfer`, {
             method: "POST",
-            body: JSON.stringify({to: "Dominic", amount: transfervalue, note: (donatenote ? '(RA) ' + donatenote : "Donation through Rotur Assistant's Donation page")})
+            headers: authform,
+            body: JSON.stringify({to: "Dominic", amount: transfervalue, note: (donatenote ? '[RA] ' + donatenote : "Donation through Rotur Assistant's Donation page")})
         }).then(res => res.json())
         closePopup()
         if (transferresult.error) {

@@ -1,33 +1,19 @@
-const parser = new DOMParser();
-
-const config = {
+const indexconfig = {
     elements: ['div', 'p', 'h1', 'button'],
     attributes: ['id', 'class']
 }
-const sanitizer = new Sanitizer(config)
-
-const default_app_settings =
-{
-    size: 2,
-    utils: true,
-    social: true,
-    misc: true
-}
+const indexsanitizer = new Sanitizer(indexconfig)
 
 const settings = await new Promise(resolve =>
         chrome.storage.local.get('settings', data => resolve(data.settings?.padEnd(16, "0") || "0000000000000000"))
 ) ?? "0000000000000000";
 
-const app_settings = await new Promise(resolve =>
-    chrome.storage.local.get('app_settings', data => resolve(data.app_settings || default_app_settings))
-) ?? default_app_settings;
-
-const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a', 'Enter'];
-let cursor = 0;
-
 // Functions used in multiple places
 
 export function sanitize(input) {
+    if (typeof input != 'string') {
+        return input;
+    }
     return input.replace(/[<>&'"/()=]/g, char => {
         switch (char) {
             case '&': return '&amp;';
@@ -62,17 +48,15 @@ function ConvertToAMPM(time) {
 }
 
 export function formatDate(input) {
-    let date = new Date(input)
-    date = date.toString().split(' ')
-    let finaldate = date[0] + ', ' + date[1] + ' ' + date[2] + ', ' + date[3] + ' at ' + (settings[4] == "0" ? ConvertToAMPM(date[4]) : date[4])
-    return finaldate;
+    try {
+        let date = new Date(input)
+        date = date.toString().split(' ')
+        let finaldate = date[0] + ', ' + date[1] + ' ' + date[2] + ', ' + date[3] + ' at ' + (settings[4] == "0" ? ConvertToAMPM(date[4]) : date[4])
+        return finaldate;
+    } catch (err) {
+        return "Unknown Date"
+    }
 }
-
-export function parseHTML(string) {
-    const prototype = parser.parseFromString(string, 'text/html')
-    const final = prototype.body.children
-    return final;
-} // To satisfy Mozilla's security requirements (it didn't like variables inside innerHTML arguments)
 
 // Success, warning, and error pop-ups
 
@@ -87,7 +71,7 @@ export function openErrorPopup(error) {
         <div id="popup-choices">
             <button id="cancel" class="closebtn">OK</button>
         </div>
-    `, {sanitizer: sanitizer})
+    `, {sanitizer: indexsanitizer})
 }
 export function openSuccessPopup(msg) {
     document.getElementById('overlay').style.display = 'flex';
@@ -100,7 +84,7 @@ export function openSuccessPopup(msg) {
         <div id="popup-choices">
             <button id="cancel" class="closebtn">OK</button>
         </div>
-    `, {sanitizer: sanitizer})
+    `, {sanitizer: indexsanitizer})
 }
 export function openWarningPopup(warning) {
     document.getElementById('overlay').style.display = 'flex';
@@ -113,7 +97,7 @@ export function openWarningPopup(warning) {
         <div id="popup-choices">
             <button id="cancel" class="closebtn">OK</button>
         </div>
-    `, {sanitizer: sanitizer})
+    `, {sanitizer: indexsanitizer})
 }
 export function closePopup() {
     document.getElementById('overlay').style.display = 'none';
@@ -135,10 +119,17 @@ export function CreateEmptyPlaceholder(value, noli) {
 }
 
 export function FixDecimal(input) {
-    if (Math.floor(input) === input) {
+    try {
+        if ((typeof input) == 'string') {
+            return input;
+        }
+        if (Math.floor(input) === input) {
+            return input;
+        }
+        return ((String(input).split(".")[1].length || 0) > 2) ? (input).toFixed(2) : (input) // Get around JS sometimes elongating decimals (example: 0.2 + 0.1 = 0.300000004 instead of 0.3)
+    } catch {
         return input;
     }
-    return ((String(input).split(".")[1].length || 0) > 2) ? (input).toFixed(2) : (input) // Get around JS sometimes elongating decimals (example: 0.2 + 0.1 = 0.300000004 instead of 0.3)
 }
 
 export function generateRandomString(length) {
@@ -157,7 +148,10 @@ export async function UploadImage(imagedata, cdnoverride, rawdata) {
     const activeacc = await new Promise(resolve =>
         chrome.storage.local.get('activeacc', data => resolve(data.activeacc || {}))
     ) ?? {};
-
+    const authform = new FormData()
+    if (activeacc.uuid) {
+        authform.append("Authorization", `Bearer ${activeacc.token}`)
+    }
     let potentialattachment = ''
     try {
         switch (cdnoverride ?? preferredcdn) {
@@ -196,7 +190,7 @@ export async function UploadImage(imagedata, cdnoverride, rawdata) {
             }
             case ('mistiums3'): {
                 const randkey = `RA_${Date.now()}`
-                const validator = await fetch(`https://api.rotur.dev/generate_validator?auth=${activeacc.token}&key=originChats-${randkey}`).then(res => res.json())
+                const validator = await fetch(`https://api.rotur.dev/generate_validator?key=originChats-${randkey}`, {headers: authform}).then(res => res.json())
                 const json = {
                     validator: validator.validator,
                     validator_key: `originChats-${randkey}`,
@@ -221,7 +215,7 @@ export async function UploadImage(imagedata, cdnoverride, rawdata) {
                 break;
             }
             case ('ochost'): {
-                const validator = await fetch(`https://api.rotur.dev/generate_validator?auth=${activeacc.token}&key=RoturAssistantImage`).then(res => res.json())
+                const validator = await fetch(`https://api.rotur.dev/generate_validator?key=RoturAssistantImage`, {headers: authform}).then(res => res.json())
                 const json = {
                     validator: validator.validator,
                     validator_key: `RoturAssistantImage`,
@@ -252,98 +246,121 @@ export async function UploadImage(imagedata, cdnoverride, rawdata) {
     }
 }
 
-chrome.storage.session.remove('acceptinprogress')
+async function HomePage() {
+    const default_app_settings =
+    {
+        size: 2,
+        utils: true,
+        social: true,
+        misc: true
+    }
 
-if (!navigator.onLine) {
-    const isOffline = await new Promise(resolve =>
-        chrome.storage.session.get('isOffline', data => resolve(data.isOffline || false))
-    ) ?? false;
-    if (!isOffline) {
-        openWarningPopup('You do not have an internet connection. Some parts of Rotur Assistant may not work properly without a proper connection.')
-        chrome.storage.session.set({isOffline: true})
-    }
-} else {
-    chrome.storage.session.remove('isOffline')
-}
+    const app_settings = await new Promise(resolve =>
+        chrome.storage.local.get('app_settings', data => resolve(data.app_settings || default_app_settings))
+    ) ?? default_app_settings;
 
-switch (app_settings.size ?? 2) {
-    case (1): {
-        Array.from(document.getElementsByClassName('appgridbtn')).forEach(app => {
-            app.style = "flex: 1 1 70px; max-width: 70px; min-width: 70px; height: 80px; font-size: 10px;"
-            app.querySelector('img').width = 55
-            app.querySelector('img').height = 55
-        })
-        break;
-    }
-    case (2): {
-        break;
-    }
-    case (3): {
-        Array.from(document.getElementsByClassName('appgridbtn')).forEach(app => {
-            app.style = "flex: 1 1 150px; max-width: 150px; min-width: 150px; height: 150px; font-size: 14px;"
-            app.querySelector('img').width = 100
-            app.querySelector('img').height = 100
-            app.querySelector('img').style = 'max-width: 150px; max-height: 150px;'
-        })
-        break;
-    }
-}
+    const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a', 'Enter'];
+    let cursor = 0;
 
-if (!app_settings.utils) {
-    Array.from(document.querySelectorAll('[data-category="util"]')).forEach(app => {
-        app.style.display = 'none'
-    })
-}
-if (!app_settings.social) {
-    Array.from(document.querySelectorAll('[data-category="social"]')).forEach(app => {
-        app.style.display = 'none'
-    })
-}
-if (!app_settings.misc) {
-        Array.from(document.querySelectorAll('[data-category="misc"]')).forEach(app => {
-        app.style.display = 'none'
-    })
-}
+    chrome.storage.session.remove('acceptinprogress')
 
-document.addEventListener('click', function(e) {
-    if (e.target.className == 'appgridbtn') {
-        window.location.href = `/pages/${e.target.id}.html`
-    }
-    if (e.target.className == 'closebtn') {
-        closePopup()
-    }
-})
-
-document.addEventListener('keydown', (e) => {
-    if (e.key === konamiCode[cursor]) {
-        cursor++;
-        if (cursor === konamiCode.length) {
+    if (!navigator.onLine) {
+        const isOffline = await new Promise(resolve =>
+            chrome.storage.session.get('isOffline', data => resolve(data.isOffline || false))
+        ) ?? false;
+        if (!isOffline) {
             if (window.location.href.includes('index.html')) {
-                window.location.href = "/pages/vip_lounge.html"
+                openWarningPopup('You do not have an internet connection. Some parts of Rotur Assistant may not work properly without a proper connection.')
             }
-            cursor = 0;
+            chrome.storage.session.set({isOffline: true})
         }
     } else {
-        cursor = 0;
+        chrome.storage.session.remove('isOffline')
     }
-});
 
-chrome.runtime.getContexts({ contextTypes: ['SIDE_PANEL'] }, async (contexts) => {
-    if (contexts && contexts.length > 0) {
-        let ui_mode = await new Promise(resolve =>
-            chrome.storage.local.get('ui_mode', data => resolve(data.ui_mode || "popup"))
-        ) ?? "popup";
-        if (ui_mode != 'sidebar') {
-            await chrome.action.setPopup({ popup: '' });
-            await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false });
-            if (ui_mode == 'sidebar') {
-                await chrome.action.setPopup({ popup: '' });
-                await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
-                await chrome.sidePanel.setOptions({ enabled: true });
-            } else if (ui_mode == 'popup') {
-                await chrome.action.setPopup({ popup: 'index.html' });
-                await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false });
-            }
+    switch (app_settings.size ?? 2) {
+        case (1): {
+            Array.from(document.getElementsByClassName('appgridbtn')).forEach(app => {
+                app.style = "flex: 1 1 70px; max-width: 70px; min-width: 70px; height: 80px; font-size: 10px;"
+                app.querySelector('img').width = 55
+                app.querySelector('img').height = 55
+            })
+            break;
+        }
+        case (2): {
+            break;
+        }
+        case (3): {
+            Array.from(document.getElementsByClassName('appgridbtn')).forEach(app => {
+                app.style = "flex: 1 1 150px; max-width: 150px; min-width: 150px; height: 150px; font-size: 14px;"
+                app.querySelector('img').width = 100
+                app.querySelector('img').height = 100
+                app.querySelector('img').style = 'max-width: 150px; max-height: 150px;'
+            })
+            break;
         }
     }
-}); // Failsafe in case Rotur Assistant is opened as a side panel via Chrome's right-click context menu, overriding the user's settings inside the extension.
+
+    if (!app_settings.utils) {
+        Array.from(document.querySelectorAll('[data-category="util"]')).forEach(app => {
+            app.style.display = 'none'
+        })
+    }
+    if (!app_settings.social) {
+        Array.from(document.querySelectorAll('[data-category="social"]')).forEach(app => {
+            app.style.display = 'none'
+        })
+    }
+    if (!app_settings.misc) {
+            Array.from(document.querySelectorAll('[data-category="misc"]')).forEach(app => {
+            app.style.display = 'none'
+        })
+    }
+
+    document.addEventListener('click', function(e) {
+        if (e.target.className == 'appgridbtn') {
+            window.location.href = `/pages/${e.target.id}.html`
+        }
+        if (e.target.className == 'closebtn') {
+            closePopup()
+        }
+    })
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === konamiCode[cursor]) {
+            cursor++;
+            if (cursor === konamiCode.length) {
+                if (window.location.href.includes('index.html')) {
+                    window.location.href = "/pages/vip_lounge.html"
+                }
+                cursor = 0;
+            }
+        } else {
+            cursor = 0;
+        }
+    });
+
+    chrome.runtime.getContexts({ contextTypes: ['SIDE_PANEL'] }, async (contexts) => {
+        if (contexts && contexts.length > 0) {
+            let ui_mode = await new Promise(resolve =>
+                chrome.storage.local.get('ui_mode', data => resolve(data.ui_mode || "popup"))
+            ) ?? "popup";
+            if (ui_mode != 'sidebar') {
+                await chrome.action.setPopup({ popup: '' });
+                await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false });
+                if (ui_mode == 'sidebar') {
+                    await chrome.action.setPopup({ popup: '' });
+                    await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+                    await chrome.sidePanel.setOptions({ enabled: true });
+                } else if (ui_mode == 'popup') {
+                    await chrome.action.setPopup({ popup: 'index.html' });
+                    await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false });
+                }
+            }
+        }
+    }); // Failsafe in case Rotur Assistant is opened as a side panel via Chrome's right-click context menu, overriding the user's settings inside the extension.
+}
+
+if (window.location.href.includes('index.html')) {
+    HomePage() // Less overhead and stuff running in the background since index also runs on every page, not just the home page
+}

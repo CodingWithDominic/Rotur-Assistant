@@ -1,17 +1,3 @@
-// Themes and a few other universal things are handled here since unlike index.js, header.js is called everywhere
-
-const themedata = {
-    oceanblue: ["#0F0052", "#004DB1", "#00002B", "#0012B4", "#4F46E5", "#4338CA", "#03009C"],
-    forestgreen: ["#0A3100", "#00b83d", "#271e00", "#058a00", "#7c5500", "#bb6a00", "#006b17"],
-    orange: ["#6d4100", "#7c280f", "#cf3000", "#741b00", "#FF4C4B", "#df2727", "#df795a"],
-    darkpink: ["#8b0242", "#ff00aa", "#57002b", "#bd005e", "#c90788", "#b1128e", "#750844"],
-    blurple: ["#200044", "#35008b", "#28004e", "#4500b4", "#4918cf", "#4a00d4", "#2f009c"],
-    discord: ["#323339", "#7D7E87", "#323339", "#2C2D32", "#5865F2", "#4452BB", "#393A41"],
-    midnight: ["#000000", "#4d4d4d", "#242425", "#2e2e2e", "#5a5a5a", "#494949", "#3b3b3b"],
-    blackout: ["#000000", "#000000", "#000000", "#000000", "#000000", "#000000", "#000000"]
-}
-const themevarnames = ["--bg-color", "--scrollbar-bar", "--scrollbar-bg", "--headerandfooter", "--button", "--buttonhover", "--popupbg"]
-
 document.getElementById('header-placeholder').innerHTML = `
     <nav class="header" style='position: relative;'>
         <div id="raheaderlogo">
@@ -65,7 +51,8 @@ document.getElementById('header-placeholder').innerHTML = `
             <li>Getting accounts...</li>
             </ul>
         </div>
-    </nav>` // It's easier if I do this since if I need to modify the header, I can just modify this rather than having to modify it in every single HTML file.
+    </nav>`; // It's easier if I do this since if I need to modify the header, I can just modify this rather than having to modify it in every single HTML file.
+    
 if (document.body.clientWidth > 950) {
     document.getElementById('raheaderlogo').style.display = 'block'
     document.getElementById('headerbuttonrow').style.maxWidth = '800px'
@@ -101,7 +88,7 @@ async function checkanchor() {
     ) ?? "00000000";
     if (settings[2] == '1' && !location.href.includes('/auth.html')) {
         document.getElementsByClassName('container')[0].style = ('margin-top: 40px;' + (settings[3] == '1' ? ' padding-bottom: 105px;' : ''))
-        document.getElementById('header-placeholder').style = 'position: fixed; z-index: 4500;'
+        document.getElementById('header-placeholder').style = 'position: fixed; z-index: 4500'
     }
     if (settings[3] == '1' && !location.href.includes('/auth.html')) {
         document.getElementsByClassName('container')[0].style = ('padding-bottom: 105px;' + (settings[2] == '1' ? ' margin-top: 40px;' : ''))
@@ -186,26 +173,6 @@ document.getElementById('accountarea').addEventListener("contextmenu", (event) =
     openflyout('accountflyout')
 });
 
-async function updateTheme() {
-    const theme = await new Promise(resolve =>
-        chrome.storage.local.get('theme', data => resolve(data.theme || "oceanblue"))
-    ) ?? "oceanblue";
-
-    const customtheme = await new Promise(resolve =>
-        chrome.storage.local.get('customtheme', data => resolve(data.customtheme || ["#000000", "#000000", "#000000", "#000000", "#000000", "#000000", "#000000", "#FFFFFF"]))
-    ) ?? ["#000000", "#000000", "#000000", "#000000", "#000000", "#000000", "#000000", "#FFFFFF"];
-
-    const newtheme = (theme == 'custom') ? customtheme : themedata[theme]
-    const cssvars = document.documentElement.style
-    if (theme == 'custom') {
-        cssvars.setProperty("--customcolor", customtheme[7])
-        document.body.classList.toggle('customtextcolor');
-    }
-    for (let i=0; i<themevarnames.length; i++) {
-        cssvars.setProperty(themevarnames[i], newtheme[i])
-    }
-}
-
 async function updatePFPs() {
     const settings = await new Promise(resolve =>
             chrome.storage.local.get('settings', data => resolve(data.settings?.padEnd(16, "0") || "0000000000000000"))
@@ -218,5 +185,4 @@ async function updatePFPs() {
     }
 }
 
-updateTheme()
 updatePFPs()

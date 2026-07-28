@@ -2,6 +2,7 @@
 <html>
     <head>
         <meta charset="UTF-8" />
+        <script src="../initialize.js"></script>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="stylesheet" href="../style.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,8 +14,10 @@
         <header id="header-placeholder"></header>
         <script src="../header.js"></script>
         <div class="container" style="position: relative;">
-            <h1>Key Manager (Account)</h1>
-            <button id="reloadkeys" title="Refresh Keys">⟳</button>
+            <div class="keysaccpageheader">
+                <h1>Key Manager (Account)</h1>
+                <button id="reloadkeys" title="Refresh Keys">⟳</button>
+            </div>
             <p id="keyfineprint">This page is for managing account keys. For the page that manages keys associated with purchases / subscriptions, see <a href="../pages/keymanager_eco.html">Key Manager (Economy)</a></p>
             <hr class="full-size">
             <div class="tabheader keystabheader">

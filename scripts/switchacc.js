@@ -1,5 +1,11 @@
 console.log('[Rotur Assistant] Rotur account switcher active') // This has to exist or else the switcher won't work
 
+const config = {
+    removeElements: ['iframe', 'script', 'style', 'object', 'embed', 'applet', 'meta', 'link', 'base', 'form'],
+    removeAttributes: ['onload', 'onclick', 'onerror', 'onmouseover', 'onfocus', 'onblur', 'onkeydown', 'onchange', 'onsubmit', 'srcdoc', 'formaction']
+}
+const sanitizer = new Sanitizer(config)
+
 function BlockGIFs() {
     const TARGET_PREFIX = "https://gifs.originchats.com/api/";
     const CUSTOM_IMAGE_URL = "https://i.postimg.cc/1XCBXRcn/Rotur-Assistant-No-Gifs.png";
@@ -24,7 +30,7 @@ function BlockGIFs() {
             const imgoverwrite = setInterval(function() {
                 img.src = CUSTOM_IMAGE_URL
                 intervalcount += 1
-                if (intervalcount > 35) {
+                if (intervalcount > 10) {
                     clearInterval(imgoverwrite)
                 }
             }, 50) // Catch any images missed by the first pass
@@ -62,36 +68,71 @@ function BlockGIFs() {
 }
 
 let generalname = ''
-function OverrideGeneral() {
+const site_selectors = {
+    mist: ['[data-channel-name="general"], [data-channel="general"]', '[class*="mainHeaderChannelName"]'],
+    indigo: ['.channel_item[channeltype][data-name="general"]', 'div.topbar span']
+}
+
+function OverrideGeneral(site) {
+    const list_element = site_selectors[site][0]
+    const header_element = site_selectors[site][1]
+    
     function override(element) {
-        const span = element.querySelector('span');
-        if (span) {
-            if (generalname === '') {
-                generalname = span.textContent.trim();
+        if (site == 'indigo') {
+            if (element.textContent.trim() === 'general') return;
+
+            if (generalname == '') {
+                element.querySelector('span')?.remove()
+                generalname = element.textContent.trim();
+                generalname = generalname.slice(7, 9999)
             }
-            span.textContent = 'general';
+            element.setHTML(`<span class="channel_icon">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" color="currentColor" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg" style="overflow: visible;">
+                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5.25 8.25h15m-16.5 7.5h15m-1.8-13.5-3.9 19.5m-2.1-19.5-3.9 19.5"></path>
+                                </svg>
+                            </span>
+                            general`, {sanitizer: sanitizer})
+        } else {
+            const span = (element.querySelector('span') ?? element.closest('span'));
+            if (span) {
+                if (generalname === '') {
+                    generalname = span.textContent.trim();
+                }
+                
+                if ((site == 'mist') && span.matches('[data-channel="general"]')) {
+                    if (span.textContent === 'Message in #general') return;
+                    span.textContent = 'Message in #general';
+                    span.title = 'general'
+                } else {
+                    if (span.textContent === 'general') return;
+                    span.textContent = "general"
+                }
+            }
         }
     }
     
     function overrideHeader() {
-        const header = document.querySelector('[class*="mainHeaderChannelName"]');
+        const header = document.querySelector(header_element);
         if (header && header.textContent.trim() === generalname) {
+            if (header.textContent === 'general') return;
             header.textContent = 'general';
         }
     }
-    document.querySelectorAll('[data-channel-name="general"]').forEach(channel => {
+    
+    document.querySelectorAll(list_element).forEach(channel => {
         override(channel)
     })
+    
     const observer = new MutationObserver((mutations) => {
         overrideHeader();
         for (const mutation of mutations) {
             if (mutation.type === 'childList') {
                 for (const node of mutation.addedNodes) {
                     if (node.nodeType === 1) { 
-                        if (node.matches('[data-channel-name="general"]')) {
+                        if (node.matches(list_element)) {
                             override(node);
                         }
-                        const channelItem = node.querySelector('[data-channel-name="general"]');
+                        const channelItem = node.querySelector(list_element);
                         if (channelItem) override(channelItem);
                     }
                 }
@@ -114,7 +155,7 @@ window.onload = async () => {
     ) ?? "0000000000000000";
     if (settings[8] == "1") {
         BlockGIFs()
-        if (window.location.href.includes('https://gifs.originchats.com')) {
+        if (window.location.href.startsWith('https://gifs.originchats.com')) {
             const bg = document.createElement('div')
             const style = document.createElement('style')
             style.innerHTML = `
@@ -202,11 +243,18 @@ window.onload = async () => {
             })
         }
     }
-    if ((settings[9] == '1') && (window.location.href.includes('https://originchats.com') || window.location.href.includes('https://originchats.mistium.com'))) {
-        OverrideGeneral()
+    if (settings[9] == '1') {
+        if ((window.location.href.startsWith('https://originchats.com') || window.location.href.startsWith('https://originchats.mistium.com'))) {
+            OverrideGeneral('mist')
+        } else if (window.location.href.startsWith('https://runnova.github.io/indigo')) {
+            OverrideGeneral('indigo')
+        } else if (window.location.href.startsWith('https://graphite.flufi.uk')) {
+            // Graphite doesn't give enough information in its DOM to allow for support
+        }
+
     }
-    chrome.runtime.sendMessage({ type: "NewSite", url: window.location.href });
-    if (window.location.href.includes('https://rotur.dev/terms-of-service')) {
+    chrome.runtime.sendMessage({ type: "Newsite", url: window.location.href });
+    if (window.location.href.startsWith('https://rotur.dev/terms-of-service')) {
         const acceptinprogress = await new Promise(resolve =>
             chrome.storage.session.get('acceptinprogress', data => resolve(data.acceptinprogress || null))
         ) ?? null;
@@ -216,7 +264,7 @@ window.onload = async () => {
         }
         return;
     }
-    if (window.location.href.includes('https://rotur.dev/auth')) {
+    if (window.location.href.startsWith('https://rotur.dev/auth')) {
         try {
             const acceptinprogress = await new Promise(resolve =>
                 chrome.storage.session.get('acceptinprogress', data => resolve(data.acceptinprogress || null))
@@ -254,41 +302,47 @@ function updateToken(site, subspace, newToken) {
 }
 
 const rotursdk_sites = ["https://beam.rotur.dev", "https://place.rotur.dev", "https://devfund.rotur.dev", "https://photos.rotur.dev", "https://mail.rotur.dev",
-                      "https://rotur.dev", "https://pounce.rotur.dev", "https://gifs.originchats.com", "https://sable.rotur.dev"] // All these sites share the exact same method of storing your token, so to optimize code, I put them in an array
+                      "https://rotur.dev", "https://pounce.rotur.dev", "https://gifs.originchats.com", "https://sable.rotur.dev", "http://localhost:5173"] // All these sites share the exact same method of storing your token, so to optimize code, I put them in an array
 
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+    const url = window.location.href
     if (message.action === "switchacc") {
         if (!message.data) {
             console.error('To prevent risking corrupting login information, this action has been aborted.')
             sendResponse({ result: "Action aborted" });
             return;
         }
-        const url = window.location.href
         if (!url) {
             console.error('To prevent risking corrupting login information, this action has been aborted.')
             sendResponse({ result: "Action aborted" });
             return;
         }
-        if (url.includes('https://originchats.mistium.com/app') || url.includes('https://originchats.com/app')) {
+        if (url.startsWith('https://originchats.mistium.com/app') || url.startsWith('https://originchats.com/app')) {
             localStorage.setItem('originchats_token', message.data)
             updateToken('originchats', 'session', message.data)
             window.location.reload()
             sendResponse({ result: "done" });
             return;
         }
-        if (url.includes('https://graphite.flufi.uk')) {
+        if (url.startsWith('https://graphite.flufi.uk')) {
             updateToken('graphite', 'data', message.data)
             window.location.reload()
             sendResponse({ result: "done" });
             return;
         }
-        if (url.includes('https://origin.mistium.com')) {
+        if (url.startsWith('https://music.flufi.uk')) {
+            updateToken('flufi-music', 'data', message.data)
+            window.location.reload()
+            sendResponse({ result: "done" });
+            return;
+        }
+        if (url.startsWith('https://origin.mistium.com')) {
             localStorage.setItem('origin_login', message.data)
             window.location.reload()
             sendResponse({ result: "done" });
             return;
         }
-        if (url.includes('https://rotur.dev/key-manager')) {
+        if (url.startsWith('https://rotur.dev/key-manager')) {
             localStorage.setItem('rotur_token', message.data)
             localStorage.setItem('authToken', message.data)
             localStorage.setItem('rotur_username', message.datauser)
@@ -297,7 +351,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
             sendResponse({ result: "done" });
             return;
         }
-        if (url.includes('https://rotur.dev/inventory-manager')) {
+        if (url.startsWith('https://rotur.dev/inventory-manager')) {
             localStorage.setItem('rotur_token', message.data)
             localStorage.setItem('authToken', message.data)
             localStorage.setItem('rotur_username', message.datauser)
@@ -306,69 +360,70 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
             sendResponse({ result: "done" });
             return;
         }
-        if (url.includes('https://mobile.rotur.dev')) {
+        if (url.startsWith('https://mobile.rotur.dev')) {
             localStorage.setItem('rotur_auth_token', message.data)
             localStorage.setItem('rotur_username', message.datauser)
             window.location.reload()
             sendResponse({ result: "done" });
             return;
         }
-        if (url.includes('https://git.rotur.dev')) {
+        if (url.startsWith('https://git.rotur.dev')) {
             window.location.href = `https://git.rotur.dev/user/rotur/callback?token=${message.data}`
             sendResponse({ result: "done" });
             return;
         }
-        if (url.includes('https://apps.rotur.dev')) {
+        if (url.startsWith('https://apps.rotur.dev')) {
             window.location.href = `https://apps.rotur.dev/auth?token=${message.data}`
             sendResponse({ result: "done" });
             return;
         }
-        if (url.includes('https://gate.rotur.dev')) {
+        if (url.startsWith('https://gate.rotur.dev')) {
             window.location.href = `https://gate.rotur.dev/auth?token=${message.data}`
             sendResponse({ result: "done" });
             return;
         }
-        if (url.includes('https://warptheme.mistium.com')) {
+        if (url.startsWith('https://warptheme.mistium.com')) {
             window.location.href = `https://warptheme.mistium.com/auth?token=${message.data}`
             sendResponse({ result: "done" });
             return;
         }
-        if (url.includes('https://authenticator.rotur.dev')) {
+        if (url.startsWith('https://authenticator.rotur.dev')) {
             window.location.href = `https://authenticator.rotur.dev/auth?token=${message.data}`
             sendResponse({ result: "done" });
             return;
         }
-        if (url.includes('https://notes.rotur.dev')) {
+        if (url.startsWith('https://notes.rotur.dev')) {
             window.location.href = `https://notes.rotur.dev/auth?token=${message.data}`
             sendResponse({ result: "done" });
             return;
         }
-        if (url.includes('https://warpdrive.team')) {
+        if (url.startsWith('https://warpdrive.team')) {
             localStorage.setItem('rotur_token', message.data)
             localStorage.setItem('warpdrive_rotur_token', message.data)
             window.location.reload()
             sendResponse({ result: "done" });
             return;
         }
-        if (url.includes('https://warp.mistium.com')) {
+        if (url.startsWith('https://warp.mistium.com')) {
+            localStorage.removeItem('mw:mistwarp-session')
             localStorage.setItem('mw:rotur-token', message.data)
             window.location.reload()
             sendResponse({ result: "done" });
             return;
         }
-        if (url.includes('https://runnova.github.io/orion') || url.includes('https://adthoughtsglobal.github.io/Orla')) {
+        if (url.startsWith('https://runnova.github.io/orion') || url.startsWith('https://adthoughtsglobal.github.io/Orla')) {
             localStorage.setItem('orion-rotur', JSON.stringify({"type":"token", "token":message.data}))
             window.location.reload()
             sendResponse({ result: "done" });
             return;
         }
-        if (url.includes('https://runnova.github.io/indigo')) {
+        if (url.startsWith('https://runnova.github.io/indigo')) {
             localStorage.setItem('settings', JSON.stringify({"type":"token", "token":message.data}))
             window.location.reload()
             sendResponse({ result: "done" });
             return;
         }
-        if (url.includes('https://antiviiris.github.io/originChats')) {
+        if (url.startsWith('https://antiviiris.github.io/originChats') || url.startsWith('https://chat.0stormy.xyz')) {
             localStorage.setItem('rotur_auth_token', message.data)
             localStorage.removeItem('validator')
             window.location.reload()

@@ -7,6 +7,11 @@ const activeacc = await new Promise(resolve =>
     chrome.storage.local.get('activeacc', data => resolve(data.activeacc || {}))
 ) ?? {};
 
+const authform = new FormData()
+if (activeacc.uuid) {
+    authform.append("Authorization", `Bearer ${activeacc.token}`)
+}
+
 const flagged = await new Promise(resolve =>
     chrome.storage.local.get('flagged', data => resolve(data.flagged || []))
 ) ?? [];
@@ -54,7 +59,7 @@ function renderGifts(filter) {
     if (filter == 'unclaimed') {
         giftsArray = giftsArray.filter(gift => !gift.claimed_by)
     }
-    document.getElementById('giftmanagerheader').replaceChildren(CreateEmptyPlaceholder(`Manage Existing Gifts (${giftsArray.length})`, true))
+    document.getElementById('giftmanagerheader').replaceChildren(CreateEmptyPlaceholder(`Manage Existing Gifts - ${giftsArray.length}`, true))
     let giftlisthtml = document.createElement('ul')
     if (giftsArray.length == 0) {
         giftlisthtml = document.createElement('h3')
@@ -106,7 +111,7 @@ async function getGifts(filter) {
         document.getElementsByClassName('container')[0].setHTML(
             `<h1>Gift Manager</h1>
             <hr class="full-size">
-            <h3>You are not signed in! Please head over to the account manager to add an account first.</h3>`, {sanitizer: sanitizer})
+            <h3>You are not signed in! Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to add an account first.</h3>`, {sanitizer: sanitizer})
         return;
     }
     if (flagged.includes(activeacc.uuid)) {
@@ -118,7 +123,7 @@ async function getGifts(filter) {
         return;
     }
     if (giftdata_cache == '') {
-        giftdata_cache = await fetch(`https://api.rotur.dev/gifts/mine?auth=${activeacc.token}`).then(res => res.json()).catch(err => {
+        giftdata_cache = await fetch(`https://api.rotur.dev/gifts/mine`, {headers: authform}).then(res => res.json()).catch(err => {
             document.getElementsByClassName('container')[0].setHTML(`
                 <h1>Gift Manager</h1>
                 <hr class="full-size">
@@ -167,7 +172,7 @@ async function performGiftSearch(query) {
     } else {
         giftdata = giftdata.gift
         const lookupcard = document.getElementById('giftlookuptemplate').content.cloneNode(true)
-        lookupcard.querySelector('h2').setHTML(`Gift by <img src='https://avatars.rotur.dev/${giftdata.creator_id}' alt='${giftdata.creator_id}' width='24' height='24' style="border-radius: 4px;"> ${giftdata.creator_id}`, {sanitizer: sanitizer}) // setHTML is a safer alternative to innerHTML / parseHTML
+        lookupcard.querySelector('h2').setHTML(`Gift by <img src='https://avatars.rotur.dev/${giftdata.creator_id}' alt='${giftdata.creator_id}' width='24' height='24' style="border-radius: 4px;"> ${giftdata.creator_id}`, {sanitizer: sanitizer})
         lookupcard.querySelector('.giftcardamt').textContent = `Amount: ${giftdata.amount} RC`
         giftdata.note ? lookupcard.querySelector('.giftcardnote').innerText = `Note: ${giftdata.note}` : lookupcard.querySelector('.giftcardnote').remove()
         lookupcard.querySelector('.giftcarddate').textContent = `Expires: ${giftdata.expires_at ? formatDate(giftdata.expires_at) : `Never`}`
@@ -228,7 +233,7 @@ document.addEventListener('click', async function(e) {
         const target = e.target
         target.disabled = true
         target.textContent = '…'
-        giftdata_cache = await fetch(`https://api.rotur.dev/gifts/mine?auth=${activeacc.token}`).then(res => res.json())
+        giftdata_cache = await fetch(`https://api.rotur.dev/gifts/mine`, {headers: authform}).then(res => res.json())
         giftdata_cache.gifts = giftdata_cache.gifts.reverse()
         renderGifts(filter_cache)
         target.disabled = false
@@ -244,8 +249,9 @@ document.addEventListener('click', async function(e) {
             closePopup()
             return;
         }
-        const gift = await fetch(`https://api.rotur.dev/gifts/create?auth=${activeacc.token}`, {
+        const gift = await fetch(`https://api.rotur.dev/gifts/create`, {
                                 method: "POST",
+                                headers: authform,
                                 body: JSON.stringify({amount: amt, note: note, expires_in_hrs: 0, auth: activeacc.token})
                             }).then(res => res.json())
         if (gift.error) {
@@ -285,7 +291,7 @@ document.addEventListener('click', async function(e) {
         const revokebtn = e.target
         revokebtn.disabled = true
         revokebtn.textContent = 'Revoking...'
-        const revokesuccess = await fetch(`https://api.rotur.dev/gifts/cancel/${e.target.dataset.giftid2}?auth=${activeacc.token}`, {method: 'POST'}).then(res => res.json())
+        const revokesuccess = await fetch(`https://api.rotur.dev/gifts/cancel/${e.target.dataset.giftid2}`, {method: 'POST', headers: authform}).then(res => res.json())
         if (revokesuccess.error) {
             giftstatus.replaceChildren(MiniError('failure', "Failed to revoke gift. This gift may have been revoked in the past."))
             revokebtn.disabled = false
@@ -305,7 +311,7 @@ document.addEventListener('click', async function(e) {
         const giftbtn = e.target
         giftbtn.disabled = true
         giftbtn.textContent = 'Claiming...'
-        const giftclaimsuccess = await fetch(`https://api.rotur.dev/gifts/claim/${e.target.dataset.giftid}?auth=${activeacc.token}`, {method: 'POST'}).then(res => res.json())
+        const giftclaimsuccess = await fetch(`https://api.rotur.dev/gifts/claim/${e.target.dataset.giftid}`, {method: 'POST', headers: authform}).then(res => res.json())
         if (giftclaimsuccess.error) {
             document.getElementById('giftclaimstatusplaceholder').replaceChildren(MiniError('failure', giftclaimsuccess.error))
         } else {

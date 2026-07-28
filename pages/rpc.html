@@ -2,6 +2,7 @@
 <html>
     <head>
         <meta charset="UTF-8" />
+        <script src="../initialize.js"></script>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="stylesheet" href="../style.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,7 +23,7 @@
                     <label for="rpcenabled" title="Due to limitations, this feature can only be active on one Rotur account at a time.">RPC Enabled</label>
                     <button id="refreshrpc" title="RPC not showing up? Reload it here" disabled>⟳</button>
                 </div>
-                <label class="rpctypeoptions">
+                <label class="rpctypeoptions" style="display: none;">
                     <form id="rpctype" title='The dependency for the "Auto" setting is not finished yet. I hope to add this later though.' disabled>
                         <label>
                             <input type="radio" name="rpcsetting" value="custom" disabled checked>
@@ -36,9 +37,9 @@
                 </label>
             </div>
             <ul id="rpc_modals">
-                <h2>No modals yet</h2>
+                <h2>No cards yet</h2>
             </ul>
-            <button id="addmodalbtn">+ Add Modal</button>
+            <button id="addmodalbtn">+ Add Card</button>
         </div>
         <div class="overlay" id="overlay">
             <div class="popup"></div>
@@ -57,7 +58,7 @@
                     <div class="rpc_fields">
                         <div class="rpcnamecontainer">
                             <input type="text" placeholder="Name" name="rpcname" class="rpcnamefield">
-                            <button class='removemodal' title='Remove Modal' data-id='uuid'>✕</button>
+                            <button class='removemodal' title='Remove Card' data-id='uuid'>✕</button>
                         </div>
                         <input type="text" name="rpctitle" placeholder="Title" class="rpctitlefield">
                         <input type="text" name="rpcdesc2" placeholder="On: (Description 1)" class="rpcdescfield2">

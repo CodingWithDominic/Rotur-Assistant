@@ -1,12 +1,18 @@
-import { sanitize, formatDate, parseHTML, openSuccessPopup, MiniError, CreateEmptyPlaceholder } from "../index.js"
+import { sanitize, formatDate, openSuccessPopup, MiniError, CreateEmptyPlaceholder } from "../index.js"
 
 let systemcache = ''
 let tosrecentlyaccepted = false
 let accdata = {}
 
+const config = {
+    removeElements: ['script', 'style', 'object', 'embed', 'applet', 'meta', 'link', 'base', 'form'],
+    removeAttributes: ['onload', 'onclick', 'onerror', 'onmouseover', 'onfocus', 'onblur', 'onkeydown', 'onchange', 'onsubmit', 'srcdoc', 'formaction']
+}
+const sanitizer = new Sanitizer(config)
+
 function openPopup(keyname) {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Delete Key</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -16,12 +22,12 @@ function openPopup(keyname) {
             <button id="cancel" class="closebtn">No</button>
             <button class="finaldelete" data-keyname='${sanitize(keyname)}'>Yes</button>
         </div>
-    `))
+    `, {sanitizer: sanitizer})
 }
 
 function openSystemPopup(system_name, owner) {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Confirm New System</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -31,7 +37,7 @@ function openSystemPopup(system_name, owner) {
             <button id="cancel" class="closebtn">Cancel</button>
             <button class="finalsystemconfirm" data-keyname='system'>Confirm</button>
         </div>
-    `))
+    `, {sanitizer: sanitizer})
 }
 
 function closePopup() {
@@ -51,6 +57,11 @@ let key_names = []
 const activeacc = await new Promise(resolve =>
     chrome.storage.local.get('activeacc', data => resolve(data.activeacc || {}))
 ) ?? {};
+
+const authform = new FormData()
+if (activeacc.uuid) {
+    authform.append("Authorization", `Bearer ${activeacc.token}`)
+}
 
 const accounts = await new Promise(resolve =>
     chrome.storage.local.get('userdata', data => resolve(data.userdata || []))
@@ -158,67 +169,67 @@ function CreateKeyElement(key, value, system) {
 
 async function renderKeys() {
     if (!navigator.onLine) {
-        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+        document.getElementsByClassName('container')[0].setHTML(`
             <h1>Key Manager (Account)</h1>
-            <p>This page is for managing account keys. For the page that manages keys associated with purchases / subscriptions, see <a href="../pages/keymanager_eco.html">Key Manager (Purchases)</a></p>
+            <p>This page is for managing account keys. For the page that manages keys associated with purchases / subscriptions, see <a href="../pages/keymanager_eco.html">Key Manager (Economy)</a></p>
             <hr class="full-size">
             <h3>A communication error has occurred. If you're sure it's not your connection, then Rotur may be down right now.</h3>
-        `))
+        `, {sanitizer: sanitizer})
         return;
     }
     if (!activeacc.uuid) {
-        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+        document.getElementsByClassName('container')[0].setHTML(`
             <h1>Key Manager (Account)</h1>
-            <p>This page is for managing account keys. For the page that manages keys associated with purchases / subscriptions, see <a href="../pages/keymanager_eco.html">Key Manager (Purchases)</a></p>
+            <p>This page is for managing account keys. For the page that manages keys associated with purchases / subscriptions, see <a href="../pages/keymanager_eco.html">Key Manager (Economy)</a></p>
             <hr class="full-size">
-            <h3>You are not signed in! Please head over to the account manager to add an account first.</h3>
-        `))
+            <h3>You are not signed in! Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to add an account first.</h3>
+        `, {sanitizer: sanitizer})
         return;
     }
     if (flagged.includes(activeacc.uuid)) {
-        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+        document.getElementsByClassName('container')[0].setHTML(`
             <h1>Key Manager (Account)</h1>
-            <p>This page is for managing account keys. For the page that manages keys associated with purchases / subscriptions, see <a href="../pages/keymanager_eco.html">Key Manager (Purchases)</a></p>
+            <p>This page is for managing account keys. For the page that manages keys associated with purchases / subscriptions, see <a href="../pages/keymanager_eco.html">Key Manager (Economy)</a></p>
             <hr>
             <h3>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h3>
-        `))
+        `, {sanitizer: sanitizer})
         return;
     }
 
-    accdata = await fetch(`https://api.rotur.dev/get_user?auth=${activeacc.token}`).then(res => res.json()).catch(err => {
-        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+    accdata = await fetch(`https://api.rotur.dev/v2/me`, {headers: authform}).then(res => res.json()).catch(err => {
+        document.getElementsByClassName('container')[0].setHTML(`
             <h1>Key Manager (Account)</h1>
-            <p>This page is for managing account keys. For the page that manages keys associated with purchases / subscriptions, see <a href="../pages/keymanager_eco.html">Key Manager (Purchases)</a></p>
+            <p>This page is for managing account keys. For the page that manages keys associated with purchases / subscriptions, see <a href="../pages/keymanager_eco.html">Key Manager (Economy)</a></p>
             <hr class="full-size">
             <h3>A communication error has occurred. If you're sure it's not your connection, then Rotur may be down right now.</h3>
-        `))
+        `, {sanitizer: sanitizer})
         return;
     })
     if ((accdata.error && (accdata.error == 'Invalid authentication credentials') && !accdata.username) || (accdata['sys.banned'])) { // Extra check in place in case someone decides to set a key named "error" to "Invalid authentication credentials"
         flagged.push(activeacc.uuid)
         chrome.storage.local.set({flagged: flagged})
-        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+        document.getElementsByClassName('container')[0].setHTML(`
             <h1>Key Manager (Account)</h1>
-            <p>This page is for managing account keys. For the page that manages keys associated with purchases / subscriptions, see <a href="../pages/keymanager_eco.html">Key Manager (Purchases)</a></p>
+            <p>This page is for managing account keys. For the page that manages keys associated with purchases / subscriptions, see <a href="../pages/keymanager_eco.html">Key Manager (Economy)</a></p>
             <hr class="full-size">
             <h3>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h3>
-        `))
+        `, {sanitizer: sanitizer})
         return;
     }
     if ((accdata['sys.email_verified'] === false)) {
-        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+        document.getElementsByClassName('container')[0].setHTML(`
             <h1>Key Manager (Account)</h1>
-            <p>This page is for managing account keys. For the page that manages keys associated with purchases / subscriptions, see <a href="../pages/keymanager_eco.html">Key Manager (Purchases)</a></p>
+            <p>This page is for managing account keys. For the page that manages keys associated with purchases / subscriptions, see <a href="../pages/keymanager_eco.html">Key Manager (Economy)</a></p>
             <hr class="full-size">
             <div id='toscontainer'>
                 <h4>Your E-mail is not verified. Until you verify your E-mail address, some actions may be limited. To verify your e-mail, head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> and reauthenticate.</h4>
             </div>
-        `))        
+        `, {sanitizer: sanitizer})
     }
     if (!accdata['sys.tos_accepted']) {
-        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+        document.getElementsByClassName('container')[0].setHTML(`
             <h1>Key Manager (Account)</h1>
-            <p>This page is for managing account keys. For the page that manages keys associated with purchases / subscriptions, see <a href="../pages/keymanager_eco.html">Key Manager (Purchases)</a></p>
+            <p>This page is for managing account keys. For the page that manages keys associated with purchases / subscriptions, see <a href="../pages/keymanager_eco.html">Key Manager (Economy)</a></p>
             <hr class="full-size">
             <div id='toscontainer'>
                 <h4>The Rotur TOS was updated since your last visit. As a result, accounts can't access or perform certain actions until they accept the TOS again. Accept the new terms?</h4>
@@ -231,7 +242,7 @@ async function renderKeys() {
                 <div id='tosiframeplaceholder'></div>
                 <a href='https://rotur.dev/terms-of-service' target='_blank' rel='noopener noreferrer'>Rotur Terms of Service</a>
             </div>
-        `))
+        `, {sanitizer: sanitizer})
         return;
     }
 
@@ -283,9 +294,9 @@ document.addEventListener('click', async function(e) {
                 if (document.getElementById('tosiframe')) {
                     document.getElementById('tosiframe').src = `https://rotur.dev/terms-of-service?token=${accounts[i].token}`
                 } else {
-                    document.getElementById('tosiframeplaceholder').replaceChildren(...parseHTML(`
+                    document.getElementById('tosiframeplaceholder').setHTML(`
                         <iframe id='tosiframe' src="https://rotur.dev/terms-of-service?token=${accounts[i].token}"></iframe>
-                    `))
+                    `, {sanitizer: sanitizer})
                 }
                 document.getElementById('tosiframe').style.display = 'none'
                 const accept_process = new Promise((resolve) => {
@@ -310,9 +321,9 @@ document.addEventListener('click', async function(e) {
         } else {
             target.textContent = "Accepting..."
             await chrome.storage.session.set({acceptinprogress: true})
-            document.getElementById('tosiframeplaceholder').replaceChildren(...parseHTML(`
+            document.getElementById('tosiframeplaceholder').setHTML(`
                 <iframe id='tosiframe' src="https://rotur.dev/terms-of-service?token=${activeacc.token}"></iframe>
-            `))
+            `, {sanitizer: sanitizer})
             document.getElementById('tosiframe').style.display = 'none'
             chrome.runtime.onMessage.addListener(function listener(message) {
                 if (message.status == 'accepted') {
@@ -348,7 +359,7 @@ document.addEventListener('click', async function(e) {
         return;
     }
     if (e.target.className == 'keyview') {
-        e.target.replaceChildren(...parseHTML(`<img src='../images/misc_icons/${(e.target.dataset.visible == "true" ? 'in' : '')}visible.png' width='20' height='20'>`))
+        e.target.setHTML(`<img src='../images/misc_icons/${(e.target.dataset.visible == "true" ? 'in' : '')}visible.png' width='20' height='20'>`, {sanitizer: sanitizer})
         document.getElementById('modifier-key').type = (e.target.dataset.visible == "true" ? 'password' : 'text')
         e.target.dataset.visible = (e.target.dataset.visible == "true" ? "false" : "true")
         return;
@@ -486,8 +497,8 @@ document.addEventListener('click', async function(e) {
                         chrome.storage.local.set({ userdata: accounts });
                         document.getElementById('headeractiveacc').textContent = "Active: " + keyvalue
                         if (keyvalue.length < 15) {
-                            document.getElementById('headeractiveacc').title = ''
-                            document.getElementById('accountflyoutlist').querySelector(`[data-accref="${old_name}"]`).title = ''
+                            document.getElementById('headeractiveacc').removeAttribute('title')
+                            document.getElementById('accountflyoutlist').querySelector(`[data-accref="${old_name}"]`).removeAttribute('title')
                         } else {
                             document.getElementById('headeractiveacc').title = keyvalue
                             document.getElementById('accountflyoutlist').querySelector(`[data-accref="${old_name}"]`).title = keyvalue
@@ -508,8 +519,8 @@ document.addEventListener('click', async function(e) {
         if (e.target.className == 'finaldelete') {
             const deleted_key = e.target.dataset.keyname
             closePopup()
-            const keydelete = await fetch(`https://api.rotur.dev/me/delete?auth=${activeacc.token}`,
-                {method: 'DELETE', body: JSON.stringify({auth: activeacc.token, key: deleted_key})})
+            const keydelete = await fetch(`https://api.rotur.dev/me/delete`,
+                {method: 'DELETE', headers: authform, body: JSON.stringify({auth: activeacc.token, key: deleted_key})})
             if (keydelete.error) {
                 error_element.replaceChildren(MiniError('failure', keydelete.error))
             } else {

@@ -1,5 +1,5 @@
 async function getSupporters() {
-    const supporters = await fetch(`https://api.rotur.dev/supporters`).then(res => res.json()).catch(err => {
+    const supporters = await fetch(`https://api.rotur.dev/v2/supporters`).then(res => res.json()).catch(err => {
         document.getElementById('subscribersplaceholder').style.display = 'none';
         return;
     })
@@ -19,10 +19,10 @@ async function getSupporters() {
 
         const final_list = document.getElementById('subscribersplaceholder').children
 
-        document.getElementById('maxlabel').textContent += ` (${document.getElementById('tier_max').childElementCount})`
-        document.getElementById('prolabel').textContent += ` (${document.getElementById('tier_pro').childElementCount})`
-        document.getElementById('pluslabel').textContent += ` (${document.getElementById('tier_plus').childElementCount})`
-        document.getElementById('litelabel').textContent += ` (${document.getElementById('tier_lite').childElementCount})`
+        document.getElementById('maxlabel').textContent += ` - ${document.getElementById('tier_max').childElementCount}`
+        document.getElementById('prolabel').textContent += ` - ${document.getElementById('tier_pro').childElementCount}`
+        document.getElementById('pluslabel').textContent += ` - ${document.getElementById('tier_plus').childElementCount}`
+        document.getElementById('litelabel').textContent += ` - ${document.getElementById('tier_lite').childElementCount}`
 
         Array.from(final_list).forEach(child => {
             if (!child.hasChildNodes()) {

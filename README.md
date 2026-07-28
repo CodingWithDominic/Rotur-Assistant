@@ -84,7 +84,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 - Fixed a bug with searching up profiles of users under the "PassNet" system that don't have any other badges.
 - Fixed a bug with trying to change your system to "PassNet".
 - Corrected a typo regarding Fluoride (I had it spelt as "Flouride" throughout Rotur Assistant and its entire codebase)
-- Added the option to have Rotur Assistant display as a side panel instead of a pop-up. This allows Rotur Assistant to remain open for extended periods of time, even if you switch tabs or click outside its window. Thanks to <a href="lookup.html?user=darkdot">darkdot</a> for making me aware of its existence.
+- Added the option to have Rotur Assistant display as a side panel instead of a pop-up. This allows Rotur Assistant to remain open for extended periods of time, even if you switch tabs or click outside its window. Thanks to darkdot for making me aware of its existence.
 - Fixed a bug where Claw post search queries that returned only one result instead don't return anything at all, throwing an error in the console instead.
 - Added account switcher support for <a href="https://authenticator.rotur.dev" target="_blank" rel="noopener noreferrer">https://authenticator.rotur.dev</a>.
 - Added account switcher support for <a href="https://gate.rotur.dev" target="_blank" rel="noopener noreferrer">https://gate.rotur.dev</a>. This was added last minute before 1.2 rolled off the production line (its auth looping indefinitely was fixed during the final stages of Rotur Assistant 1.2's review process)
@@ -98,7 +98,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 - Double-clicking on an account in the account manager will now trigger an account switch if you're on a supported site.
 - Several wiki corrections, mainly to update any now-outdated information.
 - Any inline images, such as the one in the daily credit notice, now display aligned to the middle, rather than aligned to the bottom.
-- Added an option to show legacy notifications (the notifications found at https://api.rotur.dev/notifications as opposed to https://api.rotur.dev/notify/log), since thanks to orion, I found out that there are 2 notification endpoints, rather than one.
+- Added an option to show legacy notifications (the notifications found at https://api.rotur.dev/v2/notifications as opposed to https://api.rotur.dev/v2/notify/log), since thanks to orion, I found out that there are 2 notification endpoints, rather than one.
 - Since the option to show legacy notifications created some room for it, there's now a refresh button for notifications now.
 - Modified the layout of (non-legacy) notifications to prioritize emphasis more on the source, rather than the user associated with that source.
 - Fixed some layout issues regarding quotes and really long words in Rmail titles.
@@ -165,7 +165,41 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 - Fixed a CSS bug on Firefox regarding the header menus
 - Fixed a bug when updating your status on your profile
 - Fixed a bug where the order of accounts in the wallet's "Breakdown" section would sometimes not match the order of the accounts on your roster if you chose "Account roster order". This was a leftover side effect from the asynchronous fetching the Wallet app now uses to improve performance speed.
-- Added account switcher support for <a href="https://sable.rotur.dev">https://sable.rotur.dev</a>
+- Added account switcher support for <a href="https://sable.rotur.dev" target="_blank" rel="noopener noreferrer">https://sable.rotur.dev</a>
 - Fixed a bug with user note management in the settings app
 - Optimized Rmail to only use 1 /all request for all the inboxes, combined with manual sorting, rather than fetching each inbox individually
 - Fixed a bug with searching a key in the account key manager, then creating or deleting a key that matched the search query
+
+### 1.2.3
+- Fixed a bug where some dates would fail to format, throwing an error in the console and sometimes preventing pages from loading.
+- Fixed a bug where the widths of the header and footer would break when you enabled "Anchor header/footer to top/bottom" and you were in sidebar or full-site mode
+- Fixed a bug where the general override option would sometimes cause the page to become unresponsive while on the official <a href="https://originchats.com" target="_blank" rel="noopener noreferrer">OriginChats</a> client.
+- Fixed 2 broken hyperlinks in the wiki.
+- Fixed a bug where prices entered when creating an economy key would not get passed to the server, resulting in the prices of newly created keys being 0 no matter what.
+- Brought the Wiki a little more up to speed
+- Corrected various typos across Rotur Assistant
+- Improved switcher support for <a href="https://warp.mistium.com" target="_blank" rel="noopener noreferrer">https://warp.mistium.com</a>.
+- Code optimizations for profile viewing and editing
+- New exclusive ICN alias command: "l". This is an alias for the "line" command.
+- New exclusive ICN alias command: "continue". This is an alias for the "cont" command.
+- Made the ICN canvas bigger. It will also now resize itself if the window is resized, improving usability in sidebar and full-site mode.
+- Optimized the manifest.json files to group together sites that share similar base domains (such as any github.io sites)
+- Added switcher support for RoturSDK sites running on localhost:5173. This is mainly to complement <a href="https://music.milosantos.com" target="_blank" rel="noopener noreferrer">NexMusic</a>.
+- Buffed the feature to override OriginChats general nicknames to also override links too. Furthermore, the option now works on <a href="https://runnova.github.io/indigo" target="_blank" rel="noopener noreferrer">Indigo</a>.
+- Added switcher support for <a href="https://chat.0stormy.xyz" target="_blank" rel="noopener noreferrer">https://chat.0stormy.xyz</a>, which is just an alias URL for the already-supported <a href="https://antiviiris.github.io/originChats" target="_blank" rel="noopener noreferrer">https://antiviiris.github.io/originChats</a>.
+- Security improvement: Replaced a lot of ?auth=(token) query parameters to instead use an Authorization header. I have a feeling this may sacrifice performance in some spots though.
+- Tweaked Rmail to better handle burn after read messages, in response to the Rmail API becoming more locked-down regarding those messages
+- Rmail now has support for reading and sending proper encrypted Rmails
+- Balance sums in the Wallet app are now calculated through the https://devfund.rotur.dev/api/me endpoint, not the https://api.rotur.dev/v2/me one.
+- Tweaked the math behind the wallet's "Recent average profit margin". It will now show you your average gain/loss per entry in your history.
+- Partial adoption of https://api.rotur.dev/v2/ (Mainly stuff like getting profile information and /me in place of /get_user)
+- New feature on Claw: The ability to add small notes next to your selected system, such as a status update from that system. This will not work if you select "Unknown System".
+- Added the ability to copy the raw JSON objects of users' profiles
+- Cosmetics now show how many people own that cosmetic, without needing to click the &#9432; button
+- Various minor styling tweaks
+- The option to toggle between "legacy" notifications and "new" notifications has been replaced by an inbox system, to accomodate MistWarp's notifications, and to allow for flexibility if a new Rotur platform with its own notifications are added.
+- Fixed the issue of minor layout shifts caused by the scrollbar popping in and out, further improving user experience (I just made the scrollbar always visible via <code>scrollbar-gutter: stable;</code>)
+- Optimized theme loading when navigating pages
+- Made usernames in more places clickable (item owners and authors, economy key users, and cosmetic creators)
+- Changed the pixelated icons on the home page to better fit with the non-pixelated icons
+- And several more micro-optimizations

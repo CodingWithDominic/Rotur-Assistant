@@ -5,7 +5,7 @@ function wikireplace(arg1, arg2, arg3) {
 }
 
 async function stats() {
-    const stats = await fetch(`https://api.rotur.dev/stats/users`).then(res => res.json()).catch(err => {
+    const stats = await fetch(`https://api.rotur.dev/v2/stats/users`).then(res => res.json()).catch(err => {
         wikireplace('????', '????', '????')
         return;
     })

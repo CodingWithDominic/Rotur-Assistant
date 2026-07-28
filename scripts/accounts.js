@@ -1,14 +1,18 @@
-import { parseHTML, openErrorPopup, openWarningPopup, CreateEmptyPlaceholder } from "../index.js";
+import { openErrorPopup, openWarningPopup, CreateEmptyPlaceholder, MiniError } from "../index.js";
 
 const whitelisted_urls = ['https://apps.rotur.dev', 'https://origin.mistium.com', 'https://originchats.mistium.com/app', "https://originchats.com/app", 'https://rotur.dev/me',
                             'https://warptheme.mistium.com', 'https://notes.rotur.dev', 'https://devfund.rotur.dev', 'https://photos.rotur.dev',
                             'https://warpdrive.team', "https://rotur.dev/key-manager", "https://rotur.dev/inventory-manager", "https://graphite.flufi.uk",
                             "https://runnova.github.io/orion", "https://adthoughtsglobal.github.io/Orla", "https://antiviiris.github.io/originChats",
                             'https://git.rotur.dev', 'https://authenticator.rotur.dev', 'https://gate.rotur.dev', 'https://rotur.dev', "https://pounce.rotur.dev",
-                            "https://mail.rotur.dev", "https://beam.rotur.dev", "https://place.rotur.dev", "https://gifs.originchats.com",
-                            "https://sable.rotur.dev", "https://runnova.github.io/indigo", "https://warp.mistium.com"]
+                            "https://mail.rotur.dev", "https://beam.rotur.dev", "https://place.rotur.dev", "https://gifs.originchats.com", "https://chat.0stormy.xyz/",
+                            "https://sable.rotur.dev", "https://runnova.github.io/indigo", "https://warp.mistium.com", "http://localhost:5173", "https://music.flufi.uk"]
                             
-const parser = new DOMParser();
+const config = {
+    removeElements: ['iframe', 'script', 'style', 'object', 'embed', 'applet', 'meta', 'link', 'base', 'form'],
+    removeAttributes: ['onload', 'onclick', 'onerror', 'onmouseover', 'onfocus', 'onblur', 'onkeydown', 'onchange', 'onsubmit', 'srcdoc', 'formaction']
+}
+const sanitizer = new Sanitizer(config)
 
 let file_cache = ''
 
@@ -76,95 +80,136 @@ const roturemailwarning = await new Promise(resolve =>
 
 function openAuthErrorPopup(uuid) {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Issue Detected</h1>
             <button id="popup-x" class="closebtn">✕</button>
         </div>
-        <p id="deleteconfirmdialogue">An authentication issue has been detected with this account. This account may have either been banned, deleted, or simply had its token reset. Try logging in with this account again or use a different account.</p>
+        <p id="popupdialogue">An authentication issue has been detected with this account. This account may have either been banned, deleted, or simply had its token reset. Try logging in with this account again or use a different account.</p>
         <div id="popup-choices">
             <button id="cancel" class="closebtn">Dismiss</button>
             <button id="reauth">Reauth</button>
             <button class="removeacc" data-id='${uuid}'>Remove</button>
         </div>
-    `))
+    `, {sanitizer: sanitizer})
 }
 
 function openAltLoginPopup() {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
+        <div id="popup-header">
+            <h1>Login Methods</h1>
+            <button id="popup-x" class="closebtn">✕</button>
+        </div>
+        <p id="popupdialogue">Choose an alternate login method</p>
+        <div id="popup-choices">
+            <button id="tokenlogin">Token Login</button>
+            <button id="qrcodelogin">QR Code</button>
+        </div>
+    `, {sanitizer: sanitizer})
+}
+
+function openTokenLoginPopup() {
+    document.getElementById('overlay').style.display = 'flex';
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Token Login</h1>
             <button id="popup-x" class="closebtn">✕</button>
         </div>
-        <p id="deleteconfirmdialogue">Login using a Rotur account token here</p>
-        <input type='text' id='tokenloginbox'>
+        <p id="popupdialogue">Login using a Rotur account token here</p>
+        <div class="tokenloginbar">
+            <input type='password' id='tokenloginbox' placeholder="Paste token here...">
+            <button id="tokenloginvisibility"><img src="../images/misc_icons/invisible.png" width="24" height="24"></button>
+        </div>
         <div id="popup-choices">
             <button id="cancel" class="closebtn">Cancel</button>
             <button class="addacctoken">Login</button>
         </div>
-    `))
+    `, {sanitizer: sanitizer})
+}
+
+async function GetQRCode() {
+    const linkcode = await fetch(`https://api.rotur.dev/v2/link/code`).then(res => res.json()).then(res => res.code)
+    const link_url = `https://api.rotur.dev/v2/link?code=${linkcode}`
+}
+
+function openQRCodePopup() {
+    document.getElementById('overlay').style.display = 'flex';
+    document.getElementsByClassName('popup')[0].setHTML(`
+        <div id="popup-header">
+            <h1>QR Code</h1>
+            <button id="popup-x" class="closebtn">✕</button>
+        </div>
+        <p id="popupdialogue">Scan the QR code on a supported device</p>
+        <div id="qrcodeimagecontainer">QR Code will go here</div>
+        <div id="popup-choices">
+            <button id="cancel" class="closebtn">Close</button>
+            <button id="qrdone">Done Linking</button>
+        </div>
+    `, {sanitizer: sanitizer})
+    GetQRCode()
 }
 
 function openNameRoster() {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Name Roster</h1>
             <button id="popup-x" class="closebtn">✕</button>
         </div>
-        <p id="deleteconfirmdialogue">Name this roster (optional)</p>
+        <p id="popupdialogue">Name this roster (optional)</p>
         <input type='text' id='rostername'>
+        <p>Be sure to save this file in a secure spot, since this file will contain the tokens of all your accounts on this roster.</p>
         <div id="popup-choices">
             <button id="cancel" class="closebtn">Cancel</button>
             <button class="finalrosterexport">Export</button>
         </div>
-    `))
+    `, {sanitizer: sanitizer})
 }
 
 function openConfirmSyncRetrieval() {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Confirm Retrieval</h1>
             <button id="popup-x" class="closebtn">✕</button>
         </div>
-        <p id="deleteconfirmdialogue">Are you sure you want to overwrite your current roster with the one stored in sync?</p>
+        <p id="popupdialogue">Are you sure you want to overwrite your current roster with the one stored in sync?</p>
         <div id="popup-choices">
             <button id="cancel" class="closebtn">Cancel</button>
             <button class="finalretrievesync">Retrieve</button>
         </div>
-    `))
+    `, {sanitizer: sanitizer})
 }
 
 function openConfirmSyncClear() {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Confirm Clear</h1>
             <button id="popup-x" class="closebtn">✕</button>
         </div>
-        <p id="deleteconfirmdialogue">Are you sure you want to clear out your sync storage? Any data stored in there will be lost.</p>
+        <p id="popupdialogue">Are you sure you want to clear out your sync storage? Any data stored in there will be lost.</p>
         <div id="popup-choices">
             <button id="cancel" class="closebtn">Cancel</button>
             <button class="finalclear">Clear</button>
         </div>
-    `))
+    `, {sanitizer: sanitizer})
 }
 
 function openConfirmNewRoster() {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Overwrite Roster</h1>
             <button id="popup-x" class="closebtn">✕</button>
         </div>
-        <p id="deleteconfirmdialogue">Overwrite the current roster with the new one?</p>
+        <p id="popupdialogue">Overwrite the current roster with the new one?</p>
         <div id="popup-choices">
             <button id="cancel" class="closebtn">Cancel</button>
             <button class="finalrosteroverwrite">Overwrite</button>
         </div>
-    `))
+    `, {sanitizer: sanitizer})
 }
 
 function closePopup() {
@@ -180,7 +225,12 @@ function updateHeaderName(newname) {
 function genURLs() {
     let urls_list = ``
     whitelisted_urls.forEach(url => {
-        urls_list += `<li><a href='${url}' target="_blank" rel="noopener noreferrer">${url}</a></li>`
+        if (url == 'http://localhost:5173') {
+            url = "https://music.milosantos.com"
+        }
+        if (url != "https://music.flufi.uk") {
+            urls_list += `<li ${url == "https://music.milosantos.com" ? `title="music.milosantos.com itself isn\'t supported; the localhost URL that results from following all the steps listed on this site is supported."` : ""}><a href='${url}' target="_blank" rel="noopener noreferrer">${url}</a></li>`
+        } // Shadow-add Flufi Music as a supported site
     })
     return urls_list;
 } // Make my life easier
@@ -190,7 +240,7 @@ async function checkSwitcherEligibility(url) {
 
     const responsedata = url ?? tab.url ?? ''
 
-    const allowed_urls = (whitelisted_urls.some(item => responsedata.includes(item)) || responsedata.startsWith('https://rotur.dev'))
+    const allowed_urls = (whitelisted_urls.some(item => responsedata.startsWith(item)))
     let errormsg = "If this extension is open while you're on a supported Rotur-affiliated site, then this will automatically log you into the selected Rotur account on that site."
     if (!allowed_urls) {
         document.getElementById('switchaccbtn').disabled = true
@@ -204,14 +254,12 @@ async function checkSwitcherEligibility(url) {
             document.getElementById('switchaccbtn').disabled = false
         }
     }
-    const errorhtml = parser.parseFromString(`
+    document.getElementById('disabledcontext').setHTML(`
     <p class='switchertext'>${errormsg}</p>
     <p class='switchertext'>As of now, the following supported sites are:</p>
     <ul>
         ${genURLs()}
-    </ul>`, 'text/html'); // Can't add support for gate.rotur.dev since it's auth loops infinitely. Maybe in the future
-    const errorhtml2 = errorhtml.body.children
-    document.getElementById('disabledcontext').replaceChildren(...errorhtml2)
+    </ul>`, {sanitizer: sanitizer});
 }
 
 document.getElementById('account_list').addEventListener('dblclick', (event) => {
@@ -303,7 +351,7 @@ async function buildlist(customquery) {
     }
 
     let acc_html = document.createElement('form')
-    document.querySelector('.selectacctext').textContent = `Select Active Account (${accounts.length})`
+    document.querySelector('.selectacctext').textContent = `Select Active Account - ${accounts.length}`
 
     if (accounts.length == 0) {
         acc_html = document.createElement('h2')
@@ -412,8 +460,29 @@ document.addEventListener('click', async function(e) {
     }
     if ((e.target.className == 'addaccbtn') && e.shiftKey) {
         e.preventDefault()
-        openAltLoginPopup()
+        openTokenLoginPopup()
         return;
+    }
+    /* Shelved for now
+    if (e.target.id == 'tokenlogin') {
+        openTokenLoginPopup()
+        return;
+    }
+    if (e.target.id == 'qrcodelogin') {
+        openQRCodePopup()
+        return;
+    }
+    */
+    if (e.target.id == 'tokenloginvisibility') {
+        if (e.target.dataset.visible == 'true') {
+            e.target.dataset.visible = 'false'
+            e.target.setHTML(`<img src="../images/misc_icons/invisible.png" width="24" height="24">`, {sanitizer: sanitizer})
+            document.getElementById('tokenloginbox').type = 'password'
+        } else {
+            e.target.dataset.visible = 'true'
+            e.target.setHTML(`<img src="../images/misc_icons/visible.png" width="24" height="24">`, {sanitizer: sanitizer})
+            document.getElementById('tokenloginbox').type = 'text'
+        }
     }
     if (e.target.className == 'addacctoken') {
         const token = document.getElementById('tokenloginbox').value
@@ -421,7 +490,9 @@ document.addEventListener('click', async function(e) {
         if (token == '') {
             openErrorPopup('No token was provided')
         } else {
-            const potentialuser = await fetch(`https://api.rotur.dev/get_user?auth=${token}`).then(res => res.json())
+            const authform = new FormData()
+            authform.append("Authorization", `Bearer ${token}`)
+            const potentialuser = await fetch(`https://api.rotur.dev/v2/me`, {headers: authform}).then(res => res.json())
             let username = ''
             if (potentialuser.error && potentialuser.error == "Invalid authentication credentials" && !potentialuser.username) {
                 openErrorPopup('Invalid Token')
@@ -443,7 +514,7 @@ document.addEventListener('click', async function(e) {
                     accounts[exist_index] = {name: potentialuser.username, token: token, uuid: uuid}
                 } else {
                     accounts.push({name: potentialuser.username, token: token, uuid: uuid})
-                    document.querySelector('.selectacctext').textContent = `Select Active Account (${accounts.length})`
+                    document.querySelector('.selectacctext').textContent = `Select Active Account - ${accounts.length}`
                 }
                 activeacc = {name: potentialuser.username, token: token, uuid: uuid}
                 await chrome.storage.local.set({userdata: accounts})
@@ -511,7 +582,7 @@ document.addEventListener('click', async function(e) {
         accounts = accounts.filter(acc => acc.uuid !== IDToRemove);
         flagged = flagged.filter(id => id != IDToRemove)
         chrome.storage.local.set({flagged: flagged})
-        document.querySelector('.selectacctext').textContent = `Select Active Account (${accounts.length})`
+        document.querySelector('.selectacctext').textContent = `Select Active Account - ${accounts.length}`
 
         let rpcactive = await new Promise(resolve =>
             chrome.storage.local.get('rpcactive', data => resolve(data.rpcactive || ''))
@@ -563,16 +634,20 @@ document.addEventListener('click', async function(e) {
     if (e.target.id == 'switchaccbtn') {
         chrome.tabs.query({ active: true, currentWindow: true }, async function(tabs) {
             if (tabs[0].url.includes('https://warptheme.mistium.com')) {
-                await chrome.cookies.remove({url: 'https://warptheme.mistium.com', name: 'auth_token'}) // WarpTheme gets VIP treatment since I had to modify manifest.json to allow permissions to modify cookies
+                await chrome.cookies.remove({url: 'https://warptheme.mistium.com', name: 'auth_token'})
             }
             if (tabs[0].url.includes('https://git.rotur.dev')) {
                 await chrome.cookies.remove({url: 'https://git.rotur.dev', name: 'g_state'})
-                await chrome.cookies.remove({url: 'https://git.rotur.dev', name: 'session'}) // Same goes for roturGIT
+                await chrome.cookies.remove({url: 'https://git.rotur.dev', name: 'session'})
                 await chrome.cookies.remove({url: 'https://git.rotur.dev', name: 'username'})
             }
             if (tabs[0].url.includes('https://authenticator.rotur.dev')) {
-                await chrome.cookies.remove({url: 'https://authenticator.rotur.dev', name: 'auth_token'}) // Same goes for roturGIT
+                await chrome.cookies.remove({url: 'https://authenticator.rotur.dev', name: 'auth_token'})
                 await chrome.cookies.remove({url: 'https://authenticator.rotur.dev', name: 'username'})
+            }
+            if (tabs[0].url.includes('https://warp.mistium.com')) {
+                await chrome.cookies.remove({url: 'https://warp.mistium.com', name: 'auth_token'})
+                await chrome.cookies.remove({url: 'https://warp.mistium.com', name: 'cf_clearance'})
             }
             chrome.tabs.sendMessage(tabs[0].id, { action: "switchacc", data: activeacc.token, datauser: activeacc.name });
         });
@@ -632,7 +707,7 @@ document.addEventListener('click', async function(e) {
             chrome.storage.local.get('userdata', data => resolve(data.userdata || []))
         ) ?? [];
         if (syncdata.length == 0) {
-            syncstatus.replaceChildren(...parseHTML(`<p class='failure'>You need at least one account added in order to sync.</p>`))
+            syncstatus.replaceChildren(MiniError('failure', "You need at least one account added in order to sync."))
         } else if (syncdata.length < 21) {
             if (document.getElementById('scramblesync').checked) {
                 syncacc.token = scramble(syncacc.token)
@@ -643,9 +718,9 @@ document.addEventListener('click', async function(e) {
             }
             chrome.storage.sync.set({userdata: syncdata})
             chrome.storage.sync.set({activeacc: syncacc})
-            syncstatus.replaceChildren(...parseHTML(`<p class='success'>Synced successfully!</p>`))
+            syncstatus.replaceChildren(MiniError("success", "Synced Successfully!"))
         } else {
-            syncstatus.replaceChildren(...parseHTML(`<p class='failure'>Due to google limitations, you can only sync if you have 20 or less accounts added.</p>`))
+            syncstatus.replaceChildren(MiniError("failure", "Due to google limitations, you can only sync if you have 20 or less accounts added."))
         }
         setTimeout(() => {
             syncstatus.replaceChildren()
@@ -665,7 +740,7 @@ document.addEventListener('click', async function(e) {
             chrome.storage.sync.get('userdata', data => resolve(data.userdata || []))
         ) ?? [];
         if (syncdata.length == 0) {
-            syncstatus.replaceChildren(...parseHTML(`<p class='failure'>There is nothing stored in sync.</p>`))
+            syncstatus.replaceChildren(MiniError("failure", "There is nothing stored in sync."))
         } else {
             if (syncdata.some(item => item.scrambled)) {
                 syncacc.token = unscramble(syncacc.token)
@@ -680,7 +755,7 @@ document.addEventListener('click', async function(e) {
             accounts = syncdata
             flagged = []
             chrome.storage.local.set({flagged: []})
-            syncstatus.replaceChildren(...parseHTML(`<p class='success'>Successfuly retrieved data from sync!</p>`))
+            syncstatus.replaceChildren(MiniError("success", "Successfully retrieved data from sync!"))
             buildlist()
             updateHeaderName(syncacc.name)
         }
@@ -697,7 +772,7 @@ document.addEventListener('click', async function(e) {
         const syncstatus = document.getElementById('syncstatusplaceholder')
         chrome.storage.sync.remove('activeacc')
         chrome.storage.sync.remove('userdata')
-        syncstatus.replaceChildren(...parseHTML(`<p class='success'>Sync cleared out successfully!</p>`))
+        syncstatus.replaceChildren(MiniError("success", "Sync cleared out successfully!"))
         setTimeout(() => {
             syncstatus.replaceChildren()
         }, 10000);
@@ -747,8 +822,10 @@ if (ui_mode == 'sidebar') {
 document.getElementById('accsearchbar').addEventListener('input', function(e) {
     buildlist(e.target.value)
 })
-chrome.runtime.onMessage.addListener((msg) => {
-    if (msg.type == 'New_site') {
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    if (msg.type == 'Newsite') {
         checkSwitcherEligibility(msg.url)
+        sendResponse('Done')
     }
+    return true;
 })

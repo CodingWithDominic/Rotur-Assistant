@@ -2,6 +2,7 @@
 <html>
     <head>
         <meta charset="UTF-8" />
+        <script src="../initialize.js"></script>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="stylesheet" href="../style.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -32,7 +33,7 @@
                 <textarea id="icn_field" placeholder="ICN goes here..." spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
                 <button id="rendericn">Render</button>
                 <hr class="full-size dotted_separator">
-                <canvas id="icn_canvas" width="370" height="240">
+                <canvas id="icn_canvas" width="370" height="370">
                     If you see this, then unfortunately, the browser you are currently using does not support the HTML Canvas API. Rotur Assistant handles its ICN rendering using the HTML Canvas API.
                 </canvas>
                 <button id="resetcamera">Reset Camera</button>
@@ -91,7 +92,7 @@
                     <p class="icnsyntaxfineprint">Syntax: dot x y<br>Example command: dot 1 1</p>
                     <p>Creates a circular dot at the specified location.</p>
                     <h3>line</h3>
-                    <p class="icnsyntaxfineprint">Syntax: line x1 y1 x2 y2<br>Example command: line -1 -2 3 4</p>
+                    <p class="icnsyntaxfineprint">Syntax: line x1 y1 x2 y2<br>Example command: line -1 -2 3 4<br><mark class="highlight_yellow">Alias: l</mark></p>
                     <p>Creates a straightforward line from point A to point B</p>
                     <h3>rect</h3>
                     <p class="icnsyntaxfineprint">Syntax: rect x y width height<br>Example command: rect 0 0 4 3<br><mark class="highlight_yellow">Alias: rectangle</mark></p>
@@ -112,13 +113,13 @@
                     <p class="icnsyntaxfineprint">Syntax: curve x1 y1 x2 y2 gx gy<br>Example command: curve 0 0 5 5 0 5</p>
                     <p>Draws a bezier curve between 2 points, with the 3rd point acting as the reference point the curve gravitates towards</p>
                     <h3>cont</h3>
-                    <p class="icnsyntaxfineprint">Syntax: cont x y<br>Example command: cont 5 5</p>
+                    <p class="icnsyntaxfineprint">Syntax: cont x y<br>Example command: cont 5 5<br><mark class="highlight_yellow">Alias: continue</mark></p>
                     <p>Allows some commands to continue from the last point of the previous shape drawn. This works best with the line command.</p>
                     <h3>move</h3>
                     <p class="icnsyntaxfineprint">Syntax: move x y<br>Example command: move 4 6</p>
                     <p>Moves the canvas's reference point to the specified point</p>
                     <h3>back</h3>
-                    <p class="icnsyntaxfineprint">Syntax: back<br>Example command: back</p>
+                    <p class="icnsyntaxfineprint">Syntax: back<br>Example command: back<br><mark class="highlight_yellow">Alias: reset</mark></p>
                     <p>Resets the canvas's reference point back to 0, 0. This is the only ICN command that doesn't have any arguments</p>
                     <h3>image*</h3>
                     <p class="icnsyntaxfineprint">Syntax: image (url) scale<br>Example command: image https://avatars.rotur.dev/Rotur_Assistant 5</p>

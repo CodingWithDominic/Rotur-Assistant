@@ -2,6 +2,7 @@
 <html>
     <head>
         <meta charset="UTF-8" />
+        <script src="../initialize.js"></script>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="stylesheet" href="../style.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,9 +23,19 @@
                 <button id='notifendpoints' class="tab">Manage Endpoints</button>
             </div>
             <div id="notificationslog">
-                <label title="Shows notifications from the https://api.rotur.dev/notifications endpoint, rather than the https://api.rotur.dev/notify/log endpoint." class="legacynotifsoption">
+                
+                <label style="display: none;" title="Shows notifications from the https://api.rotur.dev/notifications endpoint, rather than the https://api.rotur.dev/notify/log endpoint." class="legacynotifsoption">
                     <input type="checkbox" id="legacynotifs">
                     Show legacy notifications
+                </label>
+                
+                <label class="notifinboxlabel">
+                    Inbox: 
+                    <select id="notificationinbox">
+                        <option value="general">General</option>
+                        <option value="rotur">Rotur</option>
+                        <option value="mistwarp">MistWarp</option>
+                    </select>
                 </label>
                 <button id="notifsreload" title="Refresh Notifications">⟳</button>
                 <ul id="notificationslist">
@@ -88,7 +99,7 @@
         </template>
         <template id="legacynotiftemplate">
             <li>
-                <h2>Type</h2>
+                <h2 class="notiftypetitle">Type</h2>
                 <ul class="legacynotifdetails"></ul>
                 <p class='fineprint'>ID: 123 &bull; Received: 1/1/1970</p>
             </li>
@@ -103,6 +114,16 @@
                     <p class='notifsenderinfo'>1/1/1970</p>
                 </div>
                 <p class="fineprint" style="margin-top: -4px;"></p>
+            </li>
+        </template>
+        <template id="mwnotiftemplate">
+            <li>
+                <div class="mwnotifheaderbar">
+                    <a class="mwnotifimage"><img src="" width="40" height="40"></a>
+                    <h2>News</h2>
+                </div>
+                <p class="mwnotiftext">There's a new announcement: Rotur Assistant added MW Notifications</p>
+                <p class="fineprint">1/1/1970 &bull; ID: </p>
             </li>
         </template>
         <template id="notifsourcetemplate">

@@ -1,43 +1,44 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="../style.css" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
-    <title>Add Account - Rotur Assistant</title>
-</head>
-<body>
-    <header id="header-placeholder"></header>
-    <script src="../header.js"></script>
-    <div class="container" style="width: 100%; padding: 0; max-width: 830px;">
-        <div id="systemselector">
-            <label>
-                System if creating account: <select id="authselectscreen">
-                    <option value="Rotur Assistant">Rotur Assistant</option>
-                </select>
-            </label>
-        </div>
-        <script type="module" src="../scripts/auth-systems.js"></script>
-        <div class="requiredpermsbtncontainer">
-            <button id="requiredperms">See Rotur Assistant's required permissions</button>
-        </div>
-        <div id="auth-container">
-            <iframe id="auth-iframe" src="https://rotur.dev/auth?system=Rotur%20Assistant" style="display: none;"></iframe>
-            <div id="loading">Loading authentication...</div>
-            <div id="success" class="hidden">
-                <h3>Authentication Successful!</h3>
-                <p>Token: <span id="token-display"></span></p>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" href="../style.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
+        <title>Add Account - Rotur Assistant</title>
+        <script src="../initialize.js"></script>
+    </head>
+    <body>
+        <header id="header-placeholder"></header>
+        <script src="../header.js"></script>
+        <div class="container" style="width: 100%; padding: 0; max-width: 830px;">
+            <div id="systemselector">
+                <label title="Due to a limitation, changing this option will require you to fill out all of your information again when signing up.">
+                    System if creating account: <select id="authselectscreen">
+                        <option value="Rotur Assistant">Rotur Assistant</option>
+                    </select>
+                </label>
+            </div>
+            <script type="module" src="../scripts/auth-systems.js"></script>
+            <div class="requiredpermsbtncontainer">
+                <button id="requiredperms">See Rotur Assistant's required permissions</button>
+            </div>
+            <div id="auth-container">
+                <iframe id="auth-iframe" src="https://rotur.dev/auth?system=Rotur%20Assistant" style="display: none;"></iframe>
+                <div id="loading">Loading authentication...</div>
+                <div id="success" class="hidden">
+                    <h3>Authentication Successful!</h3>
+                    <p>Token: <span id="token-display"></span></p>
+                </div>
             </div>
         </div>
-    </div>
-    <div id="overlay" class="overlay">
-        <div class="popup"></div>
-    </div>
-    <script type="module" src="../scripts/auth.js"></script>
-    <footer id="footer-placeholder"></footer>
-    <script src="../footer.js"></script>
-</body>
+        <div id="overlay" class="overlay">
+            <div class="popup"></div>
+        </div>
+        <script type="module" src="../scripts/auth.js"></script>
+        <footer id="footer-placeholder"></footer>
+        <script src="../footer.js"></script>
+    </body>
 </html>

@@ -2,6 +2,7 @@
 <html>
     <head>
         <meta charset="UTF-8" />
+        <script src="../initialize.js"></script>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="stylesheet" href="../style.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -70,6 +71,7 @@
                             <button id='followuser' data-targetname ='user' data-following='false'>+ Follow</button>
                             <button id='addfriend' data-targetname ='user' data-friendstatus='nofriend' title="Add Friend"><img src="../images/misc_icons/add_friend.png" width=24 height=24></button>
                             <button id='profileblockbutton' data-friendstatus='false' data-following='false' data-targetname='name' data-blocked='no' title="Block User"><img src="../images/misc_icons/block.png" width=24 height=24></button>
+                            <button id="copyjson" title="Copy user JSON data">{ }</button>
                             <button id='profileeditbutton' title="Edit Profile" data-targetname ='user'><img src="../images/misc_icons/edit.png" width=24 height=24></button>
                         <button id='profilereload' title="Refresh Profile">⟳</button>
                     </div>
@@ -230,7 +232,7 @@
                     <div class='replyboxplaceholder'>
                         <textarea class='replybox' data-postid='postid' placeholder='Add a reply for User' name='userclawpostreplybox'></textarea>
                         <p class="postcharlimit" id="limit-id">0/300</p>
-                        <button class='sendreply' data-postid='postid'>Send</button>
+                        <button class='sendreply' data-postid='postid'>Send &rarr;</button>
                         <h2>Sign in to add a reply</h2>
                     </div>
                     <div class='replyerrorplaceholder'></div>

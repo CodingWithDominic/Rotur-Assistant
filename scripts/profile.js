@@ -5,14 +5,16 @@ let blacklisted_ips = []
 let tosrecentlyaccepted = false
 let cosmetic_cache = ''
 let active_cache = ''
+let formdata_cache = ''
 
 const config = {
-    elements: ['p', 'img', 'div', 'h1', 'h2', 'h3', 'h4', 'button', 'ul', 'li', 'select', 'option', 'input', 'hr', 'a', 'label', 'span'],
-    attributes: ['src', 'alt', 'href', 'width', 'height', 'id', 'class', 'data', 'value', 'title', 'disabled', 'type', 'placeholder', 'step', 'rel', 'target']
+    removeElements: ['script', 'style', 'object', 'embed', 'applet', 'meta', 'link', 'base'],
+    removeAttributes: ['onload', 'onclick', 'onerror', 'onmouseover', 'onfocus', 'onblur', 'onkeydown', 'onchange', 'onsubmit', 'srcdoc', 'formaction']
 }
+
 const sanitizer = new Sanitizer(config)
 
-import { sanitize, formatDate, parseHTML, openErrorPopup, openWarningPopup, openSuccessPopup, MiniError, CreateEmptyPlaceholder, FixDecimal } from "../index.js"
+import { sanitize, formatDate, openErrorPopup, openWarningPopup, openSuccessPopup, MiniError, CreateEmptyPlaceholder, FixDecimal } from "../index.js"
 
 const accounts = await new Promise(resolve =>
         chrome.storage.local.get('userdata', data => resolve(data.userdata || []))
@@ -72,7 +74,7 @@ let systemcache = ''
 const controller = new AbortController()
 const requestlimit = setTimeout(() => controller.abort(), 5000);
 
-const known_badges = ['Architext', "Asier System", "Bugger", "colon three", "dev", "discord", "friendly", "gingerbug", "Nex", "originOS", "orion", "pro", "rich", "Spark", "rotur", "Constellinux", "HuopaOS", "kyrOS", "flf", "Rotur Assistant", "geec os", "OliveOS", "Warpdrive", "passNet", "PassNet", "originChats", "Fluoride", "fluoride", 'plus']
+const known_badges = ['Architext', "Asier System", "Bugger", "colon three", "dev", "discord", "friendly", "gingerbug", "Nex", "originOS", "orion", "pro", "rich", "Spark", "rotur", "Constellinux", "HuopaOS", "kyrOS", "flf", "Rotur Assistant", "geec os", "OliveOS", "Warpdrive", "passNet", "PassNet", "originChats", "Fluoride", "fluoride", 'plus', 'mistwarp']
 
 const security_questions = [
     {question: "Who created Rotur?", answers: ["sophie", "mist", "mistium"]},
@@ -89,7 +91,7 @@ const security_questions = [
 
 function openLikesPopup(likes) {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Likes</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -98,12 +100,12 @@ function openLikesPopup(likes) {
         <div id="popup-choices">
             <button id="cancel" class="closebtn">Close</button>
         </div>
-    `))
+    `, { sanitizer: sanitizer });
 }
 
 function openDeletePopup(post_id) {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Delete post</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -113,12 +115,12 @@ function openDeletePopup(post_id) {
             <button id="cancel" class="closebtn">No</button>
             <button class="finaldelete" data-postid='${post_id}'>Yes</button>
         </div>
-    `))
+    `, { sanitizer: sanitizer });
 }
 
 function openUnfriendPopup(user) {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Remove Friend?</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -128,12 +130,12 @@ function openUnfriendPopup(user) {
             <button id="cancel" class="closebtn">Cancel</button>
             <button class="finalunfriend" data-user='${user}'>Remove Friend</button>
         </div>
-    `))
+    `, { sanitizer: sanitizer });
 }
 
 function openUnfollowPopup(user) {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Unfollow User?</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -143,12 +145,12 @@ function openUnfollowPopup(user) {
             <button id="cancel" class="closebtn">Cancel</button>
             <button class="finalunfollow" data-user='${user}'>Unfollow</button>
         </div>
-    `))
+    `, { sanitizer: sanitizer });
 }
 
 function openDeclinePopup(user) {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Decline Request?</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -158,12 +160,12 @@ function openDeclinePopup(user) {
             <button id="cancel" class="closebtn">Cancel</button>
             <button class="finaldecline" data-user='${user}'>Decline Request</button>
         </div>
-    `))
+    `, { sanitizer: sanitizer });
 }
 
 function openAcceptPopup(user) {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Accept Request?</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -173,12 +175,12 @@ function openAcceptPopup(user) {
             <button id="cancel" class="closebtn">Cancel</button>
             <button class="finalaccept" data-user='${user}'>Accept Request</button>
         </div>
-    `))
+    `, { sanitizer: sanitizer });
 }
 
 function openUnblockPopup(user) {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Unblock User?</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -188,12 +190,12 @@ function openUnblockPopup(user) {
             <button id="cancel" class="closebtn">Cancel</button>
             <button class="finalunblock" data-user='${user}'>Unblock</button>
         </div>
-    `))
+    `, { sanitizer: sanitizer });
 }
 
 function OpenCancelRequestPopup(user) {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Cancel Request?</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -203,12 +205,12 @@ function OpenCancelRequestPopup(user) {
             <button id="cancel" class="closebtn">No</button>
             <button class="finalfriendcancel" data-user='${user}'>Yes</button>
         </div>
-    `))
+    `, { sanitizer: sanitizer });
 }
 
 function openSystemPopup(system_name, owner) {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Confirm New System</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -218,12 +220,12 @@ function openSystemPopup(system_name, owner) {
             <button id="cancel" class="closebtn">Cancel</button>
             <button id="finalsystemconfirm" data-keyname='system'>Confirm</button>
         </div>
-    `))
+    `, { sanitizer: sanitizer });
 }
 
 function openPFPPopup() {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Confirm PFP Change</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -234,12 +236,12 @@ function openPFPPopup() {
             <button id="cancel" class="closebtn">Cancel</button>
             <button class="finalpfpchange">Set</button>
         </div>
-    `))
+    `, { sanitizer: sanitizer });
 }
 
 function openBannerPopup() {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Confirm Banner</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -250,12 +252,12 @@ function openBannerPopup() {
             <button id="cancel" class="closebtn">Cancel</button>
             <button class="finalbannerchange">Set${["Pro", "Max"].includes(altdata_cache.subscription ?? "Free") ? `` : ` (-10 RC)`}</button>
         </div>
-    `))
+    `, { sanitizer: sanitizer });
 }
 
 function openPinPopup(post_id) {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Pin post</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -265,12 +267,12 @@ function openPinPopup(post_id) {
             <button id="cancel" class="closebtn">Cancel</button>
             <button class="finalpin" data-postid='${post_id}'>Pin</button>
         </div>
-    `))
+    `, { sanitizer: sanitizer });
 }
 
 function openUninPopup(post_id) {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Unpin post</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -280,12 +282,12 @@ function openUninPopup(post_id) {
             <button id="cancel" class="closebtn">Cancel</button>
             <button class="finalunpin" data-postid='${post_id}'>Unpin</button>
         </div>
-    `))
+    `, { sanitizer: sanitizer });
 }
 
 function openRepostPopup(post_id) {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Repost post</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -296,14 +298,14 @@ function openRepostPopup(post_id) {
             <button id="cancel" class="closebtn">Cancel</button>
             <button class="finalrepost" data-postid='${post_id}'>Repost</button>
         </div>
-    `))
+    `, { sanitizer: sanitizer });
 }
 
 // Dangerous Popups
 
 function openConfirmRefreshTokenPopup() {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Refresh Token</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -313,12 +315,12 @@ function openConfirmRefreshTokenPopup() {
             <button id="cancel" class="closebtn">No</button>
             <button class="finaltokenrefresh">Yes</button>
         </div>
-    `))
+    `, { sanitizer: sanitizer });
 }
 
 function openChangePassPopup() {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Change Password</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -343,12 +345,12 @@ function openChangePassPopup() {
             <button id="cancel" class="closebtn">Cancel</button>
             <button class="finalpasswordchange">Change Password</button>
         </div>
-    `))
+    `, { sanitizer: sanitizer });
 }
 
 function openDeleteAccountPopup() {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Delete Account</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -356,28 +358,28 @@ function openDeleteAccountPopup() {
         <p id="deleteconfirmdialogue">Are you sure you want to delete your account?</p>
         <div id="popup-choices">
             <button id="cancel" class="closebtn">Cancel</button>
-            <button class="finaldeleteacc1">Confirm</button>
+            <button class="finaldeleteacc1">Continue</button>
         </div>
-    `))
+    `, { sanitizer: sanitizer });
 }
 function openDeleteAccountPopup2() {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Delete Account</h1>
             <button id="popup-x" class="closebtn">✕</button>
         </div>
         <p id="deleteconfirmdialogue">Are you <i>really</i> sure you want to delete your account?</p>
         <div id="popup-choices">
-            <button class="finaldeleteacc2">Confirm</button>
+            <button class="finaldeleteacc2">Continue</button>
             <button id="cancel" class="closebtn">Cancel</button>
         </div>
-    `))
+    `, { sanitizer: sanitizer });
 }
 
 function openDeleteAccountPopup3() {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Delete Account</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -385,31 +387,39 @@ function openDeleteAccountPopup3() {
         <p id="deleteconfirmdialogue">Are you <b><i>absolutely</i></b> sure you want to delete your account? Do note that there is no going back. Any friends, followers, credits, and potential collectibles you have accumulated will be gone.</p>
         <div id="popup-choices">
             <button id="cancel" class="closebtn">Cancel</button>
-            <button class="finaldeleteacc3">Confirm</button>
+            <button class="finaldeleteacc3">Continue</button>
         </div>
-    `))
+    `, { sanitizer: sanitizer });
 }
 
 function openDeleteAccountPopupFinal() {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Delete Account (Final)</h1>
             <button id="popup-x" class="closebtn">✕</button>
         </div>
         <div id='securitycheckheader'>
             <h2 style='margin-bottom: 6px;'>Security Check</h2>
-            <button id="newsecurityquestion" title="New Question">⟳</button>
+            <button id="newsecurityquestion" title="New Question" style="font-size: 18px;">⟳</button>
         </div>
         <div id="securitycontainer">
-            <p id="securityquestion"></p>
+            <p id="securityquestion" class="deleteinstructions"></p>
             <input type="text" id='securityanswer'>
-            <p>In the box below, type the following: "I, (name), am completely sure that I want to delete my Rotur account."</p>
+            <p class="deleteinstructions">In the box below, type the following: "I, (name), am completely sure that I want to delete my Rotur account."</p>
             <input type="text" id='securitystatement'>
-            <p style='display: none;'>In the box below, type "Yes, I am sure of this"</p>
+
+            <p class="deleteinstructions">Enter account password:</p>
+            <div class="deleteaccpasswordcontainer">
+                <input type="password" id='deleteaccpassword'>
+                <button id='deleteaccpasswordvisibility' data-visible="false"><img src="../images/misc_icons/invisible.png" width="24" height="24"></button>
+            </div>
+
+            <p class="deleteinstructions" style='display: none;'>In the box below, type "Yes, I am sure of this"</p>
             <input type="text" id='securitystatement2' style='display: none;'>
 
-            <p id='deletedisclaimercredits'>Since you're on Rotur Assistant, all your credits will be sent to the user "Dominic" for safekeeping upon proceeding.</p>
+            <p class="deleteinstructions">Enter a user to send all your credits to:</p>
+            <input type="text" placeholder="Dominic" id="willfield">
             <label id='voidcreditsinstead'>
                 <input type="checkbox" id='voidcredits'>
                 Void my credits instead
@@ -419,14 +429,17 @@ function openDeleteAccountPopupFinal() {
             <button id="cancel" class="closebtn">Cancel</button>
             <button id="finalfinaldeleteacc_extremelydangerous_theresnogoingback" title="There is no other confirmation screen beyond this one. Only proceed if you are ABSOLUTELY sure with deleting this account.">Delete Account</button>
         </div>
-    `))
+    `, { sanitizer: sanitizer });
     document.getElementsByClassName('popup')[0].style.background = '#700000'
     document.getElementsByClassName('overlay')[0].style.background = '#b8000031'
+    document.getElementById('voidcredits').addEventListener('input', function(e) {
+        document.getElementById('willfield').disabled = e.target.checked
+    })
 }
 
 function openDeleteSuccessPopup(msg) {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Account Deleted</h1>
         </div>
@@ -434,13 +447,13 @@ function openDeleteSuccessPopup(msg) {
         <div id="popup-choices">
             <button id="toaccmanager">Back to Account Manager</button>
         </div>
-    `))
+    `, { sanitizer: sanitizer });
 }
 
-//End of popup code. Now begins re-used claw.js code
+// End of popup code. Now begins re-used claw.js code
 
 async function getSystemData() {
-    const systemdata = await fetch(`https://api.rotur.dev/systems`).then(res => res.json())
+    const systemdata = await fetch(`https://api.rotur.dev/v2/systems`).then(res => res.json())
     systems = Object.keys(systemdata)
     systemcache = systemdata
 }
@@ -465,12 +478,15 @@ function updateReplyCharLimit(postid, num) {
 
 function createReplyElement(reply) {
     const clawreply = document.getElementById('clawreplytemplate').content.cloneNode(true)
-
-    clawreply.querySelector('a').href = `../pages/lookup.html?user=${reply.user || "Spectator"}`
+    let replyuser = reply.user
+    if ((replyuser.length > 28) && replyuser.includes('-')) {
+        replyuser = null
+    }
+    clawreply.querySelector('a').href = `../pages/lookup.html?user=${replyuser || "Spectator"}`
     clawreply.querySelector('.copypostid').dataset.postid = reply.id
-    clawreply.querySelector('.clawpfp').src = `https://avatars.rotur.dev/${reply.user || "Spectator"}`
-    clawreply.querySelector('.clawpfp').alt = reply.user || "Spectator"
-    clawreply.querySelector('h2').textContent = reply.user || "Unknown User"
+    clawreply.querySelector('.clawpfp').src = `https://avatars.rotur.dev/${replyuser || "Spectator"}`
+    clawreply.querySelector('.clawpfp').alt = replyuser || "Spectator"
+    clawreply.querySelector('h2').textContent = replyuser || "Unknown User"
     clawreply.querySelector('.postcontent').innerText = reply.content
     if (reply.attachment) {
         clawreply.querySelector('.clawattachment').src = reply.attachment
@@ -496,10 +512,14 @@ function createPostElement(post) {
     const repost = (post.is_repost && post.original_post)
     const clawpost = document.getElementById('clawposttemplate').content.cloneNode(true)
     clawpost.querySelector('li').id = `post-${post.id}`
-    clawpost.querySelector('.clawpfp').src = `https://avatars.rotur.dev/${(repost ? post.original_post.user : post.user) || "Spectator"}`
+    let postauthor = (repost ? post.original_post.user : post.user)
+    if (postauthor.includes('-') && (postauthor.length > 26)) {
+        postauthor = null
+    }
+    clawpost.querySelector('.clawpfp').src = `https://avatars.rotur.dev/${postauthor || "Spectator"}`
     clawpost.querySelector('.clawpfp').alt = post.user || "Spectator"
-    clawpost.querySelector('a').href = `../pages/lookup.html?user=${(repost ? post.original_post.user : post.user) || "Spectator"}`
-    clawpost.querySelector('.clawpfp').href = `../pages/lookup.html?user=${(repost ? post.original_post.user : post.user) || "Spectator"}`
+    clawpost.querySelector('a').href = `../pages/lookup.html?user=${postauthor || "Spectator"}`
+    clawpost.querySelector('.clawpfp').href = `../pages/lookup.html?user=${postauthor || "Spectator"}`
     clawpost.querySelectorAll('[data-postid]').forEach(elementnode => {
         elementnode.dataset.postid = post.id
     })
@@ -507,7 +527,7 @@ function createPostElement(post) {
         elementnode.dataset.user = post.user
     }) // Get around having to do it manually since it appears so often
 
-    clawpost.querySelector('.clawpostauthortitle').textContent = (((repost ? post.original_post.user : post.user) + ' ') || "Unknown User ")
+    clawpost.querySelector('.clawpostauthortitle').textContent = ((postauthor + ' ') || "Unknown User ")
     if (repost) {
         const mark = document.createElement('mark')
         mark.textContent = post.original_post.profile_only ? `Profile + Repost` : `Repost`
@@ -515,7 +535,7 @@ function createPostElement(post) {
         clawpost.querySelector('.clawpostauthortitle').appendChild(mark)
         clawpost.querySelector('.repostbtn').disabled = true
         clawpost.querySelector('.repostbtn').title = "Repost (Cannot repost profile-only posts or other reposts)"
-        clawpost.querySelector('.repostlabel').setHTML(`<img src='../images/misc_icons/repost.png' width='12' height='12'> Reposted by ${post.user}`, {sanitizer: sanitizer})
+        clawpost.querySelector('.repostlabel').setHTML(`<img src='../images/misc_icons/repost.png' width='12' height='12'> Reposted by ${post.user}${post.content ? ` with quote: ${sanitize(post.content)}` : ``}`, {sanitizer: sanitizer})
     } else if (post.profile_only) {
         const mark = document.createElement('mark')
         mark.textContent = `Profile`
@@ -565,21 +585,29 @@ function createPostElement(post) {
         clawpost.querySelector('.clawattachment').remove()
     }
     clawpost.querySelector('.postcontent').innerText = repost ? post.original_post.content : post.content
-    clawpost.querySelector('.postmetadata').textContent = `Posted from ${(repost ? post.original_post.os : post.os) ?? "Unknown System"} on ${formatDate(repost ? post.original_post.timestamp : post.timestamp)}`
+    clawpost.querySelector('.postmetadata').textContent = `Posted from ${(repost ? post.original_post.os : post.os) ?? "Unknown System"} • ${formatDate(repost ? post.original_post.timestamp : post.timestamp)}`
 
     clawpost.querySelector('.likebutton').textContent = `${post.likes && post.likes.includes(activeobject.name) ? `❤️ Unlike (${post.likes ? post.likes.length : 0})` : `🩶 Like (${post.likes ? post.likes.length : 0})`}`
-    clawpost.querySelector('.likebutton').disabled = !activeobject.uuid
+    clawpost.querySelector('.likebutton').disabled = (!activeobject.uuid || flagged.includes(activeobject.uuid))
     if (post.likes) {
         clawpost.querySelector('.viewlikes').dataset.likes = JSON.stringify(post.likes)
     } else {
         clawpost.querySelector('.viewlikes').disabled = true
     }
-    clawpost.querySelector('.replydropdownlabel').textContent = `View Replies (${post.replies ? post.replies.length : 0})`
+    clawpost.querySelector('.replydropdownlabel').textContent = `View Replies - ${post.replies ? post.replies.length : 0}`
     if (activeobject.uuid) {
-        clawpost.querySelector('.replyboxplaceholder').querySelector('h2').remove()
-        clawpost.querySelector('.postcharlimit').id = `limit-${post.id}`
-        clawpost.querySelector('.postcharlimit').textContent = `0/${clawcharlimit}`
-        clawpost.querySelector('.replybox').placeholder = `Add a reply for ${post.user}\n(Replying as ${activeobject.name})`
+        if (flagged.includes(activeobject.uuid)) {
+            clawpost.querySelector('.replyboxplaceholder').querySelectorAll(':not(h2)').forEach(elemNode => {
+                elemNode.remove()
+            })
+            clawpost.querySelector('.replyboxplaceholder').querySelector('h2').textContent = 'Due to an authentication issue that has been detected with your current account, interaction features has been disabled.'
+            clawpost.querySelector('.replyboxplaceholder').querySelector('h2').style = "font-size: 16px;"
+        } else {
+            clawpost.querySelector('.replyboxplaceholder').querySelector('h2').remove()
+            clawpost.querySelector('.postcharlimit').id = `limit-${post.id}`
+            clawpost.querySelector('.postcharlimit').textContent = `0/${clawcharlimit}`
+            clawpost.querySelector('.replybox').placeholder = `Add a reply for ${post.user}\n(Replying as ${activeobject.name})`
+        }
     } else {
         clawpost.querySelector('.replyboxplaceholder').querySelectorAll(':not(h2)').forEach(elemNode => {
             elemNode.remove()
@@ -643,7 +671,7 @@ async function reply(postid, message) {
     if (content == '') {
         replystatus.replaceChildren(MiniError('failure', "You can't post a blank reply"))
     } else {
-        replysuccess = await fetch(`https://api.rotur.dev/reply?id=${postid}&auth=${activeobject.token}&content=${encodeURIComponent(message)}`)
+        replysuccess = await fetch(`https://api.rotur.dev/reply?id=${postid}&content=${encodeURIComponent(message)}`, {headers: formdata_cache}).then(res => res.json())
         if (replysuccess.error) {
             replystatus.replaceChildren(MiniError('failure', replysuccess.error))
         } else {
@@ -722,7 +750,7 @@ function getItems(itemdata) {
             const roturitem = document.getElementById('roturitemtemplate').content.cloneNode(true)
             roturitem.querySelector('li').id = `roturitem_${encodeURIComponent(item.name)}`
             roturitem.querySelector('h2').textContent = item.name
-            roturitem.querySelector('.roturitemauthor').setHTML(`Creator: <img src='https://avatars.rotur.dev/${item.author}' width=20 height=20> ${item.author} | Current Owner: <img src='https://avatars.rotur.dev/${item.owner}' width=20 height=20> ${item.owner}`, {sanitizer: sanitizer})
+            roturitem.querySelector('.roturitemauthor').setHTML(`Creator: <a href="lookup.html?user=${item.author}"><img src='https://avatars.rotur.dev/${item.author}' width=20 height=20> ${item.author}</a> | Current Owner: <a href="lookup.html?user=${item.owner}"><img src='https://avatars.rotur.dev/${item.owner}' width=20 height=20> ${item.owner}</a>`, {sanitizer: sanitizer})
             roturitem.querySelector('.roturitemdesc').innerText = item.description
 
             roturitem.querySelector('.roturitemprice').textContent = `${item.price} RC`
@@ -853,8 +881,8 @@ function CreateMyCosmeticElement(cosmetic) {
 
     cosmeticcard.querySelector('.overlayname').textContent = cosmetic.name
     cosmeticcard.querySelector('.overlayname').title = cosmetic.description
-    cosmeticcard.querySelector('.overlaytype').textContent = cosmetic.cosmetic_type
-    cosmeticcard.querySelector('.overlaycreator').setHTML(`By: <img src='https://avatars.rotur.dev/${cosmetic.creator}' alt='${cosmetic.creator}' width='16' height='16' class='creatorpfp'> ${cosmetic.creator}`, {sanitizer: sanitizer})
+    cosmeticcard.querySelector('.overlaytype').setHTML(`${sanitize(cosmetic.cosmetic_type)} &bull; <img src="../images/misc_icons/usericon.png" width="12" height="12"> ${cosmetic.purchases}`, {sanitizer: sanitizer})
+    cosmeticcard.querySelector('.overlaycreator').setHTML(`By: <a href="lookup.html?user=${cosmetic.creator}"><img src='https://avatars.rotur.dev/${cosmetic.creator}' alt='${cosmetic.creator}' width='16' height='16' class='creatorpfp'> ${cosmetic.creator}</a>`, {sanitizer: sanitizer})
     cosmeticcard.querySelector('.equipoverlay').dataset.cosmeticid = cosmetic.id
     cosmeticcard.querySelector('.viewoverlayinfo').remove()
     cosmeticcard.querySelector('.buyoverlay').remove()
@@ -868,7 +896,7 @@ function CreateMyCosmeticElement(cosmetic) {
 
 async function UnequipCosmetic(cosmetic) {
     const cosmeticdata = cosmetic_cache.find(cosmetic2 => cosmetic2.id == cosmetic)
-    const cosmeticsuccess = await fetch(`https://api.rotur.dev/cosmetics/unequip?type=${cosmeticdata.cosmetic_type}&auth=${activeobject.token}`, {method: 'POST'}).then(res => res.json()).catch(err => {
+    const cosmeticsuccess = await fetch(`https://api.rotur.dev/cosmetics/unequip?type=${cosmeticdata.cosmetic_type}`, {method: 'POST', headers: formdata_cache}).then(res => res.json()).catch(err => {
         openErrorPopup("An unknown error occurred")
         return;
     })
@@ -885,7 +913,7 @@ async function UnequipCosmetic(cosmetic) {
 }
 
 async function EquipCosmetic(cosmetic, isRNG) {
-    const cosmeticsuccess = await fetch(`https://api.rotur.dev/cosmetics/equip/${cosmetic}?auth=${activeobject.token}`, {method: 'POST'}).then(res => res.json())
+    const cosmeticsuccess = await fetch(`https://api.rotur.dev/cosmetics/equip/${cosmetic}`, {method: 'POST', headers: formdata_cache}).then(res => res.json())
     if (cosmeticsuccess.error) {
         openErrorPopup(cosmeticsuccess.error)
     } else {
@@ -907,7 +935,7 @@ async function EquipCosmetic(cosmetic, isRNG) {
 
 async function GetMyCosmetics() {
     if (cosmetic_cache == '') {
-        cosmetic_cache = await fetch(`https://api.rotur.dev/cosmetics/mine?auth=${activeobject.token}`).then(res => res.json())
+        cosmetic_cache = await fetch(`https://api.rotur.dev/cosmetics/mine`, {headers: formdata_cache}).then(res => res.json())
         active_cache = { ...cosmetic_cache.active_cosmetics }
         cosmetic_cache = cosmetic_cache.owned_cosmetics
     }
@@ -968,19 +996,19 @@ async function renderProfile(userdata, altdata, token) {
     const name = userdata.username
     const balance = userdata['sys.currency'] ?? 0
     const id = userdata['sys.id'] ?? "Unknown ID"
-    const followingPromise = fetch(`https://api.rotur.dev/following?username=${name}`).then(res => res.json());
-    const followersPromise = fetch(`https://api.rotur.dev/followers?username=${name}`).then(res => res.json());
-    const useritemsPromise = fetch(`https://api.rotur.dev/items/list/${name}`).then(res => res.json());
-    const standingPromise = fetch(`https://api.rotur.dev/get_standing?username=${name}`).then(res => res.json());
-    const economyPromise = fetch(`https://api.rotur.dev/stats/economy`).then(res => res.json());
-    const outgoingPromise = fetch(`https://api.rotur.dev/friends/requests_out?auth=${activeobject.token}`).then(res => res.json()).then(res => res.requests_out);
-    const cosmeticpromise = await GetMyCosmetics()
-    const systempromise = await getSystemData()
+    const followingPromise = fetch(`https://api.rotur.dev/v2/users/${name}/following`).then(res => res.json()).catch(err => {console.error(err); return ({})});
+    const followersPromise = fetch(`https://api.rotur.dev/v2/users/${name}/followers`).then(res => res.json()).catch(err => {console.error(err); return ({})});;
+    const useritemsPromise = fetch(`https://api.rotur.dev/v2/users/${name}/items`).then(res => res.json()).catch(err => {console.error(err); return ([])});;
+    const standingPromise = fetch(`https://api.rotur.dev/v2/standing?username=${name}`).then(res => res.json()).catch(err => {console.error(err); return ({})});;
+    const economyPromise = fetch(`https://api.rotur.dev/v2/stats/economy`).then(res => res.json()).catch(err => {console.error(err); return ({})});;
+    const outgoingPromise = fetch(`https://api.rotur.dev/friends/requests_out`, {headers: formdata_cache}).then(res => res.json()).then(res => res.requests_out).catch(err => {console.error(err); return ([])});;
+    const cosmeticpromise = GetMyCosmetics()
+    const systempromise = getSystemData()
 
     const [followingData, followersData, useritems, standingData, economydata, outgoing_requests, cosmeticdata, system_data] = await Promise.all([followingPromise, followersPromise, useritemsPromise, standingPromise, economyPromise, outgoingPromise, cosmeticpromise, systempromise]);
 
-    const following = followingData.following
-    const followers = followersData.followers
+    const following = followingData.following ?? []
+    const followers = followersData.followers ?? []
     const friends = userdata['sys.friends'] ?? []
     const requests = userdata['sys.requests'] ?? []
     const blocked_users = userdata['sys.blocked'] ?? []
@@ -1076,7 +1104,7 @@ ${badges[i].description}`}`
             standing_html.push(CreateStandingCard(standingelement))
         })
         profile.querySelector('#standingplaceholder').replaceChildren(...standing_html)
-        profile.querySelector('#standinghistory').querySelector('summary').textContent = (`Standing History (${standingData.history.length})`)
+        profile.querySelector('#standinghistory').querySelector('summary').textContent = (`Standing History - ${standingData.history.length}`)
     } else {
         profile.querySelector('#standinghistory').style.display = 'none'
         profile.querySelector('#standing_line').style.display = 'none'
@@ -1108,7 +1136,7 @@ ${badges[i].description}`}`
     if (userdata.discord_id) {
         profile.querySelector('#discordidinfo').textContent = userdata.discord_id
     } else {
-        profile.querySelector('#discordidcontainer').remove()
+        profile.querySelector('#discordidcontainer')?.remove()
     }
     friends.length ? renderFollowingFollowers(friends, true, 'Unfriend', 'friendslist') : ``
     requests.length ? renderFollowingFollowers(requests, true, 'acceptdeclinereq', 'requestslist') : ``
@@ -1119,21 +1147,21 @@ ${badges[i].description}`}`
     altdata.posts ? profile.querySelector('#clawpostslist').replaceChildren(...renderClawFeed(altdata.posts)) : ``
     useritems ? profile.querySelector('#profileitemlist').replaceChildren(...getItems(useritems)) : ``
 
-    profile.querySelector('#overlayssummary').textContent = `Overlays (${cosmetic_cache?.length ?? 0})`
-    profile.querySelector('#friendssummary').textContent = `Friends (${friends.length})`
-    profile.querySelector('#requestssummary').textContent = `Incoming Requests (${requests.length})`
-    profile.querySelector('#outgoingsummary').textContent = `Outgoing Requests (${outgoing_requests.length})`
-    profile.querySelector('#followingsummary').textContent = `Following (${following.length})`
-    profile.querySelector('#followerssummary').textContent = `Followers (${followers.length})`
-    profile.querySelector('#blockedsummary').textContent = `Blocked (${blocked_users.length})`
-    profile.querySelector('#clawpostssummary').textContent = `Claw Posts (${clawposts.length})`
-    profile.querySelector('#useritemssummary').textContent = `Items (${useritems.length})`
+    profile.querySelector('#overlayssummary').textContent = `Overlays - ${cosmetic_cache?.length ?? 0}`
+    profile.querySelector('#friendssummary').textContent = `Friends - ${friends.length}`
+    profile.querySelector('#requestssummary').textContent = `Incoming Requests - ${requests.length}`
+    profile.querySelector('#outgoingsummary').textContent = `Outgoing Requests - ${outgoing_requests.length}`
+    profile.querySelector('#followingsummary').textContent = `Following - ${following.length}`
+    profile.querySelector('#followerssummary').textContent = `Followers - ${followers.length}`
+    profile.querySelector('#blockedsummary').textContent = `Blocked - ${blocked_users.length}`
+    profile.querySelector('#clawpostssummary').textContent = `Claw Posts - ${clawposts.length}`
+    profile.querySelector('#useritemssummary').textContent = `Items - ${useritems.length}`
 
     profile.querySelector('#economicplaceholder').replaceChildren(...economy_html)
     profile.querySelector('#profileoverlays').replaceChildren(...cosmeticdata)
     profile.querySelector('.loginstats').textContent = `You have "logged in" a total of ${total_logins} time${total_logins == 1 ? "" : "s"}.`
     profile.querySelector('#loginsplaceholder').replaceChildren(...AppendLogins(logins))
-    profile.querySelector('#blacklisted_ips_summary').textContent = `Blocked IPs (${blacklisted_ips.length})`
+    profile.querySelector('#blacklisted_ips_summary').textContent = `Blocked IPs - ${blacklisted_ips.length}`
     profile.querySelector('#blacklistedipslist').replaceChildren(...AppendIPs(blacklisted_ips))
 
     profile.style = 'border: 2px solid white; display: flex;'
@@ -1183,17 +1211,19 @@ ${badges[i].description}`}`
 
 async function performSearch(user) {
     activeobject = accounts.find(item => item.name == user)
+    formdata_cache = new FormData()
+    formdata_cache.append("Authorization", `Bearer ${activeobject.token}`)
     document.title = `Editing: ${activeobject.name} - Rotur Assistant`
     if (flagged.includes(activeobject.uuid)) {
-        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+        document.getElementsByClassName('container')[0].setHTML(`
         <h2>An authentication issue has been detected with the selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h2>
-        `))
+        `, {sanitizer: sanitizer})
         return;   
     }
-    const userdata_promise = fetch(`https://api.rotur.dev/get_user?auth=${activeobject.token}`).then(res => res.json()).catch(err => {
-        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+    const userdata_promise = fetch(`https://api.rotur.dev/v2/me`, {headers: formdata_cache}).then(res => res.json()).catch(err => {
+        document.getElementsByClassName('container')[0].setHTML(`
             <h2>A communication error has occurred. If you're sure it's not your connection, then Rotur may be down right now.</h2>
-        `))
+        `, {sanitizer: sanitizer})
         return;
     })
     const altdata_promise = fetch(`https://api.rotur.dev/profile?id=${activeobject.uuid}`).then(res => res.json())
@@ -1201,20 +1231,20 @@ async function performSearch(user) {
     if ((userdata.error && (userdata.error == "Invalid authentication credentials") && !userdata.username) || (userdata['sys.banned'])) {
         flagged.push(activeobject.uuid)
         chrome.storage.local.set({flagged: flagged})
-        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+        document.getElementsByClassName('container')[0].setHTML(`
             <h2>An authentication issue has been detected with the selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h2>
-            `))
+            `, {sanitizer: sanitizer})
         return;
     }
     if ((userdata['sys.email_verified'] === false)) {
-        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+        document.getElementsByClassName('container')[0].setHTML(`
             <div id='toscontainer'>
                 <h4>Your E-mail is not verified. Until you verify your E-mail address, some actions may be limited. To verify your e-mail, head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> and reauthenticate.</h4>
             </div>
-        `))        
+        `, {sanitizer: sanitizer})        
     }
     if (!userdata['sys.tos_accepted']) {
-        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+        document.getElementsByClassName('container')[0].setHTML(`
             <div id='toscontainer'>
                 <h4>The Rotur TOS was updated since this account's last visit. As a result, accounts can't access or perform certain actions until they accept the TOS again. Accept the new terms?</h4>
                 <button id='accepttos'>Accept Terms</button>
@@ -1226,7 +1256,7 @@ async function performSearch(user) {
                 <div id='tosiframeplaceholder'></div>
                 <a href='https://rotur.dev/terms-of-service' target='_blank' rel='noopener noreferrer'>Rotur Terms of Service</a>
             </div>
-        `))
+        `, {sanitizer: sanitizer})
         return;
     }
     if (activeobject.uuid && !flagged.includes(activeobject.uuid)) {
@@ -1250,946 +1280,963 @@ async function checkParam() {
 
 checkParam()
 
+async function updateProfileField(index, elementId, apiKey, successMsg) {
+    const newValue = document.getElementById(elementId).value;
+    new_values[index] = newValue;
+
+    if (old_values[index] === new_values[index]) {
+        openErrorPopup("New value is equivalent to the old value.");
+        return;
+    }
+
+    const response = await fetch(`https://api.rotur.dev/users`, {
+        method: 'PATCH',
+        body: JSON.stringify({ auth: activeobject.token, key: apiKey, value: newValue })
+    }).then(res => res.json());
+
+    if (response.error) {
+        openErrorPopup(response.error);
+    } else {
+        old_values = [...new_values];
+        openSuccessPopup(successMsg);
+        return true;
+    }
+    return false;
+}
+
 document.addEventListener('click', async function(e) {
-    if (e.target.id == 'accepttos') {
-        const target = e.target
-        target.disabled = true
-        await chrome.storage.session.setAccessLevel({ 
-            accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' 
-        });
-        if (document.getElementById('bulkacceptoption')?.checked) {
-            target.textContent = "Accepting... (This may take a while)"
-            await chrome.storage.session.set({acceptinprogress: true})
-        
-            for (let i=0; i<accounts.length; i++) {
-                if (flagged.includes(accounts[i].uuid)) {
-                    continue;
-                }
-                if (document.getElementById('tosiframe')) {
-                    document.getElementById('tosiframe').src = `https://rotur.dev/terms-of-service?token=${accounts[i].token}`
-                } else {
-                    document.getElementById('tosiframeplaceholder').replaceChildren(...parseHTML(`
-                        <iframe id='tosiframe' src="https://rotur.dev/terms-of-service?token=${accounts[i].token}"></iframe>
-                    `))
-                }
-                document.getElementById('tosiframe').style.display = 'none'
-                const accept_process = new Promise((resolve) => {
-                    chrome.runtime.onMessage.addListener(function listener(message) {
-                        if (message.status == 'accepted') {
-                            resolve(message)
-                            chrome.runtime.onMessage.removeListener(listener)
-                        }
-                    })
-                })
-                await accept_process
-            }
-            chrome.storage.session.remove('acceptinprogress')
-            document.getElementById('tosiframeplaceholder').replaceChildren()
-            openSuccessPopup(`TOS successfully accepted on all accounts! The page will reload shortly.`)
-            tosrecentlyaccepted = true
-            target.remove()
-            document.getElementById('tosbulkaccept')?.remove()
-            setTimeout(function() {
-                this.location.reload()
-            }, 5000)
-        } else {
-            target.textContent = "Accepting..."
-            await chrome.storage.session.set({acceptinprogress: true})
-            document.getElementById('tosiframeplaceholder').replaceChildren(...parseHTML(`
-                <iframe id='tosiframe' src="https://rotur.dev/terms-of-service?token=${activeobject.token}"></iframe>
-            `))
-            document.getElementById('tosiframe').style.display = 'none'
-            chrome.runtime.onMessage.addListener(function listener(message) {
-                if (message.status == 'accepted') {
-                    chrome.storage.session.remove('acceptinprogress')
-                    document.getElementById('tosiframeplaceholder').replaceChildren()
-                    openSuccessPopup(`TOS successfully accepted! The page will reload shortly.`)
-                    tosrecentlyaccepted = true
-                    target.remove()
-                    document.getElementById('tosbulkaccept')?.remove()
-                    setTimeout(function() {
-                        this.location.reload()
-                    }, 5000)
-                    chrome.runtime.onMessage.removeListener(listener)
-                }
-            })
-        }
-        return;
-    }
-    if (e.target.id == 'toggleprofileview') {
-        this.location.href = `../pages/lookup.html?user=${activeobject.name}`
-        return;
-    }
-    if (e.target.id == 'profilereloadedit') {
-        document.getElementById('profilereloadedit').textContent = '…'
-        document.getElementById('profilereloadedit').disabled = true;
-        await performSearch(userdata_cache.username)
-        document.getElementById('profilereloadedit').textContent = '⟳'
-        document.getElementById('profilereloadedit').disabled = false;
-        return;
-    }
-    // Save buttons
-    if (e.target.id == 'savename') {
-        const newname = document.getElementById('usernamebox').value
-        new_values[0] = newname
-        if (old_values[0] != new_values[0]) {
-            const keyupdate = await fetch(`https://api.rotur.dev/users`,
-                {method: 'PATCH', body: JSON.stringify({auth: activeobject.token, key: 'username', value: newname})}).then(res => res.json())
-            if (keyupdate.error) {
-                openErrorPopup(keyupdate.error)
-            } else {
-                old_values = [...new_values]
-                const exist_index = accounts.findIndex(user => user.uuid === activeobject.uuid);
-                accounts[exist_index].name = newname
-                document.title = `Editing: ${newname} - Rotur Assistant`
-                chrome.storage.local.set({ userdata: accounts });
-                if (activeobject.uuid == activeacc.uuid) {
-                    const old_name = activeacc.name
-                    activeacc.name = newname
-                    chrome.storage.local.set({ activeacc: activeacc });
-                    document.getElementById('headeractiveacc').textContent = "Active: " + newname
-                    if (newname.length < 15) {
-                        document.getElementById('headeractiveacc').title = ''
-                        document.getElementById('accountflyoutlist').querySelector(`[data-accref="${old_name}"]`).title = ''
+    const target = e.target;
+    const targetId = target.id;
+    const targetClass = target.className;
+
+    // 1. ROUTE BY ID
+    switch (targetId) {
+        case ('accepttos'): {
+            target.disabled = true;
+            await chrome.storage.session.setAccessLevel({ 
+                accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' 
+            });
+            if (document.getElementById('bulkacceptoption')?.checked) {
+                target.textContent = "Accepting... (This may take a while)";
+                await chrome.storage.session.set({acceptinprogress: true});
+            
+                for (let i = 0; i < accounts.length; i++) {
+                    if (flagged.includes(accounts[i].uuid)) continue;
+
+                    const iframeSrc = `https://rotur.dev/terms-of-service?token=${accounts[i].token}`;
+                    if (document.getElementById('tosiframe')) {
+                        document.getElementById('tosiframe').src = iframeSrc;
                     } else {
-                        document.getElementById('headeractiveacc').title = newname
-                        document.getElementById('accountflyoutlist').querySelector(`[data-accref="${old_name}"]`).title = newname
+                        document.getElementById('tosiframeplaceholder').setHTML(`
+                            <iframe id='tosiframe' src="${iframeSrc}"></iframe>
+                        `, {sanitizer: sanitizer});
                     }
-                    document.getElementById('accountflyoutlist').querySelector(`[data-accref="${old_name}"]`).textContent = newname
-                    document.getElementById('accountflyoutlist').querySelector(`[data-accref="${old_name}"]`).dataset.accref = newname
-                }
-                openSuccessPopup('Username successfully updated')
-            }
-        } else {
-            openErrorPopup("New value is equivalent to the old value.")
-        }
-        return;
-    }
-    if (e.target.id == 'savepronouns') {
-        const newpronouns = document.getElementById('pronounsbox').value
-        new_values[1] = newpronouns
-        if (old_values[1] != new_values[1]) {
-            const keyupdate = await fetch(`https://api.rotur.dev/users`,
-                {method: 'PATCH', body: JSON.stringify({auth: activeobject.token, key: 'pronouns', value: newpronouns})}).then(res => res.json())
-            if (keyupdate.error) {
-                openErrorPopup(keyupdate.error)
-            } else {
-                openSuccessPopup('Pronouns successfully updated')
-                old_values = [...new_values]
-            }
-        } else {
-            openErrorPopup("New value is equivalent to the old value.")
-        }
-        return;
-    }
-    if (e.target.id == 'savebio') {
-        const newbio = document.getElementById('biobox').value
-        new_values[2] = newbio
-        if (old_values[2] != new_values[2]) {
-            const keyupdate = await fetch(`https://api.rotur.dev/users`,
-                {method: 'PATCH', body: JSON.stringify({auth: activeobject.token, key: 'bio', value: newbio})}).then(res => res.json())
-            if (keyupdate.error) {
-                openErrorPopup(keyupdate.error)
-            } else {
-                openSuccessPopup('Bio successfully updated')
-                old_values = [...new_values]
-            }
-        } else {
-            openErrorPopup("New value is equivalent to the old value.")
-        }
-        return;
-    }
-    if (e.target.id == 'savedisplayname') {
-        const newdisplayname = document.getElementById('displaynamebox').value
-        new_values[3] = newdisplayname
-        if (old_values[3] != new_values[3]) {
-            const keyupdate = await fetch(`https://api.rotur.dev/users`,
-                {method: 'PATCH', body: JSON.stringify({auth: activeobject.token, key: 'display_name', value: newdisplayname})}).then(res => res.json())
-            if (keyupdate.error) {
-                openErrorPopup(keyupdate.error)
-            } else {
-                openSuccessPopup('Display Name successfully updated')
-                old_values = [...new_values]
-            }
-        } else {
-            openErrorPopup("New value is equivalent to the old value.")
-        }
-        return;
-    }
-    if (e.target.id == 'saveemail') {
-        const newemail = document.getElementById('emailbox').value
-        new_values[4] = newemail
-        if (old_values[4] != new_values[4]) {
-            const keyupdate = await fetch(`https://api.rotur.dev/users`,
-                {method: 'PATCH', body: JSON.stringify({auth: activeobject.token, key: 'email', value: newemail})}).then(res => res.json())
-            if (keyupdate.error) {
-                openErrorPopup(keyupdate.error)
-            } else {
-                openSuccessPopup('E-mail successfully updated')
-                old_values = [...new_values]
-            }
-        } else {
-            openErrorPopup("New value is equivalent to the old value.")
-        }
-        return;
-    }
-    if (e.target.id == 'savephone') {
-        const newphone = document.getElementById('phonebox').value
-        new_values[5] = newphone
-        if (old_values[5] != new_values[5]) {
-            const keyupdate = await fetch(`https://api.rotur.dev/users`,
-                {method: 'PATCH', body: JSON.stringify({auth: activeobject.token, key: 'phone', value: newphone})}).then(res => res.json())
-            if (keyupdate.error) {
-                openErrorPopup(keyupdate.error)
-            } else {
-                openSuccessPopup('Phone Number successfully updated')
-                old_values = [...new_values]
-            }
-        } else {
-            openErrorPopup("New value is equivalent to the old value.")
-        }
-        return;
-    }
-    if (e.target.id == 'savesystem') {
-        const newsystem = document.getElementById('profileselectsystem').value
-        if (old_values[6] == newsystem) {
-            openErrorPopup("New value is equivalent to the old value.")
-        } else {
-            openSystemPopup(newsystem, systemcache[newsystem].owner.name)
-        }
-        return;
-    }
-    if (e.target.id == 'saveprivate') {
-        const newprivate = JSON.stringify(document.getElementById('privateacc').checked)
-        new_values[7] = newprivate
-        if (old_values[7] != new_values[7]) {
-            const keyupdate = await fetch(`https://api.rotur.dev/users`,
-                {method: 'PATCH', body: JSON.stringify({auth: activeobject.token, key: 'private', value: JSON.parse(newprivate)})}).then(res => res.json())
-            if (keyupdate.error) {
-                openErrorPopup(keyupdate.error)
-            } else {
-                openSuccessPopup('Private status successfully updated.')
-                old_values = [...new_values]
-            }
-        } else {
-            openErrorPopup("New value is equivalent to the old value.")
-        }
-        return;
-    }
-    if (e.target.id == 'savestatus') {
-        const target = e.target
-        target.disabled = true
-
-        const oldstatus = userdata_cache['sys.status'] ?? {presence: 'invisible', status: ''}
-        const newpresence = document.getElementById('statusselector').value
-        const newstatus = document.getElementById('statustextbox').value
-
-        if ((newpresence == oldstatus.presence) && (newstatus == oldstatus.status)) {
-            openErrorPopup('Your new status is equal to your old status.')
-            target.disabled = false
-            return;
-        }
-        const statussuccess = await fetch(`https://api.rotur.dev/status/set?auth=${activeobject.token}`, {
-            method: 'POST',
-            body: JSON.stringify({
-                presence: newpresence,
-                status: newstatus
-            })
-        }).then(res => res.json()).catch(err => {
-            return ({error: String(err)})
-            target.disabled = false
-        })
-        if (statussuccess.error) {
-            openErrorPopup(statussuccess.error)
-        } else {
-            openSuccessPopup('Status successfully updated!')
-            document.querySelector('.statusicon').style.background = presencecolors[newpresence] ?? 'rgb(48, 48, 48)'
-            userdata_cache['sys.status'] = {presence: newpresence, status: newstatus}
-        }
-        target.disabled = false
-    }
-    if (e.target.id == 'profilesaveall') {
-        const target = e.target
-        target.disabled = true
-        new_values[0] = document.getElementById('usernamebox').value
-        new_values[1] = document.getElementById('pronounsbox').value
-        new_values[2] = document.getElementById('biobox').value
-        new_values[3] = document.getElementById('displaynamebox').value
-        new_values[4] = document.getElementById('emailbox').value
-        new_values[5] = document.getElementById('phonebox').value
-        new_values[6] = document.getElementById('profileselectsystem').value
-        new_values[7] = JSON.stringify(document.getElementById('privateacc').checked)
-
-        let errorlogger = 0;
-        let successlogger = 0;
-
-        for (let i=0; i<new_values.length; i++) {
-            if (old_values[i] != new_values[i]) {
-                const keyupdate = await fetch(`https://api.rotur.dev/users`,
-                    {method: 'PATCH', body: JSON.stringify({auth: activeobject.token, key: profile_keys[i], value: new_values[i]})}).then(res => res.json())
-                if (keyupdate.error) {
-                    errorlogger += 1
-                } else {
-                    old_values[i] = new_values[i]
-                    if (i = 0) {
-                        const exist_index = accounts.findIndex(user => user.uuid === activeobject.uuid);
-                        accounts[exist_index].name = new_values[0]
-                        document.title = `Editing: ${new_values[0]} - Rotur Assistant`
-                        chrome.storage.local.set({ userdata: accounts });
-                        if (activeobject.uuid == activeacc.uuid) {
-                            const old_name = activeacc.name
-                            activeacc.name = new_values[0]
-                            chrome.storage.local.set({ activeacc: activeacc });
-                            document.getElementById('headeractiveacc').textContent = "Active: " + new_values[0]
-                            if (new_values[0].length < 15) {
-                                document.getElementById('headeractiveacc').title = ''
-                                document.getElementById('accountflyoutlist').querySelector(`[data-accref="${old_name}"]`).title = ''
-                            } else {
-                                document.getElementById('headeractiveacc').title = new_values[0]
-                                document.getElementById('accountflyoutlist').querySelector(`[data-accref="${old_name}"]`).title = new_values[0]
+                    document.getElementById('tosiframe').style.display = 'none';
+                    await new Promise((resolve) => {
+                        chrome.runtime.onMessage.addListener(function listener(message) {
+                            if (message.status === 'accepted') {
+                                resolve(message);
+                                chrome.runtime.onMessage.removeListener(listener);
                             }
-                            document.getElementById('accountflyoutlist').querySelector(`[data-accref="${old_name}"]`).textContent = new_values[0]
-                            document.getElementById('accountflyoutlist').querySelector(`[data-accref="${old_name}"]`).dataset.accref = new_values[0]
-                        }
+                        });
+                    });
+                }
+                chrome.storage.session.remove('acceptinprogress');
+                document.getElementById('tosiframeplaceholder').replaceChildren();
+                openSuccessPopup(`TOS successfully accepted on all accounts! The page will reload shortly.`);
+                tosrecentlyaccepted = true;
+                target.remove();
+                document.getElementById('tosbulkaccept')?.remove();
+                setTimeout(() => window.location.reload(), 5000);
+            } else {
+                target.textContent = "Accepting...";
+                await chrome.storage.session.set({acceptinprogress: true});
+                document.getElementById('tosiframeplaceholder').setHTML(`
+                    <iframe id='tosiframe' src="https://rotur.dev/terms-of-service?token=${activeobject.token}"></iframe>
+                `, {sanitizer: sanitizer});
+                document.getElementById('tosiframe').style.display = 'none';
+                chrome.runtime.onMessage.addListener(function listener(message) {
+                    if (message.status === 'accepted') {
+                        chrome.storage.session.remove('acceptinprogress');
+                        document.getElementById('tosiframeplaceholder').replaceChildren();
+                        openSuccessPopup(`TOS successfully accepted! The page will reload shortly.`);
+                        tosrecentlyaccepted = true;
+                        target.remove();
+                        document.getElementById('tosbulkaccept')?.remove();
+                        setTimeout(() => window.location.reload(), 5000);
+                        chrome.runtime.onMessage.removeListener(listener);
                     }
-                successlogger += 1;
-                }
+                });
             }
-        }
-        const oldstatus = userdata_cache['sys.status'] ?? {presence: 'invisible', status: ''}
-        const newpresence = document.getElementById('statusselector').value
-        const newstatus = document.getElementById('statustextbox').value
-
-        let statusws = ''
-        let statusupdated = false
-        if (!((newpresence == oldstatus.presence) && (newstatus == oldstatus.status))) {
-            statusupdated = true
-            const statussuccess = await fetch(`https://api.rotur.dev/status/set?auth=${activeobject.token}`, {
-                method: 'POST',
-                body: JSON.stringify({
-                    presence: newpresence,
-                    status: newstatus
-                })
-            }).then(res => res.json()).catch(err => {
-                return ({error: err})
-            })
-            if (!statussuccess.error) {
-                successlogger += 1
-                document.querySelector('.statusicon').style.background = presencecolors[newpresence] ?? 'rgb(48, 48, 48)'
-                userdata_cache['sys.status'] = {presence: newpresence, status: newstatus}
-            } else {
-                errorlogger += 1
-            }
-        }
-        if (successlogger > 0) {
-            openSuccessPopup(`Settings successfully updated${errorlogger > 0 ? `, though there were issues updating ${errorlogger} of the values.` : `!`}`)
-        } else {
-            if (statusupdated) {
-                openSuccessPopup('Successfully updated status!')
-            } else {
-                openErrorPopup('None of the settings were modified.')
-            }
-        }
-        target.disabled = false
-        return;
-    }
-    // IP Block Management
-    if (e.target.id == 'blockipbtn') {
-        e.preventDefault()
-        const ip = document.getElementById('iptoblock').value
-        const target = e.target
-        if (blacklisted_ips.includes(ip)) {
-            openErrorPopup('You already have this IP blocked')
-        } else if (ip.trim() == '') {
-            openErrorPopup('Please enter an IP address to block')
-        } else {
-            blacklisted_ips.push(ip)
-            const blocksuccess = await fetch(`https://api.rotur.dev/users`,
-            {method: 'PATCH', body: JSON.stringify({auth: activeobject.token, key: 'blocked_ips', value: blacklisted_ips})}).then(res => res.json())
-            if (blocksuccess.error) {
-                openErrorPopup(blocksuccess.error)
-            } else {
-                document.getElementById('blacklisted_ips_summary').textContent = `Blocked IPs (${blacklisted_ips.length})`
-                if (blacklisted_ips.length == 0) {
-                    const li = document.createElement('li')
-                    const h2 = document.createElement('h2')
-                    h2.textContent = "You have not blocked any IPs yet."
-                    li.appendChild(h2)
-                    document.getElementById('blacklistedipslist').replaceChildren(li)
-                } else {
-                    document.getElementById('blacklistedipslist').querySelector('h2')?.remove()
-                    const ip_card = document.getElementById('iptemplate').content.cloneNode(true)
-                    ip_card.querySelector('li').dataset.ip = ip
-                    ip_card.querySelector('p').textContent = ip
-                    ip_card.querySelector('button').dataset.ip = ip
-                    document.getElementById('blacklistedipslist').appendChild(ip_card)
-                }
-                document.getElementById('iptoblock').value = ''
-            }
-        }
-    }
-    if (e.target.className == 'profileeditremoveip') {
-        const ip = e.target.dataset.ip
-        const target = e.target
-        blacklisted_ips = blacklisted_ips.filter(item => item != ip)
-        const blocksuccess = await fetch(`https://api.rotur.dev/users`,
-        {method: 'PATCH', body: JSON.stringify({auth: activeobject.token, key: 'blocked_ips', value: blacklisted_ips})}).then(res => res.json())
-        if (blocksuccess.error) {
-            openErrorPopup(blocksuccess.error)
-        } else {
-            document.getElementById('blacklisted_ips_summary').textContent = `Blocked IPs (${blacklisted_ips.length})`
-            target.closest('.listip').remove()
-            if (blacklisted_ips.length == 0) {
-                const li = document.createElement('li')
-                const h2 = document.createElement('h2')
-                h2.textContent = "You have not blocked any IPs yet."
-                li.appendChild(h2)
-                document.getElementById('blacklistedipslist').replaceChildren(li)
-            }
-        }
-    }
-    // Social Action Buttons (unfriend, unfollow, unblock, etc.)
-
-    if (e.target.className == 'profileeditremoveuser') {
-        e.preventDefault();
-        const btnaction = e.target.dataset.action
-        const targetuser = e.target.dataset.user
-        switch (btnaction) {
-            case ('Unfriend'): {
-                openUnfriendPopup(targetuser)
-                break;
-            }
-            case ('Unfollow'): {
-                openUnfollowPopup(targetuser)
-                break;
-            }
-            case ('Unblock'): {
-                openUnblockPopup(targetuser)
-                break;
-            }
-            case ('Cancel'): {
-                OpenCancelRequestPopup(targetuser)
-                break;
-            }
-        }
-        return;
-    }
-
-    if (e.target.className == 'profileacceptreq') {
-        e.preventDefault();
-        openAcceptPopup(e.target.dataset.user)
-        return;
-    }
-
-    if (e.target.className == 'profiledeclinereq') {
-        e.preventDefault();
-        openDeclinePopup(e.target.dataset.user)
-        return;
-    }
-    if (e.target.id == 'changepass') {
-        openChangePassPopup()
-        return;
-    }
-    if (e.target.id == 'deleteacc_verydangerous') {
-        openDeleteAccountPopup()
-        return;
-    }
-    if (e.target.className == 'finalpasswordchange') {
-        closePopup()
-        const oldpass = document.getElementById('oldpass').value
-        const newpass1 = document.getElementById('newpass1').value
-        const newpass2 = document.getElementById('newpass2').value
-        if ((newpass1 === newpass2) && (newpass1 != '')) {
-            const passchangesuccess = await fetch(`https://api.rotur.dev/me/change_password?auth=${activeobject.token}`,
-            {method: 'POST', body: JSON.stringify({current_password: oldpass, new_password: newpass1})}).then(res => res.json())
-            if (passchangesuccess.error) {
-                openErrorPopup(passchangesuccess.error)
-            } else {
-                openSuccessPopup('Password changed successfully')
-            }
-        } else if (newpass1 == '') {
-            openErrorPopup("New password can't be blank")
-        } else {
-            openErrorPopup("New passwords don't match")
-        }
-    return;
-    }
-    if (e.target.id == 'copytoken') {
-        try {
-            await navigator.clipboard.writeText(activeobject.token);
-            openSuccessPopup('Account token copied successfully. Be careful of what you do with your token, because your token gives you full access to your Rotur account, including the ability to drain its funds or delete it. Do not share your token, especially in any public chats.')
-        } catch (err) {
-            console.error('Failed to copy: ', err);
-            openErrorPopup('Failed to copy account token')
-        }
-        return;
-    }
-    if (e.target.id == 'accrefreshtoken') {
-        openConfirmRefreshTokenPopup()
-        return;
-    }
-
-    // Final actions (social buttons bar popups)
-    if (e.target.className == 'finalunfriend') {
-        const user = e.target.dataset.user
-        closePopup()
-        const request = await fetch(`https://api.rotur.dev/friends/remove/${user}?auth=${activeobject.token}`, {method: 'POST'}).then(res => res.json())
-        if (request.error) {
-            openErrorPopup(request.error)
-        } else {
-            document.getElementById('friendslist').querySelector(`[data-user="${user}"]`).remove()
-            document.getElementById('friendssummary').textContent = `Friends (${document.getElementById("friendslist").childElementCount})`
-            if (document.getElementById('friendslist').childElementCount == 0) {
-                document.getElementById('friendslist').replaceChildren(CreateEmptyPlaceholder("You have not befriended any users yet"))
-            }
-        }
-        return;
-    }
-    if (e.target.className == 'finalunblock') {
-        const user = e.target.dataset.user
-        closePopup()
-        const request = await fetch(`https://api.rotur.dev/me/unblock/${user}?auth=${activeobject.token}`, {method: 'POST'}).then(res => res.json())
-        if (request.error) {
-            openErrorPopup(request.error)
-        } else {
-            document.getElementById('blockedlist').querySelector(`[data-user="${user}"]`).remove()
-            document.getElementById('blockedsummary').textContent = `Blocked (${document.getElementById("blockedlist").childElementCount})`
-            if (document.getElementById("blockedlist").childElementCount == 0) {
-                document.getElementById('blockedlist').replaceChildren(CreateEmptyPlaceholder("You have not blocked any users yet"))
-            }
-        }
-        return;
-    }
-    if (e.target.className == 'finalunfollow') {
-        const user = e.target.dataset.user
-        closePopup()
-        const request = await fetch(`https://api.rotur.dev/unfollow?auth=${activeobject.token}&username=${user}`).then(res => res.json())
-        if (request.error) {
-            openErrorPopup(request.error)
-        } else {
-            document.getElementById('followinglist').querySelector(`[data-user="${user}"]`).remove()
-            document.getElementById('followingsummary').textContent = `Following (${document.getElementById("followinglist").childElementCount})`
-            if (document.getElementById("followinglist").childElementCount == 0) {
-                document.getElementById('followinglist').replaceChildren(CreateEmptyPlaceholder("You have not followed any users yet"))
-            }
-        }
-        return;
-    }
-    if (e.target.className == 'finalfriendcancel') {
-        const user = e.target.dataset.user
-        closePopup()
-        const request = await fetch(`https://api.rotur.dev/friends/cancel/${user}?auth=${activeobject.token}`, {method: 'POST'}).then(res => res.json())
-        if (request.error) {
-            openErrorPopup(request.error)
-        } else {
-            document.getElementById('outgoinglist').querySelector(`[data-user="${user}"]`).remove()
-            document.getElementById('outgoingsummary').textContent = `Outgoing Requests (${document.getElementById("outgoinglist").childElementCount})`
-            if (document.getElementById("outgoinglist").childElementCount == 0) {
-                document.getElementById('outgoinglist').replaceChildren(CreateEmptyPlaceholder("You have no outgoing friend requests."))
-            }
-        }
-        return;
-    }
-    if (e.target.className == 'finalaccept') {
-        const user = e.target.dataset.user
-        closePopup()
-        const request = await fetch(`https://api.rotur.dev/friends/accept/${user}?auth=${activeobject.token}`, {method: 'POST'}).then(res => res.json())
-        if (request.error) {
-            openErrorPopup(request.error)
-        } else {
-            document.getElementById('requestslist').querySelector(`[data-user="${user}"]`).remove()
-            document.getElementById('requestssummary').textContent = `Friend Requests (${document.getElementById("requestslist").childElementCount})`
-            if (document.getElementById("requestslist").childElementCount == 0) {
-                document.getElementById('requestslist').replaceChildren(CreateEmptyPlaceholder("You have no pending friend requests."))
-            }
-            if (document.getElementById('friendssummary').textContent.includes('0')) {
-                document.getElementById('friendslist').replaceChildren()
-            }
-
-            const newfriend = document.getElementById('listusertemplate').content.cloneNode(true)
-            newfriend.querySelector('li').dataset.user = user
-            newfriend.querySelector('a').href = `lookup.html?user=${user}`
-            newfriend.querySelector('img').src = `https://avatars.rotur.dev/${user || "Spectator"}`
-            newfriend.querySelector('p').textContent = user || "Unknown User"
-            newfriend.querySelector('button').title = "Unfriend"
-            newfriend.querySelector('button').dataset.user = user
-            newfriend.querySelector('button').dataset.action = "Unfriend"
-            document.getElementById('friendslist').appendChild(newfriend)
-            document.getElementById('friendssummary').textContent = `Friends (${document.getElementById('friendslist').childElementCount})`
-        }
-        return;
-    }
-    if (e.target.className == 'finaldecline') {
-        const user = e.target.dataset.user
-        closePopup()
-        const request = await fetch(`https://api.rotur.dev/friends/reject/${user}?auth=${activeobject.token}`, {method: 'POST'}).then(res => res.json())
-        if (request.error) {
-            openErrorPopup(request.error)
-        } else {
-            document.getElementById('requestslist').querySelector(`[data-user="${user}"]`).remove()
-            document.getElementById('requestssummary').textContent = `Friend Requests (${document.getElementById("requestslist").childElementCount})`
-            if (document.getElementById("requestslist").childElementCount == 0) {
-                document.getElementById('requestslist').replaceChildren(CreateEmptyPlaceholder("You have no pending friend requests."))
-            }
-        }
-        return;
-    }
-
-    if (e.target.className == 'finaltokenrefresh') {
-        const refreshsuccess = await fetch(`https://api.rotur.dev/me/refresh_token?auth=${activeobject.token}`, {method: 'POST'}).then(res => res.json())
-        if (refreshsuccess.error) {
-            openErrorPopup(refreshsuccess.error)
-        } else {
-            openSuccessPopup("This account's Rotur token has been successfully refreshed.")
-            activeobject.token = refreshsuccess.token
-            if (activeacc.id == activeobject.id) {
-                activeacc.token = refreshsuccess.token
-                chrome.storage.local.set({activeacc: activeacc})
-            }
-            const activeindex = accounts.findIndex(id => id.uuid == activeobject.uuid)
-            accounts[activeindex].token = refreshsuccess.token
-            chrome.storage.local.set({userdata: accounts})
-        }
-        return;
-    }
-    // Confirm system change
-    if (e.target.id == 'finalsystemconfirm') {
-        const newsystem = (document.getElementById('profileselectsystem').value == "PassNet") ? "passNet" : document.getElementById('profileselectsystem').value  // Why does passNet have 2 separate edge cases
-        new_values[6] = newsystem
-        if (old_values[6] != new_values[6]) {
-            const keyupdate = await fetch(`https://api.rotur.dev/users`,
-                {method: 'PATCH', body: JSON.stringify({auth: activeobject.token, key: 'system', value: newsystem})}).then(res => res.json())
-            if (keyupdate.error) {
-                openErrorPopup(keyupdate.error)
-            } else {
-                openSuccessPopup('System successfully updated')
-                old_values = [...new_values]
-            }
-        } else {
-            openErrorPopup("New value is equivalent to the old value.")
-        }
-    }
-    if (e.target.className == 'repostbtn') {
-        openRepostPopup(e.target.dataset.postid)
-        return;
-    }
-    if (e.target.className == 'pinbtn') {
-        if (e.target.title == 'Unpin Post') {
-            openUninPopup(e.target.dataset.postid)
-        } else {
-            openPinPopup(e.target.dataset.postid)
-        }
-        return;
-
-    }
-    if (e.target.className == 'finalpin') {
-        const postid = e.target.dataset.postid
-        closePopup()
-        const pinsuccess = await fetch(`https://api.rotur.dev/pin_post?auth=${activeobject.token}&id=${postid}`).then(res => res.json())
-        if (pinsuccess.error) {
-            openErrorPopup(pinsuccess.error)
-        } else {
-            openSuccessPopup("Successfully pinned post to profile!")
-            const pinned_post = document.querySelector(`#post-${postid}`)
-            pinned_post.querySelector('.pinnedpostlabel').style.display = 'block'
-            pinned_post.querySelector('.pinbtn').querySelector('img').src = '../images/misc_icons/unpin.png'
-            pinned_post.querySelector('.pinbtn').title = 'Unpin Post'
-            document.getElementById('clawpostslist').insertBefore(pinned_post, document.getElementById('clawpostslist').firstChild)
-        }
-        return;
-    }
-    if (e.target.className == 'finalunpin') {
-        const target = e.target
-        const postid = e.target.dataset.postid
-        closePopup()
-        const repostsuccess = await fetch(`https://api.rotur.dev/unpin_post?auth=${activeobject.token}&id=${postid}`).then(res => res.json())
-        if (repostsuccess.error) {
-            openErrorPopup(repostsuccess.error)
-        } else {
-            openSuccessPopup("Successfully unpinned post from profile.")
-            const pinned_post = document.querySelector(`#post-${postid}`)
-            pinned_post.querySelector('.pinnedpostlabel').style.display = 'none'
-            pinned_post.querySelector('.pinbtn').querySelector('img').src = '../images/misc_icons/pin.png'
-            pinned_post.querySelector('.pinbtn').title = 'Pin Post'
-        }
-        return;
-    }
-    // Now begins re-used functions from claw.js
-    if (e.target.className == 'finalrepost') {
-        const postid = e.target.dataset.postid
-        const quote = document.getElementById('clawrepostquote').value
-        const repostsuccess = await fetch(`https://api.rotur.dev/repost?auth=${activeobject.token}&id=${postid}${quote ? `&content=${encodeURIComponent(quote)}&os=Rotur%20Assistant` : ``}`).then(res => res.json())
-        closePopup()
-        if (repostsuccess.error) {
-            openErrorPopup(repostsuccess.error)
-        } else {
-            if (quote) {
-                document.getElementById('clawrepostquote').value = ''
-                openSuccessPopup("This post has been reposted successfully!")
-            } else {
-                openSuccessPopup("This post has been reposted to your profile successfully!")
-            }
-        }
-        return;
-    }
-    if (e.target.className == 'pollsubmit') {
-        e.preventDefault()
-        const target = e.target
-        target.disabled = true
-        target.textContent = 'Submitting...'
-        const postid = target.dataset.postid
-        const chosen_option = target.closest('form').querySelector(`input[name="poll-${postid}"]:checked`).value
-        if (chosen_option == null) {
-            openErrorPopup("Please choose an option")
             return;
         }
-        const pollsuccess = await fetch(`https://api.rotur.dev/vote_poll?id=${postid}&option=${chosen_option}&auth=${activeobject.token}`).then(res => res.json())
-        if (pollsuccess.error) {
-            openErrorPopup(String(pollsuccess.error))
-        } else {
-            openSuccessPopup('Your vote was successfully cast.')
-            const postdata = altdata_cache.posts.find(clawpost => clawpost.id == postid)
-            postdata.poll = pollsuccess.poll
-            const newpost = document.querySelector(`.clawpostbody[id="post-${postid}"]`).replaceWith(createPostElement(postdata))
-            target.closest('form').reset()
-            target.disabled = true
+        case ('toggleprofileview'): {
+            window.location.href = `../pages/lookup.html?user=${activeobject.name}`;
+            return;
         }
-        target.textContent = "Submit Choice"
-        return;
-    }
-
-    if (e.target.className == 'deletebtn') {
-        openDeletePopup(e.target.dataset.postid)
-        return;
-    }
-    if (e.target.className == 'closebtn') {
-        image_cache = ''
-        if (!tosrecentlyaccepted) {
-            document.getElementById('changeavatarfilebtn').value = ''
-            document.getElementById('changebannerfilebtn').value = ''
+        case ('copyuserjson'): {
+            try {
+                await navigator.clipboard.writeText(JSON.stringify(userdata_cache, null, '\t'));
+                openSuccessPopup('Successfully copied the JSON from the /get_user endpoint. Warning that this JSON does contain your account token, under the key named "key", so be careful what you do with it.')
+                const copynotoken = document.createElement('button')
+                copynotoken.id = "copyjsonnotoken"
+                copynotoken.textContent = "Copy without token"
+                document.getElementById('popup-choices').prepend(copynotoken)
+                document.getElementById('popup-choices').querySelectorAll('button').forEach(button => {
+                    button.style.paddingLeft = "0"
+                    button.style.paddingRight = "0"
+                })
+            } catch (err) {
+                openErrorPopup(String(err))
+                console.error('Failed to copy: ', err);
+            }  
+            return;
         }
-        closePopup()
-        return;
-    }
-    if (e.target.className == 'finaldelete') {
-        const postid = e.target.dataset.postid
-        const deletesuccess = await fetch(`https://api.rotur.dev/delete?auth=${activeobject.token}&id=${postid}`).then(res => res.json())
-        closePopup()
-        document.getElementById(`post-${postid}`).remove()
-        document.getElementById(`clawpostssummary`).textContent = `Claw Posts (${document.getElementById(`clawpostslist`).childElementCount})`
-        if (document.getElementById(`clawpostslist`).childElementCount == 0) {
-            document.getElementById(`clawpostslist`).remove()
-            document.getElementById('userclawposts').appendChild(CreateEmptyPlaceholder('You have not created any claw posts yet.', true))
+        case ('copyjsonnotoken'): {
+            try {
+                const userdatacache2 = { ...userdata_cache }
+                delete userdatacache2.key
+                await navigator.clipboard.writeText(JSON.stringify(userdatacache2, null, '\t'));
+                openSuccessPopup('Successfully copied the JSON from the /get_user endpoint, but without your token included.')
+            } catch (err) {
+                openErrorPopup(String(err))
+                console.error('Failed to copy: ', err);
+            }  
+            return;
         }
-        return;
-    }
-
-    if (e.target.className == 'likebutton') {
-        const likebtn = e.target
-        let likes = parseInt(likebtn.textContent.match(/\d+\.?\d*/g));
-        const like = await fetch(`https://api.rotur.dev/rate?id=${likebtn.dataset.postid}&auth=${activeobject.token}&rating=${Number(!likebtn.textContent.includes('Unlike'))}`)
-        likebtn.textContent = (e.target.textContent.includes('Unlike') ? `🩶 Like (${likes - 1})` : `❤️ Unlike (${likes + 1})`)
-        document.getElementById(`post-${e.target.dataset.postid}`).querySelector('[class*="viewlikes"]').disabled = ((likes - 1 == 0) && !likebtn.textContent.includes('Unlike'))
-        return;
-    }
-    if (e.target.id == 'toaccmanager') {
-        this.location.href = "../pages/accounts.html"
-        return;
-    }
-    if (e.target.className == 'viewlikes') {
-        const likes = JSON.parse(e.target.dataset.likes ?? "[]")
-        if (document.getElementById(`post-${e.target.dataset.postid}`).querySelector('[class="likebutton"]').textContent.includes('Unlike') && !likes.includes(activeobject.name)) {
-            likes.push(activeobject.name)
+        case ('copyprofilejson'): {
+            try {
+                await navigator.clipboard.writeText(JSON.stringify(altdata_cache, null, '\t'));
+                openSuccessPopup("Successfully copied the JSON from the /profile endpoint.")
+            } catch (err) {
+                openErrorPopup(String(err))
+                console.error('Failed to copy: ', err);
+            }  
+            return;
         }
-        let likeshtml = `<ul class='likelist'>`
-        for (let i=0; i<likes.length; i++) {
-            likeshtml += `<li>
-            <a href='lookup.html?user=${likes[i] || "Spectator"}'>
-                <img src='https://avatars.rotur.dev/${likes[i] || "Spectator"}' alt='${likes[i] || "Spectator"}' width='24' height='24'>
-                <p>${likes[i] || "Unknown User"}</p>
-            </a>
-            </li>`
+        case ('profilereloadedit'): {
+            target.textContent = '…';
+            target.disabled = true;
+            await performSearch(userdata_cache.username);
+            target.textContent = '⟳';
+            target.disabled = false;
+            return;
         }
-        likeshtml += `</ul>`
-        openLikesPopup(likeshtml)
-        return;
-    }
-    if (e.target.className == 'sendreply') {
-        const postid = e.target.dataset.postid
-        const content = document.getElementById(`post-${postid}`).querySelector('[class="replybox"]').value
-        reply(postid, content)
-    }
-    if (e.target.className == 'copypostid') {
-        try {
-            await navigator.clipboard.writeText(e.target.dataset.postid);
-            const target = e.target
-            const oldtextcontent = target.textContent
-            target.textContent = 'Copied!'
-            target.style.background = 'rgb(0, 179, 0)'
-            target.disabled = true
-            setTimeout(() => {
-                target.textContent = oldtextcontent.includes('Reply') ? 'Copy Reply ID' : 'Copy Post ID'
-                target.style.background = ''
-                target.disabled = false
-            }, 1500)
-        } catch (err) {
-            const target = e.target
-            const oldtextcontent = target.textContent
-            target.textContent = 'Copy Failed'
-            target.style.background = 'rgb(179, 0, 0)'
-            target.disabled = true
-            setTimeout(() => {
-                target.textContent = oldtextcontent.includes('Reply') ? 'Copy Reply ID' : 'Copy Post ID'
-                target.style.background = ''
-                target.disabled = false
-            }, 1500)
-        }
-        return;
-    }
-    // Avatar and Banner handling
-    if (e.target.id == 'changeavatarbtn') {
-        if (e.shiftKey) {
-            image_cache = await readImageFromClipboard()
-            if (image_cache) {
-                openPFPPopup()
-            } else {
-                openErrorPopup('No image was detected on your clipboard.')
-            }
-        } else {
-            document.getElementById('changeavatarfilebtn').click()
-        }
-    }
-    if (e.target.id == 'changebannerbtn') {
-        if (e.shiftKey) {
-            image_cache = await readImageFromClipboard()
-            if (image_cache) {
-                openBannerPopup()
-            } else {
-                openErrorPopup('No image was detected on your clipboard.')
-            }
-        } else {
-            document.getElementById('changebannerfilebtn').click()
-        }
-    }
-    if (e.target.className == 'finalpfpchange') {
-        closePopup()
-        const keyupdate = await fetch(`https://api.rotur.dev/users`,
-            {method: 'PATCH', body: JSON.stringify({auth: activeobject.token, key: 'pfp', value: image_cache})}).then(res => res.json())
-        if (keyupdate.error) {
-            openErrorPopup(keyupdate.error)
-        } else {
-            openSuccessPopup('Your PFP was successfully changed.')
-            document.getElementById('useravatarimg').src = `https://avatars.rotur.dev/${activeobject.name}`
-        }
-        image_cache = ''
-    }
-    if (e.target.className == 'finalbannerchange') {
-        closePopup()
-        const keyupdate = await fetch(`https://api.rotur.dev/users`,
-            {method: 'PATCH', body: JSON.stringify({auth: activeobject.token, key: 'banner', value: image_cache})}).then(res => res.json())
-        if (keyupdate.error) {
-            openErrorPopup(keyupdate.error)
-        } else {
-            openSuccessPopup('Your banner was successfully changed.')
-            document.getElementById('userbannerimg').src = `https://avatars.rotur.dev/.banners/${activeobject.name}`
-        }
-        image_cache = ''
-    }
-    if (e.target.id == 'togglepassvisibility') {
-        if (e.target.dataset.visible == 'false') {
-            e.target.dataset.visible = 'true'
-            document.getElementById('oldpass').type = 'text'
-            document.getElementById('newpass1').type = 'text'
-            document.getElementById('newpass2').type = 'text'
-            document.getElementById('passbuttonvisibilityicon').src = '../images/misc_icons/visible.png'
-        } else {
-            e.target.dataset.visible = 'false'
-            document.getElementById('oldpass').type = 'password'
-            document.getElementById('newpass1').type = 'password'
-            document.getElementById('newpass2').type = 'password'
-            document.getElementById('passbuttonvisibilityicon').src = '../images/misc_icons/invisible.png'
-        }
-    }
-    // Cosmetic
-    if (e.target.className == 'equipoverlay') {
-        if (e.target.dataset.equipped == 'true') {
-            UnequipCosmetic(e.target.dataset.cosmeticid)
-        } else {
-            EquipCosmetic(e.target.dataset.cosmeticid)
-        }
-    }
-    if (e.target.id == 'randomoverlay') {
-        const target = e.target
-        target.textContent = 'Equipping...'
-        target.disabled = true
-        const random_overlay = (cosmetic_cache[Math.floor(Math.random() * cosmetic_cache.length)] ?? cosmetic_cache[0])
-        if (active_cache?.overlay?.id != random_overlay.id) {
-            await EquipCosmetic(random_overlay.id, true)
-        } else {
-            openSuccessPopup(`Successfully equipped the cosmetic "${random_overlay.name}"!`)
-        }
-        target.textContent = 'Equip Random Overlay'
-        target.disabled = false
-    }
-    // Dangerous Stuff
-    if (e.target.id == 'newsecurityquestion') {
-        getSecurityQuestion()
-        const target = e.target
-        target.disabled = true
-        setTimeout(function() {target.disabled = false}, 30000)
-    }
-    if (e.target.className == 'finaldeleteacc1') {
-        openDeleteAccountPopup2()
-        return;
-    }
-    if (e.target.className == 'finaldeleteacc2') {
-        openDeleteAccountPopup3()
-        return;
-    }
-    if (e.target.className == 'finaldeleteacc3') {
-        openDeleteAccountPopupFinal()
-        getSecurityQuestion()
-        return;
-    }
-    if (e.target.id == 'finalfinaldeleteacc_extremelydangerous_theresnogoingback') {
-        const answer = document.getElementById('securityanswer').value
-        const statement = document.getElementById('securitystatement').value
-        const voidcredits = document.getElementById('voidcredits').checked
-        const balance = altdata_cache.currency
-        if (document.getElementById('securitystatement2').value == '') {
-            if (question_cache.answers.includes(answer.toLowerCase())) {
-                if (statement == `I, ${activeobject.name}, am completely sure that I want to delete my Rotur account.`) {
-                    if (!voidcredits && balance > 0) {
-                        const transferresult = await fetch(`https://api.rotur.dev/me/transfer?auth=${activeobject.token}`, {
-                            method: "POST",
-                            body: JSON.stringify({to: "Dominic", amount: balance, note: `(RA) Account deleted (Name: ${activeobject.name})`})
-                        }).then(res => res.json())
-                    }
-                    const deletesuccess = await fetch(`https://api.rotur.dev/users/${activeobject.name}?auth=${activeobject.token}`, {method: 'DELETE'}).then(res => res.json()) // The smoking gun
-                    if (deletesuccess.error) {
-                        openErrorPopup(`Failed to delete your Rotur account. ${voidcredits ? "" : "If you change your mind, you may have to ask Dominic for your credits back. "}\nError Details: ${deletesuccess.error}`)
+        case ('savename'): {
+            const success = await updateProfileField(0, 'usernamebox', 'username', 'Username successfully updated');
+            if (success) {
+                const newname = new_values[0];
+                const exist_index = accounts.findIndex(user => user.uuid === activeobject.uuid);
+                accounts[exist_index].name = newname;
+                document.title = `Editing: ${newname} - Rotur Assistant`;
+                chrome.storage.local.set({ userdata: accounts });
+                if (activeobject.uuid === activeacc.uuid) {
+                    const old_name = activeacc.name;
+                    activeacc.name = newname;
+                    chrome.storage.local.set({ activeacc: activeacc });
+                    document.getElementById('headeractiveacc').textContent = "Active: " + newname;
+                    const flyoutItem = document.getElementById('accountflyoutlist').querySelector(`[data-accref="${old_name}"]`);
+                    if (newname.length < 15) {
+                        document.getElementById('headeractiveacc').removeAttribute('title')
+                        if (flyoutItem) flyoutItem.removeAttribute('title')
                     } else {
-                        openDeleteSuccessPopup("Your Rotur account has been successfully deleted. Thank you for being a part of Rotur, and by extension, Rotur Assistant. We're sad to see you go. You will be returned to the account manager shortly.")
-                        const newaccounts = accounts.filter(item => item.uuid != activeobject.uuid)
-                        const newactiveacc = (activeacc.uuid == activeobject.uuid) ? (newaccounts[0] ?? {}) : activeacc
-                        chrome.storage.local.set({userdata: newaccounts})
-                        chrome.storage.local.set({activeacc: newactiveacc})
-                        setTimeout(function() {
-                            this.location.href = "../pages/accounts.html"
-                        }, 15000)
+                        document.getElementById('headeractiveacc').title = newname;
+                        if (flyoutItem) flyoutItem.title = newname;
                     }
+                    if (flyoutItem) {
+                        flyoutItem.textContent = newname;
+                        flyoutItem.dataset.accref = newname;
+                    }
+                }
+            }
+            return;
+        }
+        case ('savepronouns'): {
+            await updateProfileField(1, 'pronounsbox', 'pronouns', 'Pronouns successfully updated');
+            return;
+        }
+        case ('savebio'): {
+            await updateProfileField(2, 'biobox', 'bio', 'Bio successfully updated');
+            return;
+        }
+        case ('savedisplayname'): {
+            await updateProfileField(3, 'displaynamebox', 'display_name', 'Display Name successfully updated');
+            return;
+        }
+        case ('saveemail'): {
+            await updateProfileField(4, 'emailbox', 'email', 'E-mail successfully updated');
+            return;
+        }
+        case ('savephone'): {
+            await updateProfileField(5, 'phonebox', 'phone', 'Phone Number successfully updated');
+            return;
+        }
+        case ('savesystem'): {
+            const newsystem = document.getElementById('profileselectsystem').value;
+            if (old_values[6] === newsystem) {
+                openErrorPopup("New value is equivalent to the old value.");
+            } else {
+                openSystemPopup(newsystem, systemcache[newsystem].owner.name);
+            }
+            return;
+        }
+
+        case ('saveprivate'): {
+            const newprivate = JSON.stringify(document.getElementById('privateacc').checked);
+            new_values[7] = newprivate;
+            if (old_values[7] !== new_values[7]) {
+                const keyupdate = await fetch(`https://api.rotur.dev/users`, {
+                    method: 'PATCH', 
+                    body: JSON.stringify({auth: activeobject.token, key: 'private', value: JSON.parse(newprivate)})
+                }).then(res => res.json());
+                
+                if (keyupdate.error) {
+                    openErrorPopup(keyupdate.error);
                 } else {
-                    openErrorPopup("The security statement was wrong.")
+                    openSuccessPopup('Private status successfully updated.');
+                    old_values = [...new_values];
                 }
             } else {
-                openErrorPopup('The security question was wrong.')
+                openErrorPopup("New value is equivalent to the old value.");
             }
-        } else {
-            openErrorPopup('A honeypot was triggered.')
+            return;
         }
-        document.getElementsByClassName('popup')[0].style.background = ''
-        document.getElementsByClassName('overlay')[0].style.background = ''
-        return;
+
+        case ('savestatus'): {
+            target.disabled = true;
+            const oldstatus = userdata_cache['sys.status'] ?? {presence: 'invisible', status: ''};
+            const newpresence = document.getElementById('statusselector').value;
+            const newstatus = document.getElementById('statustextbox').value;
+
+            if ((newpresence === oldstatus.presence) && (newstatus === oldstatus.status)) {
+                openErrorPopup('Your new status is equal to your old status.');
+                target.disabled = false;
+                return;
+            }
+            const statussuccess = await fetch(`https://api.rotur.dev/status/set`, {
+                method: 'POST',
+                headers: formdata_cache,
+                body: JSON.stringify({ presence: newpresence, status: newstatus })
+            }).then(res => res.json()).catch(err => {
+                target.disabled = false;
+                return ({error: String(err)});
+            });
+            if (statussuccess.error) {
+                openErrorPopup(statussuccess.error);
+            } else {
+                openSuccessPopup('Status successfully updated!');
+                document.querySelector('.statusicon').style.background = presencecolors[newpresence] ?? 'rgb(48, 48, 48)';
+                userdata_cache['sys.status'] = {presence: newpresence, status: newstatus};
+            }
+            target.disabled = false;
+            return;
+        }
+
+        case ('profilesaveall'): {
+            target.disabled = true;
+            new_values[0] = document.getElementById('usernamebox').value;
+            new_values[1] = document.getElementById('pronounsbox').value;
+            new_values[2] = document.getElementById('biobox').value;
+            new_values[3] = document.getElementById('displaynamebox').value;
+            new_values[4] = document.getElementById('emailbox').value;
+            new_values[5] = document.getElementById('phonebox').value;
+            new_values[6] = document.getElementById('profileselectsystem').value;
+            new_values[7] = JSON.stringify(document.getElementById('privateacc').checked);
+
+            let errorlogger = 0;
+            let successlogger = 0;
+
+            for (let i = 0; i < new_values.length; i++) {
+                if (old_values[i] !== new_values[i]) {
+                    const keyupdate = await fetch(`https://api.rotur.dev/users`, {
+                        method: 'PATCH', 
+                        body: JSON.stringify({auth: activeobject.token, key: profile_keys[i], value: new_values[i]})
+                    }).then(res => res.json());
+                    
+                    if (keyupdate.error) {
+                        errorlogger += 1;
+                    } else {
+                        old_values[i] = new_values[i];
+                        if (i == 0) {
+                            const exist_index = accounts.findIndex(user => user.uuid === activeobject.uuid);
+                            accounts[exist_index].name = new_values[0];
+                            document.title = `Editing: ${new_values[0]} - Rotur Assistant`;
+                            chrome.storage.local.set({ userdata: accounts });
+                            if (activeobject.uuid === activeacc.uuid) {
+                                const old_name = activeacc.name;
+                                activeacc.name = new_values[0];
+                                chrome.storage.local.set({ activeacc: activeacc });
+                                document.getElementById('headeractiveacc').textContent = "Active: " + new_values[0];
+                                const flyoutItem = document.getElementById('accountflyoutlist').querySelector(`[data-accref="${old_name}"]`);
+                                if (new_values[0].length < 15) {
+                                    document.getElementById('headeractiveacc').removeAttribute('title')
+                                    if (flyoutItem) flyoutItem.removeAttribute('title')
+                                } else {
+                                    document.getElementById('headeractiveacc').title = new_values[0];
+                                    if (flyoutItem) flyoutItem.title = new_values[0];
+                                }
+                                if (flyoutItem) {
+                                    flyoutItem.textContent = new_values[0];
+                                    flyoutItem.dataset.accref = new_values[0];
+                                }
+                            }
+                        }
+                        successlogger += 1;
+                    }
+                }
+            }
+            const oldstatus = userdata_cache['sys.status'] ?? {presence: 'invisible', status: ''};
+            const newpresence = document.getElementById('statusselector').value;
+            const newstatus = document.getElementById('statustextbox').value;
+
+            let statusupdated = false;
+            if (!((newpresence === oldstatus.presence) && (newstatus === oldstatus.status))) {
+                statusupdated = true;
+                const statussuccess = await fetch(`https://api.rotur.dev/status/set`, {
+                    method: 'POST',
+                    headers: formdata_cache,
+                    body: JSON.stringify({ presence: newpresence, status: newstatus })
+                }).then(res => res.json()).catch(err => ({error: err}));
+                
+                if (!statussuccess.error) {
+                    successlogger += 1;
+                    document.querySelector('.statusicon').style.background = presencecolors[newpresence] ?? 'rgb(48, 48, 48)';
+                    userdata_cache['sys.status'] = {presence: newpresence, status: newstatus};
+                } else {
+                    errorlogger += 1;
+                }
+            }
+            if (successlogger > 0) {
+                openSuccessPopup(`Settings successfully updated${errorlogger > 0 ? `, though there were issues updating ${errorlogger} of the values.` : `!`}`);
+            } else {
+                if (statusupdated) {
+                    openSuccessPopup('Successfully updated status!');
+                } else {
+                    openErrorPopup('None of the settings were modified.');
+                }
+            }
+            target.disabled = false;
+            return;
+        }
+        case ('blockipbtn'): {
+            e.preventDefault();
+            const ip = document.getElementById('iptoblock').value;
+            if (blacklisted_ips.includes(ip)) {
+                openErrorPopup('You already have this IP blocked');
+            } else if (ip.trim() === '') {
+                openErrorPopup('Please enter an IP address to block');
+            } else {
+                blacklisted_ips.push(ip);
+                const blocksuccess = await fetch(`https://api.rotur.dev/users`, {
+                    method: 'PATCH', 
+                    body: JSON.stringify({auth: activeobject.token, key: 'blocked_ips', value: blacklisted_ips})
+                }).then(res => res.json());
+                
+                if (blocksuccess.error) {
+                    openErrorPopup(blocksuccess.error);
+                } else {
+                    document.getElementById('blacklisted_ips_summary').textContent = `Blocked IPs (${blacklisted_ips.length})`;
+                    if (blacklisted_ips.length === 0) {
+                        const li = document.createElement('li');
+                        const h2 = document.createElement('h2');
+                        h2.textContent = "You have not blocked any IPs yet.";
+                        li.appendChild(h2);
+                        document.getElementById('blacklistedipslist').replaceChildren(li);
+                    } else {
+                        document.getElementById('blacklistedipslist').querySelector('h2')?.remove();
+                        const ip_card = document.getElementById('iptemplate').content.cloneNode(true);
+                        ip_card.querySelector('li').dataset.ip = ip;
+                        ip_card.querySelector('p').textContent = ip;
+                        ip_card.querySelector('button').dataset.ip = ip;
+                        document.getElementById('blacklistedipslist').appendChild(ip_card);
+                    }
+                    document.getElementById('iptoblock').value = '';
+                }
+            }
+            return;
+        }
+        case ('changepass'): {
+            openChangePassPopup();
+            return;
+        }
+        case ('deleteacc_verydangerous'): {
+            openDeleteAccountPopup();
+            return;
+        }
+        case ('copytoken'): {
+            try {
+                await navigator.clipboard.writeText(activeobject.token);
+                openSuccessPopup('Account token copied successfully. Be careful of what you do with your token, because your token gives you full access to your Rotur account, including the ability to drain its funds or delete it. Do not share your token, especially in any public chats.');
+            } catch (err) {
+                console.error('Failed to copy: ', err);
+                openErrorPopup('Failed to copy account token');
+            }
+            return;
+        }
+        case ('accrefreshtoken'): {
+            openConfirmRefreshTokenPopup();
+            return;
+        }
+        case ('finalsystemconfirm'): {
+            const rawSystem = document.getElementById('profileselectsystem').value;
+            const newsystem = (rawSystem === "PassNet") ? "passNet" : rawSystem;
+            new_values[6] = newsystem;
+            if (old_values[6] !== new_values[6]) {
+                const keyupdate = await fetch(`https://api.rotur.dev/users`, {
+                    method: 'PATCH', 
+                    body: JSON.stringify({auth: activeobject.token, key: 'system', value: newsystem})
+                }).then(res => res.json());
+                if (keyupdate.error) {
+                    openErrorPopup(keyupdate.error);
+                } else {
+                    openSuccessPopup('System successfully updated');
+                    old_values = [...new_values];
+                }
+            } else {
+                openErrorPopup("New value is equivalent to the old value.");
+            }
+            return;
+        }
+        case ('toaccmanager'): {
+            window.location.href = "../pages/accounts.html";
+            return;
+        }
+        case ('changeavatarbtn'): {
+            if (e.shiftKey) {
+                image_cache = await readImageFromClipboard();
+                if (image_cache) openPFPPopup();
+                else openErrorPopup('No image was detected on your clipboard.');
+            } else {
+                document.getElementById('changeavatarfilebtn').click();
+            }
+            return;
+        }
+        case ('changebannerbtn'): {
+            if (e.shiftKey) {
+                image_cache = await readImageFromClipboard();
+                if (image_cache) openBannerPopup();
+                else openErrorPopup('No image was detected on your clipboard.');
+            } else {
+                document.getElementById('changebannerfilebtn').click();
+            }
+            return;
+        }
+        case ('togglepassvisibility'): {
+            const isVisible = target.dataset.visible === 'true';
+            target.dataset.visible = String(!isVisible);
+            const passType = isVisible ? 'password' : 'text';
+            document.getElementById('oldpass').type = passType;
+            document.getElementById('newpass1').type = passType;
+            document.getElementById('newpass2').type = passType;
+            document.getElementById('passbuttonvisibilityicon').src = `../images/misc_icons/${isVisible ? 'invisible' : 'visible'}.png`;
+            return;
+        }
+
+        case ('randomoverlay'): {
+            target.textContent = 'Equipping...';
+            target.disabled = true;
+            const random_overlay = (cosmetic_cache[Math.floor(Math.random() * cosmetic_cache.length)] ?? cosmetic_cache[0]);
+            if (active_cache?.overlay?.id !== random_overlay.id) {
+                await EquipCosmetic(random_overlay.id, true);
+            } else {
+                openSuccessPopup(`Successfully equipped the cosmetic "${random_overlay.name}"!`);
+            }
+            target.textContent = 'Equip Random Overlay';
+            target.disabled = false;
+            return;
+        }
+
+        case ('newsecurityquestion'): {
+            getSecurityQuestion();
+            target.disabled = true;
+            setTimeout(() => { target.disabled = false; }, 30000);
+            return;
+        }
+        case ('deleteaccpasswordvisibility'): {
+            if (e.target.dataset.visible == 'true') {
+                e.target.dataset.visible = 'false'
+                e.target.setHTML(`<img src="../images/misc_icons/invisible.png" width="24" height="24">`, {sanitizer: sanitizer})
+                document.getElementById('deleteaccpassword').type = 'password'
+            } else {
+                e.target.dataset.visible = 'true'
+                e.target.setHTML(`<img src="../images/misc_icons/visible.png" width="24" height="24">`, {sanitizer: sanitizer})
+                document.getElementById('deleteaccpassword').type = 'text'
+            }
+            return;
+        }
+        case ('finalfinaldeleteacc_extremelydangerous_theresnogoingback'): {
+            const answer = document.getElementById('securityanswer').value;
+            const statement = document.getElementById('securitystatement').value;
+            const voidcredits = document.getElementById('voidcredits').checked;
+            const balance = altdata_cache.currency;
+            if (document.getElementById('securitystatement2').value === '') {
+                if (question_cache.answers.includes(answer.toLowerCase())) {
+                    const deleteRegex = new RegExp(`^i,? ${activeobject.name.toLowerCase()},? am completely sure that i want to delete my rotur account\\.?$`, 'i');
+                    const willuser = (document.getElementById('willfield').value || "Dominic")
+                    if (deleteRegex.test(statement)) {
+                        const validuser = await fetch(`https://api.rotur.dev/get_user?username=${activeobject.name}&password=${encodeURIComponent(document.getElementById('deleteaccpassword').value)}`).then(res => res.json())
+                        if (!validuser.username) {
+                            document.getElementsByClassName('popup')[0].style.background = '';
+                            document.getElementsByClassName('overlay')[0].style.background = '';
+                            openErrorPopup(`Invalid account password`)
+                            return;
+                        }
+                        if (!voidcredits && (balance > 0)) {
+                            const willsuccess = await fetch(`https://api.rotur.dev/me/transfer`, {
+                                method: "POST",
+                                headers: formdata_cache,
+                                body: JSON.stringify({to: willuser, amount: balance, note: `[RA] Account deleted (Name: ${activeobject.name})`})
+                            }).then(res => res.json());
+                            if (willsuccess.error) {
+                                document.getElementsByClassName('popup')[0].style.background = '';
+                                document.getElementsByClassName('overlay')[0].style.background = '';
+                                openErrorPopup(`Failed to transfer your credits to ${willuser}. The user may not exist.`)
+                                return;
+                            }
+                        }
+                        const deletesuccess = await fetch(`https://api.rotur.dev/users/${activeobject.name}`, {
+                            method: 'DELETE',
+                            headers: formdata_cache
+                        }).then(res => res.json()); // The smoking gun
+                        if (deletesuccess.error) {
+                            openErrorPopup(`Failed to delete your Rotur account. ${voidcredits ? "" : `If you change your mind, you may have to ask ${willuser} for your credits back. `}\nError Details: ${deletesuccess.error}`);
+                        } else {
+                            openDeleteSuccessPopup("Your Rotur account has been successfully deleted. Thank you for being a part of Rotur, and by extension, Rotur Assistant. We're sad to see you go. You will be returned to the account manager shortly.");
+                            const newaccounts = accounts.filter(item => item.uuid !== activeobject.uuid);
+                            const newactiveacc = (activeacc.uuid === activeobject.uuid) ? (newaccounts[0] ?? {}) : activeacc;
+                            chrome.storage.local.set({userdata: newaccounts});
+                            chrome.storage.local.set({activeacc: newactiveacc});
+                            setTimeout(() => {
+                                window.location.href = "../pages/accounts.html";
+                            }, 15000);
+                        }
+                    } else {
+                        openErrorPopup("The security statement was wrong.");
+                    }
+                } else {
+                    openErrorPopup('The security question was wrong.');
+                }
+            } else {
+                openErrorPopup('A honeypot was triggered.');
+            }
+            document.getElementsByClassName('popup')[0].style.background = '';
+            document.getElementsByClassName('overlay')[0].style.background = '';
+            return;
+        }
+    }
+    switch (targetClass) {
+        case ('profileeditremoveip'): {
+            const ip = target.dataset.ip;
+            blacklisted_ips = blacklisted_ips.filter(item => item !== ip);
+            const blocksuccess = await fetch(`https://api.rotur.dev/users`, {
+                method: 'PATCH', 
+                body: JSON.stringify({auth: activeobject.token, key: 'blocked_ips', value: blacklisted_ips})
+            }).then(res => res.json());
+            
+            if (blocksuccess.error) {
+                openErrorPopup(blocksuccess.error);
+            } else {
+                document.getElementById('blacklisted_ips_summary').textContent = `Blocked IPs (${blacklisted_ips.length})`;
+                target.closest('.listip').remove();
+                if (blacklisted_ips.length === 0) {
+                    const li = document.createElement('li');
+                    const h2 = document.createElement('h2');
+                    h2.textContent = "You have not blocked any IPs yet.";
+                    li.appendChild(h2);
+                    document.getElementById('blacklistedipslist').replaceChildren(li);
+                }
+            }
+            return;
+        }
+        case ('profileeditremoveuser'): {
+            e.preventDefault();
+            const btnaction = target.dataset.action;
+            const targetuser = target.dataset.user;
+            switch (btnaction) {
+                case 'Unfriend': openUnfriendPopup(targetuser); break;
+                case 'Unfollow': openUnfollowPopup(targetuser); break;
+                case 'Unblock':  openUnblockPopup(targetuser); break;
+                case 'Cancel':   OpenCancelRequestPopup(targetuser); break;
+            }
+            return;
+        }
+        case ('profileacceptreq'): {
+            e.preventDefault();
+            openAcceptPopup(target.dataset.user);
+            return;
+        }
+        case ('profiledeclinereq'): {
+            e.preventDefault();
+            openDeclinePopup(target.dataset.user);
+            return;
+        }
+        case ('finalpasswordchange'): {
+            closePopup();
+            const oldpass = document.getElementById('oldpass').value;
+            const newpass1 = document.getElementById('newpass1').value;
+            const newpass2 = document.getElementById('newpass2').value;
+            if ((newpass1 === newpass2) && (newpass1 !== '')) {
+                const passchangesuccess = await fetch(`https://api.rotur.dev/me/change_password`, {
+                    method: 'POST',
+                    headers: formdata_cache,
+                    body: JSON.stringify({current_password: oldpass, new_password: newpass1})
+                }).then(res => res.json());
+                
+                if (passchangesuccess.error) {
+                    openErrorPopup(passchangesuccess.error);
+                } else {
+                    openSuccessPopup('Password changed successfully');
+                }
+            } else if (newpass1 === '') {
+                openErrorPopup("New password can't be blank");
+            } else {
+                openErrorPopup("New passwords don't match");
+            }
+            return;
+        }
+        case ('finalunfriend'): {
+            const user = target.dataset.user;
+            closePopup();
+            const request = await fetch(`https://api.rotur.dev/friends/remove/${user}`, {method: 'POST', headers: formdata_cache}).then(res => res.json());
+            if (request.error) {
+                openErrorPopup(request.error);
+            } else {
+                document.getElementById('friendslist').querySelector(`[data-user="${user}"]`).remove();
+                document.getElementById('friendssummary').textContent = `Friends (${document.getElementById("friendslist").childElementCount})`;
+                if (document.getElementById('friendslist').childElementCount === 0) {
+                    document.getElementById('friendslist').replaceChildren(CreateEmptyPlaceholder("You have not befriended any users yet"));
+                }
+            }
+            return;
+        }
+        case ('finalunblock'): {
+            const user = target.dataset.user;
+            closePopup();
+            const request = await fetch(`https://api.rotur.dev/me/unblock/${user}`, {method: 'POST', headers: formdata_cache}).then(res => res.json());
+            if (request.error) {
+                openErrorPopup(request.error);
+            } else {
+                document.getElementById('blockedlist').querySelector(`[data-user="${user}"]`).remove();
+                document.getElementById('blockedsummary').textContent = `Blocked (${document.getElementById("blockedlist").childElementCount})`;
+                if (document.getElementById("blockedlist").childElementCount === 0) {
+                    document.getElementById('blockedlist').replaceChildren(CreateEmptyPlaceholder("You have not blocked any users yet"));
+                }
+            }
+            return;
+        }
+        case ('finalunfollow'): {
+            const user = target.dataset.user;
+            closePopup();
+            const request = await fetch(`https://api.rotur.dev/unfollow?username=${user}`, {headers: formdata_cache}).then(res => res.json());
+            if (request.error) {
+                openErrorPopup(request.error);
+            } else {
+                document.getElementById('followinglist').querySelector(`[data-user="${user}"]`).remove();
+                document.getElementById('followingsummary').textContent = `Following (${document.getElementById("followinglist").childElementCount})`;
+                if (document.getElementById("followinglist").childElementCount === 0) {
+                    document.getElementById('followinglist').replaceChildren(CreateEmptyPlaceholder("You have not followed any users yet"));
+                }
+            }
+            return;
+        }
+        case ('finalfriendcancel'): {
+            const user = target.dataset.user;
+            closePopup();
+            const request = await fetch(`https://api.rotur.dev/friends/cancel/${user}`, {method: 'POST', headers: formdata_cache}).then(res => res.json());
+            if (request.error) {
+                openErrorPopup(request.error);
+            } else {
+                document.getElementById('outgoinglist').querySelector(`[data-user="${user}"]`).remove();
+                document.getElementById('outgoingsummary').textContent = `Outgoing Requests (${document.getElementById("outgoinglist").childElementCount})`;
+                if (document.getElementById("outgoinglist").childElementCount === 0) {
+                    document.getElementById('outgoinglist').replaceChildren(CreateEmptyPlaceholder("You have no outgoing friend requests."));
+                }
+            }
+            return;
+        }
+        case ('finalaccept'): {
+            const user = target.dataset.user;
+            closePopup();
+            const request = await fetch(`https://api.rotur.dev/friends/accept/${user}`, {method: 'POST', headers: formdata_cache}).then(res => res.json());
+            if (request.error) {
+                openErrorPopup(request.error);
+            } else {
+                document.getElementById('requestslist').querySelector(`[data-user="${user}"]`).remove();
+                document.getElementById('requestssummary').textContent = `Friend Requests (${document.getElementById("requestslist").childElementCount})`;
+                if (document.getElementById("requestslist").childElementCount === 0) {
+                    document.getElementById('requestslist').replaceChildren(CreateEmptyPlaceholder("You have no pending friend requests."));
+                }
+                if (document.getElementById('friendssummary').textContent.includes('0')) {
+                    document.getElementById('friendslist').replaceChildren();
+                }
+
+                const newfriend = document.getElementById('listusertemplate').content.cloneNode(true);
+                newfriend.querySelector('li').dataset.user = user;
+                newfriend.querySelector('a').href = `lookup.html?user=${user}`;
+                newfriend.querySelector('img').src = `https://avatars.rotur.dev/${user || "Spectator"}`;
+                newfriend.querySelector('p').textContent = user || "Unknown User";
+                newfriend.querySelector('button').title = "Unfriend";
+                newfriend.querySelector('button').dataset.user = user;
+                newfriend.querySelector('button').dataset.action = "Unfriend";
+                document.getElementById('friendslist').appendChild(newfriend);
+                document.getElementById('friendssummary').textContent = `Friends (${document.getElementById('friendslist').childElementCount})`;
+            }
+            return;
+        }
+        case ('finaldecline'): {
+            const user = target.dataset.user;
+            closePopup();
+            const request = await fetch(`https://api.rotur.dev/friends/reject/${user}`, {method: 'POST', headers: formdata_cache}).then(res => res.json());
+            if (request.error) {
+                openErrorPopup(request.error);
+            } else {
+                document.getElementById('requestslist').querySelector(`[data-user="${user}"]`).remove();
+                document.getElementById('requestssummary').textContent = `Friend Requests (${document.getElementById("requestslist").childElementCount})`;
+                if (document.getElementById("requestslist").childElementCount === 0) {
+                    document.getElementById('requestslist').replaceChildren(CreateEmptyPlaceholder("You have no pending friend requests."));
+                }
+            }
+            return;
+        }
+        case ('finaltokenrefresh'): {
+            const refreshsuccess = await fetch(`https://api.rotur.dev/me/refresh_token`, {method: 'POST', headers: formdata_cache}).then(res => res.json());
+            if (refreshsuccess.error) {
+                openErrorPopup(refreshsuccess.error);
+            } else {
+                openSuccessPopup("This account's Rotur token has been successfully refreshed.");
+                activeobject.token = refreshsuccess.token;
+                if (activeacc.id === activeobject.id) {
+                    activeacc.token = refreshsuccess.token;
+                    chrome.storage.local.set({activeacc: activeacc});
+                }
+                const activeindex = accounts.findIndex(id => id.uuid === activeobject.uuid);
+                accounts[activeindex].token = refreshsuccess.token;
+                chrome.storage.local.set({userdata: accounts});
+            }
+            return;
+        }
+        case ('repostbtn'): {
+            openRepostPopup(target.dataset.postid);
+            return;
+        }
+        case ('pinbtn'): {
+            if (target.title === 'Unpin Post') {
+                openUnpinPopup(target.dataset.postid);
+            } else {
+                openPinPopup(target.dataset.postid);
+            }
+            return;
+        }
+        case ('finalpin'): {
+            const postid = target.dataset.postid;
+            closePopup();
+            const pinsuccess = await fetch(`https://api.rotur.dev/pin_post?id=${postid}`, {headers: formdata_cache}).then(res => res.json());
+            if (pinsuccess.error) {
+                openErrorPopup(pinsuccess.error);
+            } else {
+                openSuccessPopup("Successfully pinned post to profile!");
+                const pinned_post = document.querySelector(`#post-${postid}`);
+                pinned_post.querySelector('.pinnedpostlabel').style.display = 'block';
+                pinned_post.querySelector('.pinbtn').querySelector('img').src = '../images/misc_icons/unpin.png';
+                pinned_post.querySelector('.pinbtn').title = 'Unpin Post';
+                document.getElementById('clawpostslist').insertBefore(pinned_post, document.getElementById('clawpostslist').firstChild);
+            }
+            return;
+        }
+        case ('finalunpin'): {
+            const postid = target.dataset.postid;
+            closePopup();
+            const repostsuccess = await fetch(`https://api.rotur.dev/unpin_post?id=${postid}`, {headers: formdata_cache}).then(res => res.json());
+            if (repostsuccess.error) {
+                openErrorPopup(repostsuccess.error);
+            } else {
+                openSuccessPopup("Successfully unpinned post from profile.");
+                const pinned_post = document.querySelector(`#post-${postid}`);
+                pinned_post.querySelector('.pinnedpostlabel').style.display = 'none';
+                pinned_post.querySelector('.pinbtn').querySelector('img').src = '../images/misc_icons/pin.png';
+                pinned_post.querySelector('.pinbtn').title = 'Pin Post';
+            }
+            return;
+        }
+        case ('finalrepost'): {
+            const postid = target.dataset.postid;
+            const quote = document.getElementById('clawrepostquote').value;
+            const repostsuccess = await fetch(`https://api.rotur.dev/repost?id=${postid}${quote ? `&content=${encodeURIComponent(quote)}&os=Rotur%20Assistant` : ``}`, {headers: formdata_cache}).then(res => res.json()); // Only place where it's actually hardcoded to my system... for now at least
+            closePopup();
+            if (repostsuccess.error) {
+                openErrorPopup(repostsuccess.error);
+            } else {
+                if (quote) {
+                    document.getElementById('clawrepostquote').value = '';
+                    openSuccessPopup("This post has been reposted successfully!");
+                } else {
+                    openSuccessPopup("This post has been reposted to your profile successfully!");
+                }
+            }
+            return;
+        }
+        case ('pollsubmit'): {
+            e.preventDefault();
+            target.disabled = true;
+            target.textContent = 'Submitting...';
+            const postid = target.dataset.postid;
+            const chosen_option = target.closest('form').querySelector(`input[name="poll-${postid}"]:checked`).value;
+            if (chosen_option == null) {
+                openErrorPopup("Please choose an option");
+                return;
+            }
+            const pollsuccess = await fetch(`https://api.rotur.dev/vote_poll?id=${postid}&option=${chosen_option}`, {headers: formdata_cache}).then(res => res.json());
+            if (pollsuccess.error) {
+                openErrorPopup(String(pollsuccess.error));
+            } else {
+                openSuccessPopup('Your vote was successfully cast.');
+                const postdata = altdata_cache.posts.find(clawpost => clawpost.id == postid);
+                postdata.poll = pollsuccess.poll;
+                document.querySelector(`.clawpostbody[id="post-${postid}"]`).replaceWith(createPostElement(postdata));
+                target.closest('form').reset();
+                target.disabled = true;
+            }
+            target.textContent = "Submit Choice";
+            return;
+        }
+        case ('deletebtn'): {
+            openDeletePopup(target.dataset.postid);
+            return;
+        }
+        case ('closebtn'): {
+            image_cache = '';
+            if (!tosrecentlyaccepted) {
+                document.getElementById('changeavatarfilebtn').value = '';
+                document.getElementById('changebannerfilebtn').value = '';
+            }
+            closePopup();
+            return;
+        }
+        case ('finaldelete'): {
+            const postid = target.dataset.postid;
+            await fetch(`https://api.rotur.dev/delete?id=${postid}`, {headers: formdata_cache}).then(res => res.json());
+            closePopup();
+            document.getElementById(`post-${postid}`).remove();
+            document.getElementById(`clawpostssummary`).textContent = `Claw Posts (${document.getElementById(`clawpostslist`).childElementCount})`;
+            if (document.getElementById(`clawpostslist`).childElementCount === 0) {
+                document.getElementById(`clawpostslist`).remove();
+                document.getElementById('userclawposts').appendChild(CreateEmptyPlaceholder('You have not created any claw posts yet.', true));
+            }
+            return;
+        }
+        case ('likebutton'): {
+            const likesCount = parseInt(target.textContent.match(/\d+\.?\d*/g)) || 0;
+            const isUnliking = target.textContent.includes('Unlike');
+            await fetch(`https://api.rotur.dev/rate?id=${target.dataset.postid}&rating=${Number(!isUnliking)}`, {headers: formdata_cache});
+            target.textContent = isUnliking ? `🩶 Like (${likesCount - 1})` : `❤️ Unlike (${likesCount + 1})`;
+            document.getElementById(`post-${target.dataset.postid}`).querySelector('[class*="viewlikes"]').disabled = (likesCount - 1 === 0);
+            return;
+        }
+        case ('viewlikes'): {
+            const likes = JSON.parse(target.dataset.likes ?? "[]");
+            if (document.getElementById(`post-${target.dataset.postid}`).querySelector('[class="likebutton"]').textContent.includes('Unlike') && !likes.includes(activeobject.name)) {
+                likes.push(activeobject.name);
+            }
+            let likeshtml = `<ul class='likelist'>`;
+            for (let i = 0; i < likes.length; i++) {
+                if (likes[i].length > 25 && likes[i].includes('-')) {
+                    likes[i] = ''
+                }
+                likeshtml += `<li>
+                <a href='lookup.html?user=${likes[i] || "Spectator"}'>
+                    <img src='https://avatars.rotur.dev/${likes[i] || "Spectator"}' alt='${likes[i] || "Spectator"}' width='24' height='24'>
+                    <p>${likes[i] || "Unknown User"}</p>
+                </a>
+                </li>`;
+            }
+            likeshtml += `</ul>`;
+            openLikesPopup(likeshtml);
+            return;
+        }
+        case ('sendreply'): {
+            const postid = target.dataset.postid;
+            const content = document.getElementById(`post-${postid}`).querySelector('[class="replybox"]').value;
+            reply(postid, content);
+            return;
+        }
+        case ('copypostid'): {
+            try {
+                await navigator.clipboard.writeText(target.dataset.postid);
+                const oldtextcontent = target.textContent;
+                target.textContent = 'Copied!';
+                target.style.background = 'rgb(0, 179, 0)';
+                target.disabled = true;
+                setTimeout(() => {
+                    target.textContent = oldtextcontent.includes('Reply') ? 'Copy Reply ID' : 'Copy Post ID';
+                    target.style.background = '';
+                    target.disabled = false;
+                }, 1500);
+            } catch (err) {
+                const oldtextcontent = target.textContent;
+                target.textContent = 'Copy Failed';
+                target.style.background = 'rgb(179, 0, 0)';
+                target.disabled = true;
+                setTimeout(() => {
+                    target.textContent = oldtextcontent.includes('Reply') ? 'Copy Reply ID' : 'Copy Post ID';
+                    target.style.background = '';
+                    target.disabled = false;
+                }, 1500);
+            }
+            return;
+        }
+        case ('finalpfpchange'): {
+            closePopup();
+            const pfpUpdate = await fetch(`https://api.rotur.dev/users`, {
+                method: 'PATCH', 
+                body: JSON.stringify({auth: activeobject.token, key: 'pfp', value: image_cache})
+            }).then(res => res.json());
+            
+            if (pfpUpdate.error) {
+                openErrorPopup(pfpUpdate.error);
+            } else {
+                openSuccessPopup('Your PFP was successfully changed.');
+                document.getElementById('useravatarimg').src = `https://avatars.rotur.dev/${activeobject.name}`;
+            }
+            image_cache = '';
+            return;
+        }
+        case ('finalbannerchange'): {
+            closePopup();
+            const bannerUpdate = await fetch(`https://api.rotur.dev/users`, {
+                method: 'PATCH', 
+                body: JSON.stringify({auth: activeobject.token, key: 'banner', value: image_cache})
+            }).then(res => res.json());
+            
+            if (bannerUpdate.error) {
+                openErrorPopup(bannerUpdate.error);
+            } else {
+                openSuccessPopup('Your banner was successfully changed.');
+                document.getElementById('userbannerimg').src = `https://avatars.rotur.dev/.banners/${activeobject.name}`;
+            }
+            image_cache = '';
+            return;
+        }
+        case ('equipoverlay'): {
+            if (target.dataset.equipped === 'true') {
+                UnequipCosmetic(target.dataset.cosmeticid);
+            } else {
+                EquipCosmetic(target.dataset.cosmeticid);
+            }
+            return;
+        }
+        case ('finaldeleteacc1'): {
+            openDeleteAccountPopup2();
+            return;
+        }
+        case ('finaldeleteacc2'): {
+            openDeleteAccountPopup3();
+            return;
+        }
+        case ('finaldeleteacc3'): {
+            openDeleteAccountPopupFinal();
+            getSecurityQuestion();
+            return;
+        }
     }
 });
 

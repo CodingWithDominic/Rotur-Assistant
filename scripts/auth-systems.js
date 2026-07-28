@@ -7,13 +7,16 @@ const sanitizer = new Sanitizer(config)
 
 let system_cache = []
 async function getSystems() {
-    const systems = await fetch(`https://api.rotur.dev/systems`).then(res => res.json())
+    const systems = await fetch(`https://api.rotur.dev/v2/systems`).then(res => res.json())
     const systemsarray = Object.keys(systems)
     system_cache = systemsarray
 
     let systemoptions = ``
 
     for (let i=0; i<systemsarray.length; i++) {
+        if (systemsarray[i] == "PassNet") {
+            systemsarray[i] = "passNet"
+        }
         systemoptions += `<option value="${systemsarray[i]}" ${systemsarray[i] == "Rotur Assistant" ? "selected" : ""}>${systemsarray[i]}</option>`
     }
     systemoptions += `<option value="Random">Random System</option>`

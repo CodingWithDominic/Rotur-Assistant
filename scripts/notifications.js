@@ -5,8 +5,8 @@ function desanitize(string) {
 }
 
 const config = {
-    elements: ['p', 'img', 'div', 'h1', 'h2', 'h3', 'h4', 'button', 'ul', 'li', 'select', 'option', 'input', 'hr', 'a', 'label'],
-    attributes: ['src', 'alt', 'href', 'width', 'height', 'id', 'class', 'data', 'value', 'title', 'disabled', 'type', 'placeholder', 'step']
+    removeElements: ['iframe', 'script', 'style', 'object', 'embed', 'applet', 'meta', 'link', 'base', 'form'],
+    removeAttributes: ['onload', 'onclick', 'onerror', 'onmouseover', 'onfocus', 'onblur', 'onkeydown', 'onchange', 'onsubmit', 'srcdoc', 'formaction']
 }
 const sanitizer = new Sanitizer(config)
 
@@ -22,6 +22,11 @@ const activeacc = await new Promise(resolve =>
     chrome.storage.local.get('activeacc', data => resolve(data.activeacc || {}))
 ) ?? {};
 
+const authform = new FormData()
+if (activeacc.uuid) {
+    authform.append("Authorization", `Bearer ${activeacc.token}`)
+}
+
 const legacynotifs = await new Promise(resolve =>
     chrome.storage.local.get('legacynotifs', data => resolve(data.legacynotifs || false))
 ) ?? false;
@@ -29,6 +34,12 @@ const legacynotifs = await new Promise(resolve =>
 const flagged = await new Promise(resolve =>
     chrome.storage.local.get('flagged', data => resolve(data.flagged || []))
 ) ?? [];
+
+let last_inbox = await new Promise(resolve =>
+    chrome.storage.local.get('notifinbox', data => resolve(data.notifinbox || 'general'))
+) ?? 'general';
+
+document.getElementById('notificationinbox').querySelector(`option[value="${last_inbox}"]`).selected = true
 
 const type_lookup = {
     reply: 'Someone replied to your claw post',
@@ -41,6 +52,16 @@ const type_lookup = {
     like: "Someone liked your Claw post!"
 }
 
+const mw_type_lookup = {
+    news: 'New Announcement',
+    purchase: 'Project Sale',
+    remix: "Project Remixed",
+    love: "Project Love",
+    comment: "Project Comment",
+    profile_comment: "Profile Comment",
+    reply: "New Reply"
+}
+
 document.getElementById('legacynotifs').checked = legacynotifs
 
 if (!activeacc.uuid) {
@@ -48,7 +69,7 @@ if (!activeacc.uuid) {
         `<h1>Notifications</h1>
         <p>Notifications that you may have received across different Rotur services.</p>
         <hr class="full-size">
-        <h3>You are not signed in! Please head over to the account manager to add an account first.</h3>`,
+        <h3>You are not signed in! Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to add an account first.</h3>`,
         {sanitizer: sanitizer}
     )
 }
@@ -114,6 +135,8 @@ function closePopup() {
 }
 
 let notifications_cache = ''
+let rotur_notifs_cache = ''
+let mw_notifs_cache = ''
 let senders_cache = ''
 let endpoints_cache = ''
 
@@ -227,8 +250,119 @@ function appendBasedOnType(notif) {
     return ul
 }
 
-async function getNotifications() {
-    const legacy = document.getElementById('legacynotifs').checked
+function LoadInbox(inbox) {
+    const notifs = (() => {
+        switch (inbox) {
+            case ('general'): {
+                return notifications_cache
+            }
+            case ('rotur'): {
+                return rotur_notifs_cache
+            }
+            case ('mistwarp'): {
+                return mw_notifs_cache
+            }
+        }
+    })()
+    const notifs_html = []
+    if (notifs.length == 0) {
+        const li = document.createElement('li')
+        const h2 = document.createElement('h2')
+        h2.textContent = `You don't have any notifications in this inbox yet!`
+        li.appendChild(h2)
+        document.getElementById('notificationslist').replaceChildren(li)
+    } else {
+        switch (inbox) {
+            case ('general'): {
+                notifs.forEach(notif => {
+                    const notifcard = document.getElementById('notiftemplate').content.cloneNode(true)
+                    notifcard.querySelector('h3').textContent = ((notif.source ?? "Unknown Source") + " • " + (notif.title ?? "Unknown Title"))
+                    notifcard.querySelector('.notifbody').innerText = (notif.body ?? "Unknown Content")
+                    notifcard.querySelector('.notiftimeinfo').textContent = formatDate(notif.at ?? 0)
+                    notifcard.querySelector('.notifsenderinfo').setHTML(`Sender: <a href="lookup.html?user=${notif.from}"><img src="https://avatars.rotur.dev/${notif.from}" alt="${notif.from}" width="16" height="16"> ${notif.from}</a>`, {sanitizer: sanitizer})
+                    notifs_html.push(notifcard)
+                });
+                break;
+            }
+            case ('rotur'): {
+                notifs.forEach(notif => {
+                    const type = type_lookup[notif.type] ?? `Misc. Notification (${notif.type})`
+                    const id = notif.id ?? 'Unknown ID'
+                    const timestamp = formatDate(notif.timestamp ?? 0)
+                    if (notif.type == 'notification') {
+                        const notifcard = document.getElementById('legacynotiftemplate2').content.cloneNode(true)
+                        notifcard.querySelector('.notiftypetitle').textContent = type
+                        notifcard.querySelector('h3').textContent = ((notif.source ?? "Unknown Source") + " • " + (notif.title ?? "Unknown Title"))
+                        notifcard.querySelector('.notiftimeinfo').textContent = timestamp
+                        notifcard.querySelector('.notifsenderinfo').setHTML(`Sender: <a href="lookup.html?user=${notif.from}"><img src="https://avatars.rotur.dev/${notif.from}" alt="${notif.from}" width="16" height="16"> ${notif.from}</a>`, {sanitizer: sanitizer})
+                        notifcard.querySelector('.fineprint').textContent = `ID: ${id}`
+                        notifs_html.push(notifcard)
+                    } else {
+                        const notifcard = document.getElementById('legacynotiftemplate').content.cloneNode(true)
+                        notifcard.querySelector('h2').textContent = type
+                        notifcard.querySelector('.legacynotifdetails').replaceChildren(...appendBasedOnType(notif))
+                        notifcard.querySelector('.fineprint').textContent = `ID: ${id} • Received: ${timestamp}`
+                        notifs_html.push(notifcard)
+                    }
+                });
+                break;
+            }
+            case ('mistwarp'): {
+                notifs.forEach(notif => {
+                    const user = notif.actor ?? "Unknown User"
+                    const type = mw_type_lookup[notif.type] ?? `Misc. (${notif.type})`
+                    const imgurl = `https://avatars.rotur.dev/${notif.actor ?? "Spectator"}`
+                    const notiftext = (() => {
+                        switch (notif.type) {
+                            case ('news'): {
+                                return `A new announcement was made: <a href="https://warp.mistium.com/news" target="_blank" rel="noopener noreferrer">${sanitize(notif.title)}</a>`
+                            }
+                            case ('purchase'): {
+                                return `<a href="lookup.html?user=${sanitize(notif.actor ?? "Spectator")}">${sanitize(user)}</a> bought your project: <a href="https://warp.mistium.com/project/${encodeURIComponent(notif.projectId)}" target="_blank" rel="noopener noreferrer">${sanitize(notif.projectTitle)}</a> for ${notif.amount ?? 0} ${(notif.amount == 1) ? 'credit' : 'credits'}.`
+                            }
+                            case ('remix'): {
+                                return `<a href="lookup.html?user=${sanitize(notif.actor ?? "Spectator")}">${sanitize(user)}</a> remixed one of your projects: <a href="https://warp.mistium.com/project/${encodeURIComponent(notif.projectId)}" target="_blank" rel="noopener noreferrer">${sanitize(notif.projectTitle)}</a>.`
+                            }
+                            case ('love'): {
+                                return `<a href="lookup.html?user=${sanitize(notif.actor ?? "Spectator")}">${sanitize(user)}</a> loved your project <a href="https://warp.mistium.com/project/${encodeURIComponent(notif.projectId)}" target="_blank" rel="noopener noreferrer">${sanitize(notif.projectTitle)}</a>.`
+                            }
+                            case ('comment'): {
+                                return `<a href="lookup.html?user=${sanitize(notif.actor ?? "Spectator")}">${sanitize(user)}</a> commented on your project <a href="https://warp.mistium.com/project/${encodeURIComponent(notif.projectId)}#comment-id-${encodeURIComponent(notif.commentId)}" target="_blank" rel="noopener noreferrer">${sanitize(notif.projectTitle)}</a>.`
+                            }
+                            case ('profile_comment'): {
+                                return `<a href="lookup.html?user=${sanitize(notif.actor ?? "Spectator")}">${sanitize(user)}</a> commented on <a href="https://warp.mistium.com/users/${encodeURIComponent(activeacc.name)}" target="_blank" rel="noopener noreferrer">your profile</a>.`
+                            }
+                            case ('reply'): {
+                                if (notif.projectId) {
+                                    return `<a href="lookup.html?user=${sanitize(notif.actor ?? "Spectator")}">${sanitize(user)}</a> replied to your comment on <a href="https://warp.mistium.com/project/${encodeURIComponent(notif.projectId)}#comment-id-${encodeURIComponent(notif.commentId)}" target="_blank" rel="noopener noreferrer">${sanitize(notif.projectTitle)}</a>.`
+                                } else {
+                                    return `<a href="lookup.html?user=${sanitize(notif.actor ?? "Spectator")}">${sanitize(user)}</a> replied to your comment on <a href="https://warp.mistium.com/users/${encodeURIComponent(notif.profile)}#comment-id-${encodeURIComponent(notif.commentId)}" target="_blank" rel="noopener noreferrer">${sanitize(notif.profile)}'s profile</a>.`
+                                }
+                            }
+                            default: {
+                                return `Rotur Assistant does not recognize this notification type yet. In the meantime, check out the notification <a href="https://warp.mistium.com/notifications" target="_blank" rel="noopener noreferrer">here</a>.`
+                            }
+                        }
+                    })()
+                    const notifcard = document.getElementById('mwnotiftemplate').content.cloneNode(true)
+                    notifcard.querySelector("img").src = imgurl
+                    notifcard.querySelector("img").alt = user
+                    notifcard.querySelector(".mwnotiftext").setHTML(notiftext, {sanitizer: sanitizer})
+                    notifcard.querySelector("h2").textContent = type
+                    notifcard.querySelector(".mwnotifimage").href = `lookup.html?user=${notif.actor ?? "Spectator"}`
+                    notifcard.querySelector('.fineprint').textContent = `${formatDate(notif.created)} • ID: ${notif.id ?? "Unknown"}`
+                    notifs_html.push(notifcard)
+                })
+                break;
+            }
+        }
+        document.getElementById('notificationslist').replaceChildren(...notifs_html)
+        document.getElementById('notificationslist').style = 'border: 2px solid white;'
+    }
+    document.getElementById('notifsfeed').textContent = `Notifications (${notifs.length ?? 0})`
+}
+
+async function getNotifications(inbox) {
     if (!navigator.onLine) {
         document.getElementsByClassName('container')[0].setHTML(`
             <h1>Notifications</h1>
@@ -237,86 +371,45 @@ async function getNotifications() {
         `, {sanitizer: sanitizer})
         return;
     }
-    if (notifications_cache == '') {
-        notifications_cache = await fetch(`https://api.rotur.dev/${legacy ? `notifications` : `notify/log`}?auth=${activeacc.token}&after=9999`).then(res => res.json()).catch(err => {
-            document.getElementsByClassName('container')[0].setHTML(`
-                <h1>Notifications</h1>
-                <p>Notifications that you may have received across different Rotur services.</p>
-                <hr class='full-size'>
-                <h3>A communication error has occurred. If you're sure it's not your connection, then this part of Rotur may be down right now.</h3>
-            `, {sanitizer: sanitizer})
-            return;
-        })
-        if (!notifications_cache) {
-            return;
+    switch (inbox) {
+        case ('general'): {
+            if (notifications_cache == '') {
+                notifications_cache = await fetch(`https://api.rotur.dev/notify/log`, {headers: authform}).then(res => res.json()).then(res => res.log).catch(err => {
+                    return ({error: "communication error"})
+                })
+            }
+            break;
         }
-        if ((notifications_cache.error && (notifications_cache.error == 'Invalid authentication key'))) {
-            flagged.push(activeacc.uuid)
-            chrome.storage.local.set({flagged: flagged})
-            document.getElementsByClassName('container')[0].setHTML(`
-                <h1>Notifications</h1>
-                <p>Notifications that you may have received across different Rotur services.</p>
-                <hr class='full-size'>
-                <h3>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h3>
-            `, {sanitizer: sanitizer})
-            return;
+        case ('rotur'): {
+            if (rotur_notifs_cache == '') {
+                rotur_notifs_cache = await fetch(`https://api.rotur.dev/notifications?after=999999`, {headers: authform}).then(res => res.json()).catch(err => {
+                    return ({error: "communication error"})
+                })
+            }
+            break;
         }
-        if (!legacy) {
-            notifications_cache.log = notifications_cache.log.reverse() // API returns oldest to newest; I want newest to oldest
+        case ('mistwarp'): {
+            if (mw_notifs_cache == '') {
+                const validator = await fetch(`https://api.rotur.dev/generate_validator?key=mistwarp`, {headers: authform}).then(res => res.json()).then(res => res.validator).catch(err => {
+                    return ('Communication error')
+                })
+                const session_token = await fetch(`https://mwapi.mistium.com/api/auth?v=${encodeURIComponent(validator)}`, {method: 'POST'}).then(res => res.json()).then(res => res.token).catch(err => {
+                    return ('Communication error')
+                }) // Why did they make the notification endpoint suddenly require a session token; it worked fine with the main Rotur token before
+                mw_notifs_cache = await fetch(`https://mwapi.mistium.com/api/notifications`, {headers: {"Authorization": `Bearer ${session_token}`}}).then(res => res.json()).then(res => res.notifications).catch(err => {
+                    return ({error: "communication error"})
+                })
+            }
+            break;
         }
     }
-    const notifs = legacy ? notifications_cache : notifications_cache.log
-    const notifs_html = []
-    if (notifs.length == 0) {
-        const li = document.createElement('li')
-        const h2 = document.createElement('h2')
-        h2.textContent = `You don't have any notifications yet!`
-        li.appendChild(h2)
-        document.getElementById('notificationslist').replaceChildren(li)
-    } else {
-        if (legacy) {
-            notifs.forEach(notif => {
-                const type = type_lookup[notif.type] ?? `Misc. Notification (${notif.type})`
-                const id = notif.id ?? 'Unknown ID'
-                const timestamp = formatDate(notif.timestamp ?? 0)
-                if (notif.type == 'notification') {
-                    const notifcard = document.getElementById('legacynotiftemplate2').content.cloneNode(true)
-                    notifcard.querySelector('.notiftypetitle').textContent = type
-                    notifcard.querySelector('h3').textContent = ((notif.source ?? "Unknown Source") + " • " + (notif.title ?? "Unknown Title"))
-                    notifcard.querySelector('.notiftimeinfo').textContent = timestamp
-                    notifcard.querySelector('.notifsenderinfo').setHTML(`Sender: <a href="lookup.html?user=${notif.from}"><img src="https://avatars.rotur.dev/${notif.from}" alt="${notif.from}" width="16" height="16"> ${notif.from}</a>`, {sanitizer: sanitizer})
-                    notifcard.querySelector('.fineprint').textContent = `ID: ${id}`
-                    notifs_html.push(notifcard)
-                } else {
-                    const notifcard = document.getElementById('legacynotiftemplate').content.cloneNode(true)
-                    notifcard.querySelector('h2').textContent = type
-                    notifcard.querySelector('.legacynotifdetails').replaceChildren(...appendBasedOnType(notif))
-                    notifcard.querySelector('.fineprint').textContent = `ID: ${id} • Received: ${timestamp}`
-                    notifs_html.push(notifcard)
-                }
-            });
-        } else {
-            notifs.forEach(notif => {
-                const notifcard = document.getElementById('notiftemplate').content.cloneNode(true)
-                notifcard.querySelector('h3').textContent = ((notif.source ?? "Unknown Source") + " • " + (notif.title ?? "Unknown Title"))
-                notifcard.querySelector('.notifbody').innerText = (notif.body ?? "Unknown Content")
-                notifcard.querySelector('.notiftimeinfo').textContent = formatDate(notif.at ?? 0)
-                notifcard.querySelector('.notifsenderinfo').setHTML(`Sender: <a href="lookup.html?user=${notif.from}"><img src="https://avatars.rotur.dev/${notif.from}" alt="${notif.from}" width="16" height="16"> ${notif.from}</a>`, {sanitizer: sanitizer})
-                notifs_html.push(notifcard)
-            });
-        }
-
-        document.getElementById('notificationslist').replaceChildren(...notifs_html)
-        document.getElementById('notificationslist').style = 'border: 2px solid white;'
-    }
-    document.getElementById('notifsfeed').textContent = `Notifications (${notifs.length ?? 0})`
 }
 
 async function getSenders() {
     if (flagged.includes(activeacc.uuid)) {
         return;
     }
-    senders_cache = await fetch(`https://api.rotur.dev/notify/allowed?auth=${activeacc.token}`).then(res => res.json())
+    senders_cache = await fetch(`https://api.rotur.dev/notify/allowed`, {headers: authform}).then(res => res.json())
     const sources = Object.keys(senders_cache)
     if (sources.length == 0) {
         document.getElementById('notifsourcemanager').setHTML(`<li id='nosources'><h3>You don't have any notification sources</h3></li>`, {sanitizer: sanitizer})
@@ -334,7 +427,7 @@ async function getEndpoints() {
     if (flagged.includes(activeacc.uuid)) {
         return;
     }
-    endpoints_cache = await fetch(`https://api.rotur.dev/notify/endpoints?auth=${activeacc.token}`).then(res => res.json())
+    endpoints_cache = await fetch(`https://api.rotur.dev/notify/endpoints`, {headers: authform}).then(res => res.json())
     endpoints_cache = endpoints_cache.endpoints
     if (endpoints_cache.length == 0) {
         document.getElementById('notifendpointmanager').setHTML(`<li id='noendpoints'><h3>You don't have any notification endpoints</h3></li>`, {sanitizer: sanitizer})
@@ -348,12 +441,20 @@ async function getEndpoints() {
     }
 }
 
+async function setup() {
+    const general_promise = getNotifications('general')
+    const rotur_promise = getNotifications('rotur')
+    const mw_promise = getNotifications('mistwarp')
+    await Promise.all([general_promise, rotur_promise, mw_promise])
+}
+
 if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
-    await getNotifications()
+    await setup()
     if (notifications_cache != undefined) {
         getSenders()
         getEndpoints()
     }
+    LoadInbox(last_inbox)
 }
 
 document.addEventListener('click', async function(e) {
@@ -369,7 +470,7 @@ document.addEventListener('click', async function(e) {
         target.textContent = 'Adding…'
         const source = document.getElementById('notifsourcecreatesource').value
         const name = document.getElementById('notifsourcecreatename').value
-        const createsuccess = await fetch(`https://api.rotur.dev/notify/allowed/${name}?auth=${activeacc.token}`, {method: 'POST', body: JSON.stringify({"source":source})}).then(res => res.json())
+        const createsuccess = await fetch(`https://api.rotur.dev/notify/allowed/${name}`, {method: 'POST', headers: authform, body: JSON.stringify({"source":source})}).then(res => res.json())
         if (createsuccess.error) {
             document.getElementById('notifsourcestatus').replaceChildren(MiniError('failure', createsuccess.error))
         } else {
@@ -397,7 +498,10 @@ document.addEventListener('click', async function(e) {
         target.disabled = true;
         target.textContent = '...'
         notifications_cache = ''
-        await getNotifications()
+
+        await setup()
+        LoadInbox(last_inbox)
+
         target.disabled = false;
         target.textContent = '⟳'
     }
@@ -410,7 +514,7 @@ document.addEventListener('click', async function(e) {
         const authkey = document.getElementById('notifendpointcreateauth').value
         const p256_key = document.getElementById('notifendpointcreatep256dh').value
         const fingerprint = document.getElementById('notifendpointcreatefingerprint').value
-        const createsuccess = await fetch(`https://api.rotur.dev/notify/register?auth=${activeacc.token}`, {method: 'POST', body: JSON.stringify({
+        const createsuccess = await fetch(`https://api.rotur.dev/notify/register`, {method: 'POST', headers: authform, body: JSON.stringify({
             "endpoint": url,
             "p256dh": p256_key,
             "auth": authkey,
@@ -478,7 +582,7 @@ document.addEventListener('click', async function(e) {
     if (e.target.className == 'finaldeleteendpoint') {
         closePopup()
         const endpoint = e.target.dataset.endpoint
-        const deletesuccess = await fetch(`https://api.rotur.dev/notify/device/${endpoint}?auth=${activeacc.token}`, {method: 'DELETE'}).then(res => res.json())
+        const deletesuccess = await fetch(`https://api.rotur.dev/notify/device/${endpoint}`, {method: 'DELETE', headers: authform}).then(res => res.json())
         if (deletesuccess.error) {
             openErrorPopup(deletesuccess.error)
         } else {
@@ -503,7 +607,7 @@ document.addEventListener('click', async function(e) {
             updatebuttonstates(true)
             for (let i=0; i<all_sources.length; i++) {
                 const source = all_sources[i]
-                const deletesuccess = await fetch(`https://api.rotur.dev/notify/allowed/${user}?source=${encodeURIComponent(desanitize(source))}&auth=${activeacc.token}`, {method: 'DELETE'}).then(res => res.json())
+                const deletesuccess = await fetch(`https://api.rotur.dev/notify/allowed/${user}?source=${encodeURIComponent(desanitize(source))}`, {method: 'DELETE', headers: authform}).then(res => res.json())
                 if (deletesuccess.error) {
                     deleteerror = true;
                 } else {
@@ -526,7 +630,7 @@ document.addEventListener('click', async function(e) {
             }
             updatebuttonstates(false)
         } else {
-            const deletesuccess = await fetch(`https://api.rotur.dev/notify/allowed/${user}?source=${encodeURIComponent(desanitize(orig_source))}&auth=${activeacc.token}`, {method: 'DELETE'}).then(res => res.json())
+            const deletesuccess = await fetch(`https://api.rotur.dev/notify/allowed/${user}?source=${encodeURIComponent(desanitize(orig_source))}`, {method: 'DELETE', headers: authform}).then(res => res.json())
             if (deletesuccess.error) {
                 openErrorPopup(deletesuccess.error)
             } else {
@@ -552,7 +656,7 @@ document.addEventListener('click', async function(e) {
         updatebuttonstates(true)
         for (let j=0; j<sendersArray.length; j++) {
             const sender = sendersArray[j]
-            const deletesuccess = await fetch(`https://api.rotur.dev/notify/allowed/${sender.username}?source=${encodeURIComponent(desanitize(source))}&auth=${activeacc.token}`, {method: 'DELETE'}).then(res => res.json())
+            const deletesuccess = await fetch(`https://api.rotur.dev/notify/allowed/${sender.username}?source=${encodeURIComponent(desanitize(source))}`, {method: 'DELETE', headers: authform}).then(res => res.json())
             if (deletesuccess.error) {
                 deleteerror = true;
             } else {
@@ -586,3 +690,11 @@ document.addEventListener('click', async function(e) {
         return;        
     }
 })
+
+if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
+    document.getElementById('notificationinbox').addEventListener('change', function(e) {
+        last_inbox = e.target.value
+        LoadInbox(last_inbox)
+        chrome.storage.local.set({notifinbox: last_inbox})
+    })
+}

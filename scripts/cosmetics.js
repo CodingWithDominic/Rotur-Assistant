@@ -4,6 +4,11 @@ const activeacc = await new Promise(resolve =>
     chrome.storage.local.get('activeacc', data => resolve(data.activeacc || {}))
 ) ?? {};
 
+const authform = new FormData()
+if (activeacc.uuid) {
+    authform.append("Authorization", `Bearer ${activeacc.token}`)
+}
+
 const flagged = await new Promise(resolve =>
     chrome.storage.local.get('flagged', data => resolve(data.flagged || []))
 ) ?? [];
@@ -19,8 +24,8 @@ if (settings[0] == '1' || settings[1] == '1') {
 let preview_cache = ''
 
 const config = {
-    elements: ['p', 'img', 'div', 'h1', 'h2', 'h3', 'h4', 'button', 'ul', 'li', 'select', 'option', 'input', 'hr', 'a'],
-    attributes: ['src', 'alt', 'href', 'width', 'height', 'id', 'class', 'data', 'value', 'title', 'disabled', 'type', 'placeholder', 'step', 'style']
+    removeElements: ['iframe', 'script', 'style', 'object', 'embed', 'applet', 'meta', 'link', 'base', 'form'],
+    removeAttributes: ['onload', 'onclick', 'onerror', 'onmouseover', 'onfocus', 'onblur', 'onkeydown', 'onchange', 'onsubmit', 'srcdoc', 'formaction']
 }
 const sanitizer = new Sanitizer(config)
 
@@ -29,7 +34,7 @@ if (!activeacc.uuid) {
         <h1>Cosmetics</h1>
         <p>Manage your cosmetics and shop for new ones</p>
         <hr class="full-size">
-        <h3>You are not signed in! Please head over to the account manager to add an account first.</h3>
+        <h3>You are not signed in! Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to add an account first.</h3>
     `, {sanitizer: sanitizer})
 }
 if (flagged.includes(activeacc.uuid)) {
@@ -61,7 +66,7 @@ async function getBalances() {
         `, {sanitizer: sanitizer})
         return;
     }
-    user_balance = await fetch(`https://api.rotur.dev/get_user?auth=${activeacc.token}`).then(res => res.json()).catch(err => {
+    user_balance = await fetch(`https://api.rotur.dev/v2/me`, {headers: authform}).then(res => res.json()).catch(err => {
         document.getElementsByClassName('container')[0].setHTML(`
             <h1>Cosmetics</h1>
             <p>Manage your cosmetics and shop for new ones</p>
@@ -209,8 +214,8 @@ function CreateMyCosmeticElement(cosmetic) {
 
     cosmeticcard.querySelector('.overlayname').textContent = cosmetic.name
     cosmeticcard.querySelector('.overlayname').title = cosmetic.description
-    cosmeticcard.querySelector('.overlaytype').textContent = cosmetic.cosmetic_type
-    cosmeticcard.querySelector('.overlaycreator').setHTML(`By: <img src='https://avatars.rotur.dev/${cosmetic.creator}' alt='${cosmetic.creator}' width='16' height='16' class='creatorpfp'> ${cosmetic.creator}`, {sanitizer: sanitizer})
+    cosmeticcard.querySelector('.overlaytype').setHTML(`${sanitize(cosmetic.cosmetic_type)} &bull; <img src="../images/misc_icons/usericon.png" width="12" height="12"> ${cosmetic.purchases}`, {sanitizer: sanitizer})
+    cosmeticcard.querySelector('.overlaycreator').setHTML(`By: <a href="lookup.html?user=${cosmetic.creator}"><img src='https://avatars.rotur.dev/${cosmetic.creator}' alt='${cosmetic.creator}' width='16' height='16' class='creatorpfp'> ${cosmetic.creator}</a>`, {sanitizer: sanitizer})
     cosmeticcard.querySelector('.equipoverlay').dataset.cosmeticid = cosmetic.id
     cosmeticcard.querySelector('.viewoverlayinfo').dataset.cosmeticid = cosmetic.id
     cosmeticcard.querySelector('.buyoverlay').remove()
@@ -235,8 +240,8 @@ function CreateShopCosmeticElement(cosmetic) {
 
     cosmeticcard.querySelector('.overlayname').textContent = cosmetic.name
     cosmeticcard.querySelector('.overlayname').title = cosmetic.description
-    cosmeticcard.querySelector('.overlaytype').textContent = cosmetic.cosmetic_type
-    cosmeticcard.querySelector('.overlaycreator').setHTML(`By: <img src='https://avatars.rotur.dev/${cosmetic.creator}' alt='${cosmetic.creator}' width='16' height='16' class="creatorpfp"> ${cosmetic.creator}`, {sanitizer: sanitizer})
+    cosmeticcard.querySelector('.overlaytype').setHTML(`${sanitize(cosmetic.cosmetic_type)} &bull; <img src="../images/misc_icons/usericon.png" width="12" height="12"> ${cosmetic.purchases}`, {sanitizer: sanitizer})
+    cosmeticcard.querySelector('.overlaycreator').setHTML(`By: <a href="lookup.html?user=${cosmetic.creator}"><img src='https://avatars.rotur.dev/${cosmetic.creator}' alt='${cosmetic.creator}' width='16' height='16' class='creatorpfp'> ${cosmetic.creator}</a>`, {sanitizer: sanitizer})
     cosmeticcard.querySelector('.viewoverlayinfo').dataset.cosmeticid = cosmetic.id
     cosmeticcard.querySelector('.buyoverlay').dataset.cosmeticid = cosmetic.id
     cosmeticcard.querySelector('.buyoverlay').textContent = `Buy (${(cosmetic.price ?? 0) == 0 ? "Free" : (cosmetic.price + " RC")})`
@@ -254,7 +259,7 @@ function CreateShopCosmeticElement(cosmetic) {
 
 async function GetMyCosmetics() {
     if (cosmetic_cache == '') {
-        cosmetic_cache = await fetch(`https://api.rotur.dev/cosmetics/mine?auth=${activeacc.token}`).then(res => res.json()).catch(err => {
+        cosmetic_cache = await fetch(`https://api.rotur.dev/cosmetics/mine`, {headers: authform}).then(res => res.json()).catch(err => {
             canbuycosmetics = false
             return ({"active_cosmetics":{},"owned_cosmetics":[]})
         })
@@ -360,7 +365,7 @@ async function GetShopCosmetics() {
 
 async function UnequipCosmetic(cosmetic) {
     const cosmeticdata = shop_cache.find(cosmetic2 => cosmetic2.id == cosmetic)
-    const cosmeticsuccess = await fetch(`https://api.rotur.dev/cosmetics/unequip?type=${cosmeticdata.cosmetic_type}&auth=${activeacc.token}`, {method: 'POST'}).then(res => res.json()).catch(err => {
+    const cosmeticsuccess = await fetch(`https://api.rotur.dev/cosmetics/unequip?type=${cosmeticdata.cosmetic_type}`, {method: 'POST', headers: authform}).then(res => res.json()).catch(err => {
         return ({error: 'An unknown error occurred'})
     })
     if (cosmeticsuccess.error) {
@@ -376,7 +381,7 @@ async function UnequipCosmetic(cosmetic) {
 }
 
 async function EquipCosmetic(cosmetic, isRNG) {
-    const cosmeticsuccess = await fetch(`https://api.rotur.dev/cosmetics/equip/${cosmetic}?auth=${activeacc.token}`, {method: 'POST'}).then(res => res.json()).catch(err => {
+    const cosmeticsuccess = await fetch(`https://api.rotur.dev/cosmetics/equip/${cosmetic}`, {method: 'POST', headers: authform}).then(res => res.json()).catch(err => {
         return ({error: 'An unknown error occurred'})
     })
     if (cosmeticsuccess.error) {
@@ -404,7 +409,7 @@ if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
 }
 
 async function BuyCosmetic(cosmetic) {
-    const cosmeticsuccess = await fetch(`https://api.rotur.dev/cosmetics/purchase/${cosmetic}?auth=${activeacc.token}`, {method: 'POST'}).then(res => res.json())
+    const cosmeticsuccess = await fetch(`https://api.rotur.dev/cosmetics/purchase/${cosmetic}`, {method: 'POST', headers: authform}).then(res => res.json())
     if (cosmeticsuccess.error) {
         openErrorPopup(cosmeticsuccess.error)
     } else {

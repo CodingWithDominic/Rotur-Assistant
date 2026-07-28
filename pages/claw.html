@@ -2,6 +2,7 @@
 <html>
     <head>
         <meta charset="UTF-8" />
+        <script src="../initialize.js"></script>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="stylesheet" href="../style.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,6 +38,7 @@
                         </label>
                         <button type="submit" id="sendpost">Send &rarr;</button>
                     </div>
+                    <input type="text" id="systemmiscinfo" placeholder="System message" maxlength="64">
                 </form>
                 <div id="posterrorplaceholder"></div>
             </div>
@@ -99,7 +101,7 @@
                     <button class='copypostid' data-postid='postid'>Copy Post ID</button>
                 </div>
                 <details class='repliesbtn' data-postid='postid'>
-                <summary class='replydropdownlabel'>View Replies (0)</summary>
+                <summary class='replydropdownlabel'>View Replies - 0</summary>
                     <div class='repliesplaceholder'>
                         <ul class='reply' id='replies-postid'></ul>
                     </div>

@@ -2,6 +2,7 @@
 <html>
     <head>
         <meta charset="UTF-8" />
+        <script src="../initialize.js"></script>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="stylesheet" href="../style.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,7 +22,7 @@
                 <input type="number" placeholder="Amount" id="giftamount">
                 <button id="creategift">Create Gift</button>
             </div>
-            <input type="text" id="giftnote" placeholder="Note (Optional)">
+            <input type="text" id="giftnote" placeholder="Note (Optional)" maxlength="64">
             <div id="taxamt"></div>
             <div id="giftcreatestatusplaceholder"></div>
             <div id="giftcreatestatusplaceholder2"></div>

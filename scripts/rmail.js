@@ -1,4 +1,4 @@
-import { sanitize, formatDate, openErrorPopup, openSuccessPopup, CreateEmptyPlaceholder, UploadImage } from "../index.js"
+import { sanitize, formatDate, openErrorPopup, openSuccessPopup, CreateEmptyPlaceholder, UploadImage, MiniError } from "../index.js"
 
 let all_cache = ''
 let me_cache = ''
@@ -8,6 +8,42 @@ let draftprogressid = ''
 let replies_cache = []
 let current_rmail_view = ''
 let editinginprogress = false
+let validator_timestamp = 0
+let validator_cache = ''
+let rmailtabpage = 1
+let keys_cache = ''
+let rmail_passphrase_cache = ''
+
+const config = {
+    removeElements: ['iframe', 'script', 'style', 'object', 'embed', 'applet', 'meta', 'link', 'base', 'form'],
+    removeAttributes: ['onload', 'onclick', 'onerror', 'onmouseover', 'onfocus', 'onblur', 'onkeydown', 'onchange', 'onsubmit', 'srcdoc', 'formaction']
+}
+const sanitizer = new Sanitizer(config)
+
+const actionbarclasses = ['.rmailreply', '.rmaildelete', '.rmailarchive', '.rmailstar', '.rmailthreads', '.rmailreport', '.rmailmarkread', '.rmailmarkunread', '.rmailedit2'] // A lot easier than setting their attributes one-by-one manually
+const preferredcdn = await new Promise(resolve =>
+    chrome.storage.local.get('preferredcdn', data => resolve(data.preferredcdn || "mistiums3"))
+) ?? "mistiums3";
+
+const activeacc = await new Promise(resolve =>
+    chrome.storage.local.get('activeacc', data => resolve(data.activeacc || {}))
+) ?? {};
+
+const flagged = await new Promise(resolve =>
+    chrome.storage.local.get('flagged', data => resolve(data.flagged || []))
+) ?? [];
+
+const cached_rmails_data = await new Promise(resolve =>
+    chrome.storage.local.get('cached_rmails', data => resolve(data.cached_rmails || {}))
+) ?? {};
+
+let cached_rmails = cached_rmails_data[activeacc.uuid] ?? []
+
+let private_keys_cache = await new Promise(resolve =>
+    chrome.storage.local.get('rmail_misc', data => resolve(data.rmail_misc || {}))
+) ?? {};
+
+let current_private_key = await LoadPrivateKeyFromStorage(private_keys_cache[activeacc.uuid])
 
 const rmail_inbox_map =
 {
@@ -18,6 +54,7 @@ const rmail_inbox_map =
     archive: "rmailarchivelist",
     trash: "rmailtrashlist"
 }
+const known_inboxes = ['inbox', 'sent', 'drafts', 'archive', 'trash']
 function RmailCapitalize(name) {
     try {
         return name.includes('@') ? name : name.replace(/^./, char => char.toUpperCase())
@@ -31,6 +68,216 @@ function toSuperscript(text) {
         '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹'
     };
     return text.replace(/\d/g, (char) => map[char]);
+}
+
+function reverse(str) {
+    let newString = "";
+    for (let i = str.length - 1; i >= 0; i--) {
+        newString += str[i];
+    }
+    return newString;
+}
+
+function arrayBufferToBase64(buffer) {
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return window.btoa(binary);
+}
+
+function base64ToUint8Array(base64) {
+    // Handle standard Base64 as well as Base64URL
+    const normalized = base64.replace(/-/g, '+').replace(/_/g, '/');
+    const binaryString = atob(normalized);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes;
+} // Admittedly a lot of the handling of Encrypted Rmails was vibecoded considering I have 0 knowledge with encryption
+
+async function SavePrivateKeyToStorage(cryptoKey) {
+    const exported = await crypto.subtle.exportKey('pkcs8', cryptoKey);
+    const serialized = arrayBufferToBase64(exported);
+
+    private_keys_cache[activeacc.uuid] = reverse(btoa(serialized));
+    chrome.storage.local.set({ rmail_misc: private_keys_cache });
+
+    return serialized;
+}
+
+async function LoadPrivateKeyFromStorage(serialized) {
+    if (!serialized) return null;
+
+    try {
+        const keyBuf = base64ToUint8Array(atob(reverse(serialized)));
+        return await crypto.subtle.importKey(
+            'pkcs8',
+            keyBuf,
+            { name: 'RSA-OAEP', hash: 'SHA-256' },
+            true,
+            ['decrypt']
+        );
+    } catch (err) {
+        return null;
+    }
+}
+
+async function DecryptKeyFromPassword(passphrase, encryptedprivatekey) {
+    function b64ToBuf(b64) {
+        const bin = atob(b64);
+        const buf = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+        return buf.buffer;
+    }
+
+    const encPriv = JSON.parse(encryptedprivatekey);
+    const salt = b64ToBuf(encPriv.salt);
+    const ivKey = b64ToBuf(encPriv.iv);
+    const ctKey = b64ToBuf(encPriv.ct);
+
+    // 2. Derive an AES-GCM key from the passphrase via PBKDF2
+    const passKey = await crypto.subtle.importKey(
+        "raw",
+        new TextEncoder().encode(passphrase),
+        "PBKDF2",
+        false,
+        ["deriveKey"]
+    );
+
+    const aesKey = await crypto.subtle.deriveKey(
+        {
+            name: "PBKDF2",
+            salt,
+            iterations: 200000,
+            hash: "SHA-256"
+        },
+        passKey,
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["decrypt"]
+    );
+
+    // 3. Decrypt the private key blob
+    const privKeyBuf = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: ivKey },
+        aesKey,
+        ctKey
+    );
+
+    // 4. Import the RSA private key (PKCS8 DER)
+    const rsaPrivateKey = await crypto.subtle.importKey(
+        "pkcs8",
+        privKeyBuf,
+        { name: "RSA-OAEP", hash: "SHA-256" },
+        true,
+        ["decrypt"]
+    );
+
+    current_private_key = rsaPrivateKey // The result is stored here
+    await SavePrivateKeyToStorage(current_private_key)
+
+    return current_private_key
+}
+
+async function RmailEncrypt(message, recipientPublicKeysJWK) {
+    const encoder = new TextEncoder();
+    
+    // 1. Generate a temporary AES-256-GCM key
+    const aesKey = await crypto.subtle.generateKey(
+        { name: 'AES-GCM', length: 256 },
+        true,
+        ['encrypt']
+    );
+
+    // 2. Generate a 12-byte IV
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+
+    // 3. Encrypt the plaintext ("aabbcc")
+    const plaintextBuffer = encoder.encode(message);
+    const encryptedContent = await crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv: iv },
+        aesKey,
+        plaintextBuffer
+    );
+
+    // Export raw AES key bytes to encrypt it with RSA
+    const rawAesKey = await crypto.subtle.exportKey('raw', aesKey);
+
+    // 4. Encrypt the raw AES key for each recipient
+    const encryptedKeys = {};
+    for (const [user, jwk] of Object.entries(recipientPublicKeysJWK)) {
+        const rsaPublicKey = await crypto.subtle.importKey(
+        'jwk',
+        jwk,
+        { name: 'RSA-OAEP', hash: 'SHA-256' },
+        false,
+        ['encrypt']
+        );
+
+        const encryptedKeyBuffer = await crypto.subtle.encrypt(
+        { name: 'RSA-OAEP' },
+        rsaPublicKey,
+        rawAesKey
+        );
+
+        encryptedKeys[user] = arrayBufferToBase64(encryptedKeyBuffer);
+    }
+
+    return {
+        v: 1,
+        alg: 'RSA-OAEP+A256GCM',
+        iv: arrayBufferToBase64(iv),
+        ct: arrayBufferToBase64(encryptedContent),
+        keys: encryptedKeys
+    };
+}
+
+async function GetRecipientPublicKey(username, formdata) {
+    return fetch(`https://mail.rotur.dev/api/v1/users/${username}/key`, {
+        headers: formdata
+    }).then(res => res.json()).catch(err => {
+        return ({error: String(err)})
+    })
+}
+
+async function RmailDecrypt(body, recipientName) {
+    function b64ToBuf(b64) {
+        const bin = atob(b64);
+        const buf = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+        return buf.buffer;
+    }
+    function bufToStr(buf) {
+        return new TextDecoder().decode(buf);
+    }
+
+    const wrappedKeyBuf = b64ToBuf(body.keys[recipientName]);
+    const rawAesKey = await crypto.subtle.decrypt(
+        { name: "RSA-OAEP" },
+        current_private_key,
+        wrappedKeyBuf
+    );
+
+    const contentKey = await crypto.subtle.importKey(
+        "raw",
+        rawAesKey,
+        "AES-GCM",
+        false,
+        ["decrypt"]
+    );
+
+    const iv = b64ToBuf(body.iv);
+    const ct = b64ToBuf(body.ct);
+    const plaintextBuf = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv },
+        contentKey,
+        ct
+    );
+
+    return bufToStr(plaintextBuf);
 }
 
 function hasSuperscript(text) {
@@ -57,24 +304,10 @@ function incrementSuperscriptChain(text) {
     });
 }
 
-const config = {
-    removeElements: ['iframe', 'script', 'style', 'object', 'embed', 'applet', 'meta', 'link', 'base', 'form'],
-    removeAttributes: ['onload', 'onclick', 'onerror', 'onmouseover', 'onfocus', 'onblur', 'onkeydown', 'onchange', 'onsubmit', 'srcdoc', 'formaction']
+const authform = new FormData()
+if (activeacc.uuid) {
+    authform.append("Authorization", `Bearer ${activeacc.token}`)
 }
-const sanitizer = new Sanitizer(config)
-
-const actionbarclasses = ['.rmailreply', '.rmaildelete', '.rmailarchive', '.rmailstar', '.rmailthreads', '.rmailreport', '.rmailmarkread', '.rmailedit2'] // A lot easier than setting their attributes one-by-one manually
-const preferredcdn = await new Promise(resolve =>
-    chrome.storage.local.get('preferredcdn', data => resolve(data.preferredcdn || "mistiums3"))
-) ?? "mistiums3";
-
-const activeacc = await new Promise(resolve =>
-    chrome.storage.local.get('activeacc', data => resolve(data.activeacc || {}))
-) ?? {};
-
-const flagged = await new Promise(resolve =>
-    chrome.storage.local.get('flagged', data => resolve(data.flagged || []))
-) ?? [];
 
 if (!activeacc.uuid) {
     document.getElementsByClassName('container')[0].setHTML(
@@ -112,6 +345,20 @@ if (!activeacc.uuid) {
             <div id="popup-choices">
                 <button id="cancel" class="closebtn">Cancel</button>
                 <button class="finaldelete" data-id='${id}'>Delete</button>
+            </div>
+        `, {sanitizer: sanitizer})
+    }
+    function OpenCacheDeletePopup(id) {
+        document.getElementById('overlay').style.display = 'flex';
+        document.getElementsByClassName('popup')[0].setHTML(`
+            <div id="popup-header">
+                <h1>Delete Rmail</h1>
+                <button id="popup-x" class="closebtn">✕</button>
+            </div>
+            <p id="popupdialogue">Delete this Rmail from your cache? This Rmail will be gone forever.</p>
+            <div id="popup-choices">
+                <button id="cancel" class="closebtn">Cancel</button>
+                <button class="finalcachedelete" data-id='${id}'>Delete</button>
             </div>
         `, {sanitizer: sanitizer})
     }
@@ -225,6 +472,24 @@ if (!activeacc.uuid) {
             </div>
         `, {sanitizer: sanitizer})
     }
+    function openBurnWarningPopup(id) {
+        document.getElementById('overlay').style.display = 'flex';
+        document.getElementsByClassName('popup')[0].setHTML(`
+            <div id="popup-header">
+                <h1>Burn Warning</h1>
+                <button id="popup-x" class="closebtn">✕</button>
+            </div>
+            <p id="popupdialogue">This Rmail has "Burn after read" enabled. Once you have viewed the contents of this Rmail, this Rmail will be deleted from your inbox shortly after. Rotur Assistant will store a read-only, local copy of this Rmail and all of its replies.</p>
+            <label class="rmailnocachelabel">
+                <input type="checkbox" id="dontcachermail">
+                Don't cache this Rmail
+            </label>
+            <div id="popup-choices">
+                <button id="cancel" class="closebtn">Cancel</button>
+                <button id="finalviewbody" data-id='${id}'>View Contents</button>
+            </div>
+        `, {sanitizer: sanitizer})
+    }
     function openReportPopup(id) {
         document.getElementById('overlay').style.display = 'flex';
         document.getElementsByClassName('popup')[0].setHTML(`
@@ -238,6 +503,28 @@ if (!activeacc.uuid) {
                 <button id="cancel" class="closebtn">Cancel</button>
                 <button class="finalreport" data-id='${id}'>Submit</button>
             </div>
+        `, {sanitizer: sanitizer})
+    }
+    function OpenEncryptionPopup() {
+        document.getElementById('overlay').style.display = 'flex';
+        document.getElementsByClassName('popup')[0].setHTML(`
+            <div id="popup-header">
+                <h1>Encryption Settings</h1>
+                <button id="popup-x" class="closebtn">✕</button>
+            </div>
+            <p id="popupdialogue">Encryption Password:</p>
+            <div class="rmailpassphrasecontainer">
+                <input type="password" placeholder="Encryption Password..." id="rmailpassphrasefield">
+                <button id='encryptionpassphrasevisibility' data-visible="false"><img src="../images/misc_icons/invisible.png" width="24" height="24"></button>
+            </div>
+            <p>This will allow you to read and send encrypted Rmails through Rotur Assistant. Rotur Assistant will remember the private key that's derived from this password, not the password itself.</p>
+            <p>For now, this only works if you already have encryption first set up. To first set up encryption, visit <a href="https://mail.rotur.dev" target="_blank" rel="noopener noreferrer">https://mail.rotur.dev</a> and set it up through the settings on there. We plan on allowing you to set up encryption here in a future update.</p>
+            <div id="popup-choices">
+                <button id="cancel" class="closebtn">Close</button>
+                <button id="privkeyreset">Forget</button>
+                <button id="saveencryptionsettings">Save</button>
+            </div>
+            <div id='encryptionerrorstatus'></div>
         `, {sanitizer: sanitizer})
     }
     function openThreadManagerPopup(users, owner) {
@@ -357,6 +644,14 @@ if (!activeacc.uuid) {
     function ResetActionBar() {
         document.getElementById('rmailactionbarbuttons').replaceChildren(document.getElementById('actionbartemplate').content.cloneNode(true))
     }
+    async function GetValidator() {
+        const now = Date.now()
+        if ((now - validator_timestamp) > 275000) {
+            validator_cache = await fetch(`https://api.rotur.dev/generate_validator?key=rotur-mail`, {headers: authform}).then(res => res.json()).then(res => res.validator)
+            validator_timestamp = Date.now()
+        }
+        return validator_cache // Get a new one if the validator is over 5 years old
+    }
     function RefreshTabsAndInboxes() {
         let sentamt = document.getElementById('sentrmailslist').childElementCount
         let receivedamt = document.getElementById('receivedrmailslist').childElementCount
@@ -364,6 +659,8 @@ if (!activeacc.uuid) {
         let draftamt = document.getElementById('rmaildraftslist').childElementCount
         let archiveamt = document.getElementById('rmailarchivelist').childElementCount
         let trashamt = document.getElementById('rmailtrashlist').childElementCount
+        let otheramt = document.getElementById('rmailotherlist').childElementCount
+        let cacheamt = document.getElementById('rmailcachelist').childElementCount
 
         if (!document.getElementById('sentrmailslist').querySelector('li')) {
             sentamt = 0
@@ -405,7 +702,21 @@ if (!activeacc.uuid) {
             document.getElementById('rmailtrashlist').replaceChildren(CreateEmptyPlaceholder(`The trash can is empty right now.`, true))
             document.getElementById('rmailtrashlist').style = 'border: none;'
         } else {
-            document.getElementById('rmailtrashlist').style = 'border: 2px solid white;'
+            document.getElementById('rmailtrashlist').style = "border: 2px solid white;"
+        }
+        if (!document.getElementById('rmailcachelist').querySelector('li')) {
+            cacheamt = 0
+            document.getElementById('rmailcachelist').replaceChildren(CreateEmptyPlaceholder(`You have no cached Rmails yet.`, true))
+            document.getElementById('rmailcachelist').style = 'border: none;'
+        } else {
+            document.getElementById('rmailcachelist').style = "border: 2px solid white;"
+        }
+        if (!document.getElementById('rmailotherlist').querySelector('li')) {
+            otheramt = 0
+            document.getElementById('rmailotherlist').replaceChildren(CreateEmptyPlaceholder(`This inbox is empty right now. Any Rmails that don't fit into any of the main categories go here.`, true))
+            document.getElementById('rmailotherlist').style = 'border: none;'
+        } else {
+            document.getElementById('rmailotherlist').style = 'border: 2px solid white;'
         }
         document.getElementById('rmail_sent').textContent = `Sent (${sentamt})`
         document.getElementById('rmail_received').textContent = `Received (${receivedamt})`
@@ -413,6 +724,8 @@ if (!activeacc.uuid) {
         document.getElementById('rmail_starred').textContent = `Starred (${starredamt})`
         document.getElementById('rmail_archive').textContent = `Archived (${archiveamt})`
         document.getElementById('rmail_trash').textContent = `Trash (${trashamt})`
+        document.getElementById('rmail_cached').textContent = `Cached (${cacheamt})`
+        document.getElementById('rmail_other').textContent = `Other (${otheramt})`
     }
     function ActionBarWhitelist(classarray, origelement, isfeed) {
         actionbarclasses.forEach(btnclass => {
@@ -431,6 +744,22 @@ if (!activeacc.uuid) {
     }
     function CreateRmailFeedCard(rmail) {
         const rmailcard = document.getElementById('rmailfeedcardtemplate').content.cloneNode(true)
+        rmailcard.querySelector('h2').textContent = RmailCapitalize(rmail.from.username || "Unknown User")
+        rmailcard.querySelector('.authorpfp').src = `https://avatars.rotur.dev/${rmail.from.username || "Spectator"}`
+        rmailcard.querySelector('.authorpfp').alt = RmailCapitalize(rmail.from.username || "Spectator")
+        rmailcard.querySelector('.recipientpfp').src = `https://avatars.rotur.dev/${rmail.to.username || "Spectator"}`
+        rmailcard.querySelector('.recipientpfp').alt = RmailCapitalize(rmail.to.username || "Spectator")
+        rmailcard.querySelector('.rmailto').textContent = RmailCapitalize(rmail.to.username || "Unknown User")
+        rmailcard.querySelector('.rmailpreviewbody').querySelector('h3').textContent = rmail.subject
+        rmailcard.querySelector('.rmailpreviewtimestamp').textContent = ((rmail.burn_after_read ? `🔥• ` : ``) + formatDate(rmail.created_at))
+        rmailcard.querySelectorAll('[data-id]').forEach(card => {
+            card.dataset.id = rmail.id
+        })
+        if (rmail.is_cached) {
+            ActionBarWhitelist(['.rmaildelete'], rmailcard, true)
+            rmailcard.querySelector('.rmaildelete').dataset.cache = "true"
+            return rmailcard;
+        }
         if (rmail.is_starred) {
             rmailcard.querySelector('.rmailstar').title = 'Unstar Rmail'
             rmailcard.querySelector('.rmailstar').className = 'rmailunstar'
@@ -440,9 +769,6 @@ if (!activeacc.uuid) {
             rmailcard.querySelector('.rmailmarkread').querySelector('img').src = '../images/misc_icons/invisible.png'
             rmailcard.querySelector('.rmailmarkread').className = 'rmailmarkunread'
         }
-        rmailcard.querySelectorAll('[data-id]').forEach(card => {
-            card.dataset.id = rmail.id
-        })
         switch (rmail.mailbox) {
             case ('drafts'): {
                 ActionBarWhitelist(['.rmailarchive', '.rmaildelete'], rmailcard, true)
@@ -474,14 +800,6 @@ if (!activeacc.uuid) {
                 break;
             }
         }
-        rmailcard.querySelector('h2').textContent = RmailCapitalize(rmail.from.username || "Unknown User")
-        rmailcard.querySelector('.authorpfp').src = `https://avatars.rotur.dev/${rmail.from.username || "Spectator"}`
-        rmailcard.querySelector('.authorpfp').alt = RmailCapitalize(rmail.from.username || "Spectator")
-        rmailcard.querySelector('.recipientpfp').src = `https://avatars.rotur.dev/${rmail.to.username || "Spectator"}`
-        rmailcard.querySelector('.recipientpfp').alt = RmailCapitalize(rmail.to.username || "Spectator")
-        rmailcard.querySelector('.rmailto').textContent = RmailCapitalize(rmail.to.username || "Unknown User")
-        rmailcard.querySelector('.rmailpreviewbody').querySelector('h3').textContent = rmail.subject
-        rmailcard.querySelector('.rmailpreviewtimestamp').textContent = ((rmail.burn_after_read ? `🔥• ` : ``) + formatDate(rmail.created_at))
         return rmailcard
     }
     function CreateRmailCard(maildata, flags) {
@@ -489,10 +807,30 @@ if (!activeacc.uuid) {
             flags = {}
         }
         const rmailcard = document.getElementById('rmailcardtemplate').content.cloneNode(true)
+        rmailcard.querySelector('.viewrmailbodytext').replaceChildren()
         rmailcard.querySelector('.viewrmailauthorpfp').src = `https://avatars.rotur.dev/${maildata.from.username || "Spectator"}`
         rmailcard.querySelector('.viewrmailauthorpfp').alt = maildata.from.username || "Spectator"
         rmailcard.querySelector('.author_href').href = "lookup.html?user=" + (maildata.from.username || "Spectator")
         rmailcard.querySelector('.author_href2').href = "lookup.html?user=" + (maildata.from.username || "Spectator")
+        rmailcard.querySelector('.author_href2').textContent = RmailCapitalize(maildata.from.username || "Unknown User")
+        rmailcard.querySelector('.viewrmailtimestamp').textContent = ((maildata.burn_after_read ? `🔥• ` : ``) + formatDate(maildata.created_at))
+        rmailcard.querySelector('.viewrmailtitletext').textContent = maildata.subject
+        rmailcard.querySelector('.viewrmailrecipientpfp').src = `https://avatars.rotur.dev/${maildata.to.username || "Spectator"}`
+        rmailcard.querySelector('.viewrmailrecipientpfp').alt = (maildata.to.username || "Spectator")
+        rmailcard.querySelector('.recipient_href').href = "lookup.html?user=" + (maildata.to.username || "Spectator")
+        rmailcard.querySelector('.viewrmailrecipient').textContent = RmailCapitalize(maildata.to.username || "Unknown User")
+        rmailcard.querySelector('.viewrmailbodytext').innerText = maildata.body.includes('[RAIMG]') ? parseImage2(maildata.body) : maildata.body
+        AppendImages(maildata.body, maildata.attachments, rmailcard.querySelector('.rmailimageplaceholder'))
+        if (maildata.body == '') {
+            if (maildata.burn_after_read) {
+                const viewbtn = document.createElement('button')
+                viewbtn.id = 'viewrmailcontents'
+                viewbtn.textContent = "View Content & Replies"
+                viewbtn.dataset.id = maildata.id
+                viewbtn.style.width = '50%'
+                rmailcard.querySelector('.viewrmailbodytext').replaceChildren(viewbtn)
+            }
+        }
         if (flags.is_original) {
             current_rmail_view = maildata.id
             ResetActionBar()
@@ -506,6 +844,12 @@ if (!activeacc.uuid) {
             document.getElementById('viewrmailreply').dataset.rmailtitle = maildata.subject
             document.getElementById('viewrmailreply').dataset.rmailauthor = RmailCapitalize(maildata.from.username || "Unknown User")
             rmailcard.querySelector('.rmailreplyactionbar').remove()
+            if (maildata.is_cached) {
+                document.getElementById('rmailreplyelements').style.display = 'block'
+                ActionBarWhitelist(['.rmaildelete'], document.getElementById('rmailactionbarbuttons'))
+                document.getElementById('viewrmaildelete').dataset.cache = "true"
+                return rmailcard;
+            }
             ActionBarWhitelist(['.rmailreply', ".rmailedit2", '.rmailstar', '.rmailthreads', '.rmailreport', '.rmailarchive', '.rmaildelete', '.rmailmarkread'], document.getElementById('rmailactionbarbuttons'))
             if (maildata.is_starred) {
                 const unstarbtn = document.getElementById("viewrmailstar")
@@ -571,7 +915,12 @@ if (!activeacc.uuid) {
                 rmailcard.querySelector('.viewrmailtimestamp').textContent = formatDate(maildata.created_at)
                 return rmailcard;
             } else {
-                ActionBarWhitelist(['.rmailmarkread', ".rmailedit2", '.rmailreply', '.rmailreport', '.rmaildelete'], rmailcard.querySelector('.rmailreplyactionbar'))
+                if (maildata.is_cached) {
+                    ActionBarWhitelist(['.rmaildelete'], rmailcard.querySelector('.rmailreplyactionbar'))
+                    rmailcard.querySelector('.rmaildelete').dataset.cache = "true"
+                } else {
+                    ActionBarWhitelist(['.rmailmarkread', ".rmailedit2", '.rmailreply', '.rmailreport', '.rmaildelete'], rmailcard.querySelector('.rmailreplyactionbar'))
+                }
                 rmailcard.querySelectorAll('[data-id]').forEach(card => {
                     card.dataset.id = maildata.id
                 })
@@ -592,24 +941,84 @@ if (!activeacc.uuid) {
                 document.getElementById("viewrmailedit2").remove()
             }
         }
-        rmailcard.querySelector('.author_href2').textContent = RmailCapitalize(maildata.from.username || "Unknown User")
-        rmailcard.querySelector('.viewrmailtimestamp').textContent = ((maildata.burn_after_read ? `🔥• ` : ``) + formatDate(maildata.created_at))
-        rmailcard.querySelector('.viewrmailtitletext').textContent = maildata.subject
-        rmailcard.querySelector('.viewrmailrecipientpfp').src = `https://avatars.rotur.dev/${maildata.to.username || "Spectator"}`
-        rmailcard.querySelector('.viewrmailrecipientpfp').alt = (maildata.to.username || "Spectator")
-        rmailcard.querySelector('.recipient_href').href = "lookup.html?user=" + (maildata.to.username || "Spectator")
-        rmailcard.querySelector('.viewrmailrecipient').textContent = RmailCapitalize(maildata.to.username || "Unknown User")
-        rmailcard.querySelector('.viewrmailbodytext').innerText = maildata.body.includes('[RAIMG]') ? parseImage2(maildata.body) : maildata.body
-        AppendImages(maildata.body, maildata.attachments, rmailcard.querySelector('.rmailimageplaceholder'))
         return rmailcard;
     }
 
-const sent = []
-const received = []
-const drafts = []
-const starred = []
-const archived = []
-const trash = []
+    const sent = []
+    const received = []
+    const drafts = []
+    const starred = []
+    const archived = []
+    const trash = []
+    const burncache = []
+    const other = []
+
+    async function HandleBurnAfterRead(id) {
+        const validator = await GetValidator()
+        const formdata = new FormData()
+        formdata.append("Authorization", `Bearer ${validator}`)
+        const rmailthread = await fetch(`https://mail.rotur.dev/api/v1/rmails/${id}/thread`, {
+            headers: formdata
+        }).then(res => res.json()).catch(err => {
+            return ({error: String(err)})
+        })
+        if (rmailthread.error) {
+            openErrorPopup(rmailthread.error)
+            document.getElementById('rmailreplyhr').style.display = 'none'
+            document.getElementById('rmailreplies').style.display = 'none'
+        } else {
+            let body_cache = ''
+            let encryptionfailflag = false
+            const rmail = rmailthread.data.root
+            if (rmail.is_encrypted) {
+                try {
+                    rmail.body = await RmailDecrypt(JSON.parse(rmail.body), activeacc.name.toLowerCase())
+                    rmail.is_encrypted = false
+                } catch (err) {
+                    body_cache = rmail.body
+                    rmail.body = "Rotur Assistant failed to decrypt this Rmail. Check your encryption settings."
+                    encryptionfailflag = true
+                }
+            }
+            document.getElementById('original_rmail').replaceChildren(CreateRmailCard(rmail, {is_original: true}))
+            if (encryptionfailflag) {
+                rmail.body = body_cache
+            }
+            document.getElementById('rmailreplyhr').style.display = 'block'
+            document.getElementById('rmailreplies').style.display = 'block'
+            const replies = rmailthread.data.replies
+            if (replies.length == 0) {
+                document.getElementById('rmailreplyhr').style.display = 'none'
+                document.getElementById('rmailreplies').style.display = 'none'
+            }
+            replies_cache = [...replies]
+            const reply_elements = []
+            replies.forEach(reply => {
+                const li = document.createElement('li')
+                li.dataset.id = reply.id
+                li.replaceChildren(CreateRmailCard(reply, {}))
+                reply_elements.push(li)
+            })
+            document.getElementById('rmailreplies').replaceChildren(...reply_elements)
+            rmail.original_recipient = activeacc.uuid
+            if (!document.getElementById('dontcachermail')?.checked && !cached_rmails.some(oldrmail => oldrmail.id === rmail.id)) {
+                all_cache = all_cache.filter(deletedrmail => deletedrmail.id != id)
+                document.querySelectorAll(`.rmailpreview[data-id="${id}"]`).forEach(rmailelement => {
+                    rmailelement.remove()
+                })
+                rmail.is_cached = true
+                rmail.replies = replies
+                cached_rmails.push(rmail)
+                cached_rmails_data[activeacc.uuid] = cached_rmails
+                chrome.storage.local.set({cached_rmails: cached_rmails_data})
+                if (!document.getElementById('rmailcachelist').querySelector('li')) {
+                    document.getElementById('rmailcachelist').replaceChildren()
+                }
+                document.getElementById('rmailcachelist').prepend(CreateRmailFeedCard(rmail))
+                RefreshTabsAndInboxes()
+            }
+        }
+    }
 
     async function GetAllRmails(formdata) {
         all_cache = await fetch(`https://mail.rotur.dev/api/v1/rmails?per_page=99999999&box=all`, {
@@ -657,6 +1066,13 @@ const trash = []
             }
         }
     }
+    async function GetEncryptionKeys(formdata) {
+        keys_cache = await fetch(`https://mail.rotur.dev/api/v1/encryption/keys`, {
+            headers: formdata
+        }).then(res => res.json()).catch(err => {
+            return {error: {name: String(err)}}
+        })
+    }
 
     async function GetRmails() {
         all_cache = []
@@ -666,9 +1082,14 @@ const trash = []
         starred.length = 0
         archived.length = 0
         trash.length = 0
+        other.length = 0
+        burncache.length = 0
+        cached_rmails.forEach(oldrmail => {
+            burncache.push(CreateRmailFeedCard(oldrmail))
+        })
 
         let formdata = new FormData()
-        let validator = await fetch(`https://api.rotur.dev/generate_validator?auth=${encodeURIComponent(activeacc.token)}&key=rotur-mail`).then(res => res.json()).catch(err => {
+        let validator = await fetch(`https://api.rotur.dev/generate_validator?key=rotur-mail`, {headers: authform}).then(res => res.json()).catch(err => {
             document.getElementsByClassName('container')[0].setHTML(
                 `<h1>Rmail</h1>
                 <h3>A communication error has occurred. If you're sure it's not your connection, then this part of Rotur may be down right now.</h3>`,
@@ -689,7 +1110,7 @@ const trash = []
             formdata.append("Authorization", `Bearer ${validator}`)
         }
 
-        const promises = [GetAllRmails(formdata), CheckIfBanned(formdata)]
+        const promises = [GetAllRmails(formdata), CheckIfBanned(formdata), GetEncryptionKeys(formdata)]
 
         await Promise.all(promises)
 
@@ -718,56 +1139,34 @@ const trash = []
                     trash.push(CreateRmailFeedCard(rmail))
                     break;
                 }
+                default: {
+                    other.push(CreateRmailFeedCard(rmail))
+                }
             }
         })
-        document.getElementById('rmail_sent').textContent = `Sent (${sent.length})`
-        if (sent.length == 0) {
-            document.getElementById('sentrmailslist').replaceChildren(CreateEmptyPlaceholder(`You have not sent any rmails yet.`, true))
-            document.getElementById('sentrmailslist').style = 'border: none;'
-        } else {
-            document.getElementById('sentrmailslist').replaceChildren(...sent)
-            document.getElementById('sentrmailslist').style = "border: 2px solid white;"
-        }
-        document.getElementById('rmail_received').textContent = `Received (${received.length})`
-        if (received.length == 0) {
-            document.getElementById('receivedrmailslist').replaceChildren(CreateEmptyPlaceholder(`You have not received any rmails yet.`, true))
-            document.getElementById('receivedrmailslist').style = 'border: none;'
-        } else {
-            document.getElementById('receivedrmailslist').replaceChildren(...received)
-            document.getElementById('receivedrmailslist').style = 'border: 2px solid white;'
-        }
-        document.getElementById('rmail_starred').textContent = `Starred (${starred.length})`
-        if (starred.length == 0) {
-            document.getElementById('rmailstarredlist').replaceChildren(CreateEmptyPlaceholder(`You have not starred any rmails yet.`, true))
-            document.getElementById('rmailstarredlist').style = 'border: none;'
-        } else {
-            document.getElementById('rmailstarredlist').replaceChildren(...starred)
-            document.getElementById('rmailstarredlist').style = 'border: 2px solid white;'
-        }
-        document.getElementById('rmail_drafts').textContent = `Drafts (${drafts.length})`
-        if (drafts.length == 0) {
-            document.getElementById('rmaildraftslist').replaceChildren(CreateEmptyPlaceholder(`You have no drafts right now.`, true))
-            document.getElementById('rmaildraftslist').style = 'border: none;'
-        } else {
-            document.getElementById('rmaildraftslist').replaceChildren(...drafts)
-            document.getElementById('rmaildraftslist').style = "border: 2px solid white;"
-        }
-        document.getElementById('rmail_archive').textContent = `Archived (${archived.length})`
-        if (archived.length == 0) {
-            document.getElementById('rmailarchivelist').replaceChildren(CreateEmptyPlaceholder(`You have not archived any rmails yet.`, true))
-            document.getElementById('rmailarchivelist').style = 'border: none;'
-        } else {
-            document.getElementById('rmailarchivelist').replaceChildren(...archived)
-            document.getElementById('rmailarchivelist').style = "border: 2px solid white;"
-        }
-        document.getElementById('rmail_trash').textContent = `Trash (${trash.length})`
-        if (trash.length == 0) {
-            document.getElementById('rmailtrashlist').replaceChildren(CreateEmptyPlaceholder(`The trash can is empty right now.`, true))
-            document.getElementById('rmailtrashlist').style = 'border: none;'
-        } else {
-            document.getElementById('rmailtrashlist').replaceChildren(...trash)
-            document.getElementById('rmailtrashlist').style = 'border: 2px solid white;'
-        }
+        const mailboxes = [
+            { tabId: 'rmail_sent',     label: 'Sent',     listId: 'sentrmailslist',     items: sent,     emptyText: 'You have not sent any rmails yet.' },
+            { tabId: 'rmail_received', label: 'Received', listId: 'receivedrmailslist', items: received, emptyText: 'You have not received any rmails yet.' },
+            { tabId: 'rmail_starred',  label: 'Starred',  listId: 'rmailstarredlist',  items: starred,  emptyText: 'You have not starred any rmails yet.' },
+            { tabId: 'rmail_other',    label: 'Other',    listId: 'rmailotherlist',    items: other,    emptyText: "This inbox is empty right now. Any Rmails that don't fit into any of the main categories go here." },
+            { tabId: 'rmail_drafts',   label: 'Drafts',   listId: 'rmaildraftslist',   items: drafts,   emptyText: 'You have no drafts right now.' },
+            { tabId: 'rmail_cached',    label: 'Cached',   listId: 'rmailcachelist',    items: burncache,   emptyText: 'You have no cached Rmails yet.' },
+            { tabId: 'rmail_archive',  label: 'Archived', listId: 'rmailarchivelist',  items: archived, emptyText: 'You have not archived any rmails yet.' },
+            { tabId: 'rmail_trash',    label: 'Trash',    listId: 'rmailtrashlist',    items: trash,    emptyText: 'The trash can is empty right now.' }
+        ];
+
+        mailboxes.forEach(({ tabId, label, listId, items, emptyText }) => {
+            document.getElementById(tabId).textContent = `${label} (${items.length})`;
+            const listEl = document.getElementById(listId);
+            
+            if (items.length === 0) {
+                listEl.replaceChildren(CreateEmptyPlaceholder(emptyText, true));
+                listEl.style.border = 'none';
+            } else {
+                listEl.replaceChildren(...items);
+                listEl.style.border = '2px solid white';
+            }
+        });
     }
     
     GetRmails()
@@ -785,6 +1184,17 @@ const trash = []
                 document.getElementById('clearreplyattachment').style.display = 'none'
                 document.getElementById('rmailreplyimage').value = ''
                 break;
+            }
+            case ('encryptionpassphrasevisibility'): {
+                if (e.target.dataset.visible == 'true') {
+                    e.target.dataset.visible = 'false'
+                    e.target.setHTML(`<img src="../images/misc_icons/invisible.png" width="24" height="24">`, {sanitizer: sanitizer})
+                    document.getElementById('rmailpassphrasefield').type = 'password'
+                } else {
+                    e.target.dataset.visible = 'true'
+                    e.target.setHTML(`<img src="../images/misc_icons/visible.png" width="24" height="24">`, {sanitizer: sanitizer})
+                    document.getElementById('rmailpassphrasefield').type = 'text'
+                }
             }
             case ('rmailimage'): {
                 if (e.shiftKey) {
@@ -812,15 +1222,13 @@ const trash = []
                 }
                 break;
             }
-            case ('closebtn'): {
-                closePopup()
-                break;
-            }
             case ('rmail_goback'):
             case ('rmail_goback2'): {
                 document.getElementById('rmailpage1').style.display = 'block'
                 document.getElementById('rmailpage2').style.display = 'none'
                 document.getElementById('rmailpage3').style.display = 'none'
+                document.getElementById('rmailreplyhr').style.display = 'none'
+                document.getElementById('rmailreplies').style.display = 'none'
                 draftprogressid = ''
                 break;
             }
@@ -841,26 +1249,25 @@ const trash = []
                 document.getElementById('overlay').querySelector('h1').textContent = "Ban Reason"
                 break;
             }
-            case ('rmailnavleft'): {
-                Array.from(document.getElementsByClassName('rmailtab')).forEach(tab => {
-                    tab.style.display = "none"
-                })
-                document.getElementById('rmail_sent').style.display = 'block'
-                document.getElementById('rmail_received').style.display = 'block'
-                document.getElementById('rmail_starred').style.display = 'block'
-                document.getElementById('rmailnavleft').style.display = 'none'
-                document.getElementById('rmailnavright').style.display = 'block'
-                break;
-            }
+            case ('rmailnavleft'):
             case ('rmailnavright'): {
-                Array.from(document.getElementsByClassName('rmailtab')).forEach(tab => {
-                    tab.style.display = "none"
-                })
-                document.getElementById('rmail_drafts').style.display = 'block'
-                document.getElementById('rmail_archive').style.display = 'block'
-                document.getElementById('rmail_trash').style.display = 'block'
-                document.getElementById('rmailnavleft').style.display = 'block'
-                document.getElementById('rmailnavright').style.display = 'none'
+                Array.from(document.getElementsByClassName('rmailtab')).forEach(tab => tab.style.display = "none");
+                
+                rmailtabpage += (e.target.id === 'rmailnavright') ? 1 : -1;
+                
+                const tabGroups = {
+                    1: ['rmail_sent', 'rmail_received', 'rmail_starred'],
+                    2: ['rmail_other', 'rmail_drafts', 'rmail_cached'],
+                    3: ['rmail_archive', 'rmail_trash']
+                };
+
+                tabGroups[rmailtabpage]?.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = 'block';
+                });
+
+                document.getElementById('rmailnavleft').style.display = (rmailtabpage === 1) ? 'none' : 'block';
+                document.getElementById('rmailnavright').style.display = (rmailtabpage === 3) ? 'none' : 'block';
                 break;
             }
             case ("reloadrmails"): {
@@ -873,10 +1280,36 @@ const trash = []
                 target.disabled = false
                 break;
             }
+            case ("encryptionsettings"): {
+                OpenEncryptionPopup()
+                break;
+            }
+            case ("privkeyreset"): {
+                delete private_keys_cache[activeacc.uuid]
+                chrome.storage.local.set({rmail_misc: private_keys_cache})
+                current_private_key = null
+                document.getElementById('encryptionerrorstatus').replaceChildren(MiniError('success', "Successfully forgot private key data"))
+                setTimeout(() => {
+                    document.getElementById('encryptionerrorstatus')?.replaceChildren()
+                }, 10000)
+                break;
+            }
+            case ("saveencryptionsettings"): {
+                try {
+                    current_private_key = await DecryptKeyFromPassword(document.getElementById('rmailpassphrasefield').value, keys_cache.data.encrypted_private_key)
+                    document.getElementById('encryptionerrorstatus').replaceChildren(MiniError('success', "Private key saved successfully"))
+                } catch (error) {
+                    document.getElementById('encryptionerrorstatus').replaceChildren(MiniError('failure', "Incorrect password to decrypt private key"))
+                }
+                setTimeout(() => {
+                    document.getElementById('encryptionerrorstatus')?.replaceChildren()
+                }, 10000)
+                break;
+            }
             case ("rmailundo"): {
                 closePopup()
                 const rmaildata = all_cache.find(rmail => rmail.id == e.target.dataset.id)
-                const validator = await fetch(`https://api.rotur.dev/generate_validator?auth=${encodeURIComponent(activeacc.token)}&key=rotur-mail`).then(res => res.json()).then(res => res.validator)
+                const validator = await GetValidator()
                 const formdata = new FormData()
                 formdata.append("Authorization", `Bearer ${validator}`)
                 const undosuccess = await fetch(`https://mail.rotur.dev/api/v1/rmails/${e.target.dataset.id}/undo`, {
@@ -920,7 +1353,7 @@ const trash = []
                     }, 1000)
                     break;
                 }
-                const userexists = await fetch(`https://api.rotur.dev/exists?username=${newuser}`).then(res => res.json())
+                const userexists = await fetch(`https://api.rotur.dev/v2/users/${newuser}/exists`).then(res => res.json())
                 if (!userexists.exists) {
                     orig_target.style.background = 'rgb(173, 0, 0)'
                     orig_target.disabled = false
@@ -932,7 +1365,7 @@ const trash = []
                     }, 1000)
                     break;
                 }
-                const validator = await fetch(`https://api.rotur.dev/generate_validator?auth=${encodeURIComponent(activeacc.token)}&key=rotur-mail`).then(res => res.json()).then(res => res.validator)
+                const validator = await GetValidator()
                 const formdata = new FormData()
                 formdata.append("Authorization", `Bearer ${validator}`)
                 const addsuccess = await fetch(`https://mail.rotur.dev/api/v1/rmails/${current_rmail_view}/participants?username=${newuser}`, {
@@ -973,8 +1406,20 @@ const trash = []
                 orig_target.textContent = "+"
                 break;
             }
+            case ('viewrmailcontents'): {
+                openBurnWarningPopup(e.target.dataset.id)
+                break;
+            }
+            case ('finalviewbody'): {
+                closePopup()
+                HandleBurnAfterRead(e.target.dataset.id)
+            }
         }
         switch (e.target.className) {
+            case ('closebtn'): {
+                closePopup()
+                break;
+            }
             case ('rmailtab'): {
                 Array.from(document.getElementsByClassName('rmailtab')).forEach(tab => {
                     tab.style.borderBottom = "none"
@@ -983,54 +1428,121 @@ const trash = []
                 document.getElementById('rmailsenttab').style.display = ((e.target.id == 'rmail_sent') ? 'block' : 'none')
                 document.getElementById('rmailreceivedtab').style.display = ((e.target.id == 'rmail_received') ? 'block' : 'none')
                 document.getElementById('rmailstarredtab').style.display = ((e.target.id == 'rmail_starred') ? 'block' : 'none')
+                document.getElementById('rmailothertab').style.display = ((e.target.id == 'rmail_other') ? 'block' : 'none')
                 document.getElementById('rmaildraftstab').style.display = ((e.target.id == 'rmail_drafts') ? 'block' : 'none')
+                document.getElementById('rmailcachetab').style.display = ((e.target.id == 'rmail_cached') ? 'block' : 'none')
                 document.getElementById('rmailarchivetab').style.display = ((e.target.id == 'rmail_archive') ? 'block' : 'none')
                 document.getElementById('rmailtrashtab').style.display = ((e.target.id == 'rmail_trash') ? 'block' : 'none')
                 break;
             }
             case ('rmailpreview'): {
-                const maildata = all_cache.find(rmail => rmail.id == e.target.dataset.id)
-                current_rmail = maildata
-                document.getElementById('original_rmail').replaceChildren(CreateRmailCard(maildata, {is_original: true}))
-                document.getElementById('rmailpage2').style.display = 'block'
-                document.getElementById('rmailpage1').style.display = 'none'
-                scrollTo(0, 0)
-                if (!me_cache.is_banned) {
-                    document.getElementById('rmail_reply_receipient').value = ''
-                    document.getElementById('rmail_reply_title').value = ''
-                    document.getElementById('rmail_reply_comp_body').value = ''
-                    document.getElementById('rmailreplyimage').value = ''
-                    document.getElementById('replyencrypted').checked = false
-                    document.getElementById('clearreplyattachment').disabled = false
-                    document.getElementById('clearreplyattachment').style.display = 'none'
+                const maildata = all_cache.find(rmail => rmail.id == e.target.dataset.id) ?? cached_rmails.find(rmail => rmail.id == e.target.dataset.id)
+                function RenderPage() {
+                    current_rmail = maildata
+                    document.getElementById('original_rmail').replaceChildren(CreateRmailCard(maildata, {is_original: true}))
+                    document.getElementById('rmailpage2').style.display = 'block'
+                    document.getElementById('rmailpage1').style.display = 'none'
+                    document.getElementById('rmail_replybox').style.display = 'block'
+                    scrollTo(0, 0)
+                    if (!me_cache.is_banned) {
+                        document.getElementById('rmail_reply_receipient').value = ''
+                        document.getElementById('rmail_reply_title').value = ''
+                        document.getElementById('rmail_reply_comp_body').value = ''
+                        document.getElementById('rmailreplyimage').value = ''
+                        document.getElementById('replyencrypted').checked = false
+                        document.getElementById('clearreplyattachment').disabled = false
+                        document.getElementById('clearreplyattachment').style.display = 'none'
+                    }
                 }
-                if (maildata.replies.length) {
+                let rmailthread = ''
+                if (maildata.is_encrypted && !maildata.burn_after_read) {
+                    const validator = await GetValidator()
+                    const formdata = new FormData()
+                    formdata.append("Authorization", `Bearer ${validator}`)
+                    if (!rmailthread) {
+                        maildata.body = "Decrypting..."
+                        RenderPage()
+                        rmailthread = await fetch(`https://mail.rotur.dev/api/v1/rmails/${maildata.id}/thread`, {
+                            headers: formdata
+                        }).then(res => res.json()).catch(err => {
+                            return ({error: String(err)})
+                        })
+                    }
+                    try {
+                        maildata.body = await RmailDecrypt(JSON.parse(rmailthread.data.root.body), activeacc.name.toLowerCase())
+                        maildata.is_encrypted = false // Don't do the same work again
+                        if (maildata.is_cached) {
+                            cached_rmails_data[activeacc.uuid] = cached_rmails
+                            chrome.storage.local.set({cached_rmails: cached_rmails_data}) // If it's a cached Rmail, only do the decryption once forever
+                        }
+                    } catch (err) {
+                        maildata.body = "Rotur Assistant failed to decrypt this Rmail. Check your encryption settings."
+                    }
+                }
+                RenderPage()
+                if (maildata.is_cached) {
+                    const replies = maildata.replies
+                    const reply_elements = []
+                    for (const reply of replies) {
+                        reply.is_cached = true
+                        if (reply.is_encrypted) {
+                            try {
+                                reply.body = await RmailDecrypt(JSON.parse(reply.body), activeacc.name.toLowerCase())
+                                reply.is_encrypted = false
+                                cached_rmails_data[activeacc.uuid] = cached_rmails
+                                chrome.storage.local.set({cached_rmails: cached_rmails_data}) // If it's a cached Rmail, only do the decryption once forever
+                            } catch {
+                                reply.body = "Rotur Assistant failed to decrypt this reply. Check your encryption settings."
+                            }
+                        }
+                        const li = document.createElement('li')
+                        li.dataset.id = reply.id
+                        li.replaceChildren(CreateRmailCard(reply, {}))
+                        reply_elements.push(li)
+                    }
+                    document.getElementById('rmail_replybox').style.display = 'none'
+                    document.getElementById('rmailreplies').replaceChildren(...reply_elements)
+                    return;
+                }
+                if (maildata.replies.length && !maildata.burn_after_read) {
                     document.getElementById('rmailreplyhr').style.display = 'block'
                     document.getElementById('rmailreplies').style.display = 'block'
                     document.getElementById('rmailreplies').replaceChildren(CreateEmptyPlaceholder('Loading Replies...'))
-                    const validator = await fetch(`https://api.rotur.dev/generate_validator?auth=${encodeURIComponent(activeacc.token)}&key=rotur-mail`).then(res => res.json()).then(res => res.validator)
-                    const formdata = new FormData()
-                    formdata.append("Authorization", `Bearer ${validator}`)
-                    const rmailthread = await fetch(`https://mail.rotur.dev/api/v1/rmails/${maildata.id}/thread`, {
-                        headers: formdata
-                    }).then(res => res.json()).catch(err => {
-                        return ({error: String(err)})
-                    })
-                    if (rmailthread.error) {
-                        openErrorPopup(rmailthread.error)
-                        document.getElementById('rmailreplyhr').style.display = 'none'
-                        document.getElementById('rmailreplies').style.display = 'none'
-                    } else {
-                        const replies = rmailthread.data.replies
-                        replies_cache = [...replies]
-                        const reply_elements = []
-                        replies.forEach(reply => {
-                            const li = document.createElement('li')
-                            li.dataset.id = reply.id
-                            li.replaceChildren(CreateRmailCard(reply, {}))
-                            reply_elements.push(li)
-                        })
-                        document.getElementById('rmailreplies').replaceChildren(...reply_elements)
+                    const validator = await GetValidator()
+                    if (!(maildata.is_encrypted || maildata.burn_after_read)) {
+                        const formdata = new FormData()
+                        formdata.append("Authorization", `Bearer ${validator}`)
+                        if (!rmailthread) {
+                            rmailthread = await fetch(`https://mail.rotur.dev/api/v1/rmails/${maildata.id}/thread`, {
+                                headers: formdata
+                            }).then(res => res.json()).catch(err => {
+                                return ({error: String(err)})
+                            })
+                        }
+                        if (rmailthread.error) {
+                            openErrorPopup(rmailthread.error)
+                            document.getElementById('rmailreplyhr').style.display = 'none'
+                            document.getElementById('rmailreplies').style.display = 'none'
+                        } else {
+                            const replies = rmailthread.data.replies
+                            replies_cache = [...replies]
+                            const reply_elements = []
+                            for (const reply of replies) {
+                                if (reply.is_encrypted) {
+                                    try {
+                                        reply.body = await RmailDecrypt(JSON.parse(reply.body), activeacc.name.toLowerCase())
+                                        reply.is_encrypted = false
+                                    } catch {
+                                        reply.body = "Rotur Assistant failed to decrypt this reply. Check your encryption settings."
+                                    }
+                                }
+                                const li = document.createElement('li')
+                                li.dataset.id = reply.id
+                                li.replaceChildren(CreateRmailCard(reply, {}))
+                                reply_elements.push(li)
+                            }
+                            document.getElementById('rmailreplies').replaceChildren(...reply_elements)
+                        }
                     }
                 } else {
                     replies_cache = []
@@ -1072,10 +1584,10 @@ const trash = []
             }
             case ('rmailmarkread'): {
                 const rmaildata = (all_cache.find(rmail => rmail.id == e.target.dataset.id) ?? replies_cache.find(rmail => rmail.id == e.target.dataset.id))
-                if (rmaildata.burn_after_read && (e.target.className == 'rmailmarkread')) {
+                if (rmaildata.burn_after_read && (e.target.className == 'rmailmarkread') && (rmaildata.from.id != activeacc.uuid)) {
                     openMarkReadPopup(e.target.dataset.id)
                 } else {
-                    const validator = await fetch(`https://api.rotur.dev/generate_validator?auth=${encodeURIComponent(activeacc.token)}&key=rotur-mail`).then(res => res.json()).then(res => res.validator)
+                    const validator = await GetValidator()
                     const formdata = new FormData()
                     formdata.append("Authorization", `Bearer ${validator}`)
                     const readsuccess = await fetch(`https://mail.rotur.dev/api/v1/rmails/${e.target.dataset.id}/read`, {
@@ -1094,7 +1606,10 @@ const trash = []
                         })
                         rmaildata.is_read = true
                         if (e.target.className == 'finalmarkread') {
-                            openSuccessPopup('Successfully marked Rmail as read. Do note that the next time you open the Rmail app or refresh the feed, this Rmail will be gone.')
+                            openSuccessPopup('Successfully marked Rmail as read. As a result, this Rmail has been cached by Rotur Assistant.')
+                        }
+                        if ((rmaildata.from.id != activeacc.uuid) && rmaildata.burn_after_read) {
+                            HandleBurnAfterRead(e.target.dataset.id)
                         }
                     }
                 }
@@ -1102,7 +1617,7 @@ const trash = []
             }
             case ('rmailmarkunread'): {
                 const rmaildata = all_cache.find(rmail => rmail.id == e.target.dataset.id)
-                const validator = await fetch(`https://api.rotur.dev/generate_validator?auth=${encodeURIComponent(activeacc.token)}&key=rotur-mail`).then(res => res.json()).then(res => res.validator)
+                const validator = await GetValidator()
                 const formdata = new FormData()
                 formdata.append("Authorization", `Bearer ${validator}`)
                 const readsuccess = await fetch(`https://mail.rotur.dev/api/v1/rmails/${e.target.dataset.id}/unread`, {
@@ -1125,7 +1640,7 @@ const trash = []
             }
             case ('rmailstar'): {
                 const rmaildata = all_cache.find(rmail => rmail.id == e.target.dataset.id)
-                const validator = await fetch(`https://api.rotur.dev/generate_validator?auth=${encodeURIComponent(activeacc.token)}&key=rotur-mail`).then(res => res.json()).then(res => res.validator)
+                const validator = await GetValidator()
                 const formdata = new FormData()
                 formdata.append("Authorization", `Bearer ${validator}`)
                 const starsuccess = await fetch(`https://mail.rotur.dev/api/v1/rmails/${e.target.dataset.id}/star`, {
@@ -1152,7 +1667,7 @@ const trash = []
             }
             case ('rmailunstar'): {
                 const rmaildata = all_cache.find(rmail => rmail.id == e.target.dataset.id)
-                const validator = await fetch(`https://api.rotur.dev/generate_validator?auth=${encodeURIComponent(activeacc.token)}&key=rotur-mail`).then(res => res.json()).then(res => res.validator)
+                const validator = await GetValidator()
                 const formdata = new FormData()
                 formdata.append("Authorization", `Bearer ${validator}`)
                 const unstarsuccess = await fetch(`https://mail.rotur.dev/api/v1/rmails/${e.target.dataset.id}/unstar`, {
@@ -1177,7 +1692,9 @@ const trash = []
                 break;
             }
             case ('rmaildelete'): {
-                if (e.target.dataset.is_reply) {
+                if (e.target.dataset.cache) {
+                    OpenCacheDeletePopup(e.target.dataset.id)
+                } else if (e.target.dataset.is_reply) {
                     openPermaDeletePopup(e.target.dataset.id, 'true')
                 } else {
                     openDeletePopup(e.target.dataset.id)
@@ -1248,7 +1765,7 @@ const trash = []
                 target.textContent = '...'
                 const currentrmail = all_cache.find(rmail => rmail.id == current_rmail_view)
                 let threadusers = current_rmail.participants
-                const validator = await fetch(`https://api.rotur.dev/generate_validator?auth=${encodeURIComponent(activeacc.token)}&key=rotur-mail`).then(res => res.json()).then(res => res.validator)
+                const validator = await GetValidator()
                 const formdata = new FormData()
                 formdata.append("Authorization", `Bearer ${validator}`)
                 const removesuccess = await fetch(`https://mail.rotur.dev/api/v1/rmails/${current_rmail_view}/participants/${e.target.dataset.user}`, {
@@ -1280,7 +1797,7 @@ const trash = []
                 const newbody = document.getElementById('editrmailbody').value
                 const newencryption = document.getElementById('editencrypted').checked
                 const is_reply = e.target.dataset.is_reply
-                const validator = await fetch(`https://api.rotur.dev/generate_validator?auth=${encodeURIComponent(activeacc.token)}&key=rotur-mail`).then(res => res.json()).then(res => res.validator)
+                const validator = await GetValidator()
                 const formdata = new FormData()
                 formdata.append("Authorization", `Bearer ${validator}`)
                 const editsuccess = await fetch(`https://mail.rotur.dev/api/v1/rmails/${id}/edit?subject=${encodeURIComponent(newsubject)}&body=${encodeURIComponent(newbody)}&encrypted=${newencryption}`, {
@@ -1315,12 +1832,41 @@ const trash = []
                 }
                 break;
             }
+            case ('finalcachedelete'): {
+                closePopup()
+                const id = e.target.dataset.id
+                const rmaildata = cached_rmails.find(rmail => rmail.id == id) ?? current_rmail.replies.find(rmail => rmail.id == id)
+                const is_reply = !cached_rmails.some(rmail => rmail.id == id)
+                if (is_reply) {
+                    current_rmail.replies = current_rmail.replies.filter(rmail => rmail.id != id)
+                    cached_rmails.find(rmail => rmail.some(rmail2 => rmail2.replies.some(rmail3 => rmail3.id == id))) // Quite the nesting
+                    document.getElementById('rmailreplies').querySelectorAll(`[data-id="${id}"]`).forEach(rmailelement => {
+                        rmailelement.remove()
+                    })
+                    if (document.getElementById('rmailreplies').childElementCount == 0) {
+                        document.getElementById('rmailreplyhr').style.display = 'none'
+                        document.getElementById('rmailreplies').style.display = 'none'
+                    }
+                } else {
+                    cached_rmails = cached_rmails.filter(rmail => rmail.id != id)
+                    cached_rmails_data[activeacc.uuid] = cached_rmails
+                    chrome.storage.local.set({cached_rmails: cached_rmails_data})
+                    document.querySelectorAll(`.rmailpreview[data-id="${id}"]`).forEach(rmailelement => {
+                        rmailelement.remove()
+                    })
+                    RefreshTabsAndInboxes()
+                    document.getElementById('rmailpage1').style.display = 'block'
+                    document.getElementById('rmailpage2').style.display = 'none'
+                    document.getElementById('rmailpage3').style.display = 'none'
+                }
+                break;
+            }
             case ('finaldelete'): {
                 closePopup()
                 const rmaildata = all_cache.find(rmail => rmail.id == e.target.dataset.id)
                 const id = e.target.dataset.id
                 const permadelete = document.getElementById('permadeleteinstead').checked
-                const validator = await fetch(`https://api.rotur.dev/generate_validator?auth=${encodeURIComponent(activeacc.token)}&key=rotur-mail`).then(res => res.json()).then(res => res.validator)
+                const validator = await GetValidator()
                 const formdata = new FormData()
                 formdata.append("Authorization", `Bearer ${validator}`)
                 const deletesuccess = await fetch(`https://mail.rotur.dev/api/v1/rmails/${id}${permadelete ? `` : `/trash`}`, {
@@ -1366,7 +1912,7 @@ const trash = []
                 const origin = e.target.className
                 const id = e.target.dataset.id
                 const is_reply = e.target.dataset.is_reply
-                const validator = await fetch(`https://api.rotur.dev/generate_validator?auth=${encodeURIComponent(activeacc.token)}&key=rotur-mail`).then(res => res.json()).then(res => res.validator)
+                const validator = await GetValidator()
                 const formdata = new FormData()
                 formdata.append("Authorization", `Bearer ${validator}`)
                 const deletesuccess = await fetch(`https://mail.rotur.dev/api/v1/rmails/${id}`, {
@@ -1405,7 +1951,7 @@ const trash = []
             case ('finalreport'): {
                 closePopup()
                 const id = e.target.dataset.id
-                const validator = await fetch(`https://api.rotur.dev/generate_validator?auth=${encodeURIComponent(activeacc.token)}&key=rotur-mail`).then(res => res.json()).then(res => res.validator)
+                const validator = await GetValidator()
                 const formdata = new FormData()
                 formdata.append("Authorization", `Bearer ${validator}`)
                 const reportsuccess = await fetch(`https://mail.rotur.dev/api/v1/rmails/${id}/report?reason=${encodeURIComponent(document.getElementById('rmailreportfield').value)}`, {
@@ -1425,7 +1971,7 @@ const trash = []
                 closePopup()
                 const rmaildata = all_cache.find(rmail => rmail.id == e.target.dataset.id)
                 const id = e.target.dataset.id
-                const validator = await fetch(`https://api.rotur.dev/generate_validator?auth=${encodeURIComponent(activeacc.token)}&key=rotur-mail`).then(res => res.json()).then(res => res.validator)
+                const validator = await GetValidator()
                 const formdata = new FormData()
                 formdata.append("Authorization", `Bearer ${validator}`)
                 const deletesuccess = await fetch(`https://mail.rotur.dev/api/v1/rmails/${id}/restore`, {
@@ -1455,7 +2001,7 @@ const trash = []
                 closePopup()
                 const rmaildata = all_cache.find(rmail => rmail.id == e.target.dataset.id)
                 const id = e.target.dataset.id
-                const validator = await fetch(`https://api.rotur.dev/generate_validator?auth=${encodeURIComponent(activeacc.token)}&key=rotur-mail`).then(res => res.json()).then(res => res.validator)
+                const validator = await GetValidator()
                 const formdata = new FormData()
                 formdata.append("Authorization", `Bearer ${validator}`)
                 const archivesuccess = await fetch(`https://mail.rotur.dev/api/v1/rmails/${id}/archive`, {
@@ -1489,7 +2035,7 @@ const trash = []
                 closePopup()
                 const rmaildata = all_cache.find(rmail => rmail.id == e.target.dataset.id)
                 const id = e.target.dataset.id
-                const validator = await fetch(`https://api.rotur.dev/generate_validator?auth=${encodeURIComponent(activeacc.token)}&key=rotur-mail`).then(res => res.json()).then(res => res.validator)
+                const validator = await GetValidator()
                 const formdata = new FormData()
                 formdata.append("Authorization", `Bearer ${validator}`)
                 const unarchivesuccess = await fetch(`https://mail.rotur.dev/api/v1/rmails/${id}/unarchive`, {
@@ -1570,10 +2116,28 @@ const trash = []
                     }
                 }
             }
-            const validator = await fetch(`https://api.rotur.dev/generate_validator?auth=${encodeURIComponent(activeacc.token)}&key=rotur-mail`).then(res => res.json()).then(res => res.validator)
+            const validator = await GetValidator()
             const formdata = new FormData()
             formdata.append("Authorization", `Bearer ${validator}`)
-            const sendsuccess = await fetch(`https://mail.rotur.dev/api/v1/drafts?to=${recipient}&subject=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}&attachments=${encodeURIComponent(JSON.stringify(potentialattachment))}${burn ? `&burn_after_read=true` : ``}${encrypted ? `&encrypted=true` : ``}${draftprogressid ? `&id=${draftprogressid}` : ``}`, {
+            let finalbody = body
+            if (encrypted) {
+                const recipientkeydata = await GetRecipientPublicKey(recipient.toLowerCase(), formdata)
+                if (recipientkeydata.error || !recipientkeydata.data.has_key) {
+                    openErrorPopup('Either you or the recipient does not have encryption set up.')
+                    draftbutton.disabled = false
+                    postbutton.disabled = false
+                    draftbutton.textContent = 'Save Draft'
+                    return;
+                }
+                const recipientkeys = {
+                    [recipient.toLowerCase()]: JSON.parse(recipientkeydata.data.public_key)
+                }
+                if (keys_cache.data && keys_cache.data.public_key) {
+                    recipientkeys[activeacc.name.toLowerCase()] = JSON.parse(keys_cache.data.public_key)
+                }
+                finalbody = JSON.stringify(await RmailEncrypt(body, recipientkeys))
+            }
+            const sendsuccess = await fetch(`https://mail.rotur.dev/api/v1/drafts?to=${recipient}&subject=${encodeURIComponent(title)}&body=${encodeURIComponent(finalbody)}&attachments=${encodeURIComponent(JSON.stringify(potentialattachment))}${burn ? `&burn_after_read=true` : ``}${encrypted ? `&encrypted=true` : ``}${draftprogressid ? `&id=${draftprogressid}` : ``}`, {
                 method: 'POST',
                 headers: formdata
             }).then(res => res.json()).catch(err => {
@@ -1608,7 +2172,7 @@ const trash = []
             postbutton.disabled = true
             draftbutton.disabled = true
             postbutton.textContent = 'Sending...'
-            const recipient_exists = await fetch('https://api.rotur.dev/exists?username=' + recipient).then(res => res.json())
+            const recipient_exists = await fetch(`https://api.rotur.dev/v2/users/${recipient}/exists`).then(res => res.json())
             if ((recipient_exists.exists && !recipient_exists.error) || recipient.includes('@')) {
                 let potentialattachment = []
                 document.getElementById('clearattachment').disabled = true
@@ -1629,10 +2193,28 @@ const trash = []
                         }
                     }
                 }
-                const validator = await fetch(`https://api.rotur.dev/generate_validator?auth=${encodeURIComponent(activeacc.token)}&key=rotur-mail`).then(res => res.json()).then(res => res.validator)
+                const validator = await GetValidator()
                 const formdata = new FormData()
                 formdata.append("Authorization", `Bearer ${validator}`)
-                const sendsuccess = await fetch(`https://mail.rotur.dev/api/v1/rmails?to=${recipient}&subject=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}&attachments=${encodeURIComponent(JSON.stringify(potentialattachment))}${burn ? `&burn_after_read=true` : ``}${encrypted ? `&encrypted=true` : ``}`, {
+                let finalbody = body
+                if (encrypted) {
+                    const recipientkeydata = await GetRecipientPublicKey(recipient.toLowerCase(), formdata)
+                    if (recipientkeydata.error || !recipientkeydata.data.has_key) {
+                        openErrorPopup('Either you or the recipient does not have encryption set up.')
+                        postbutton.disabled = false
+                        draftbutton.disabled = false
+                        postbutton.textContent = 'Send →'
+                        return;
+                    }
+                    const recipientkeys = {
+                        [recipient.toLowerCase()]: JSON.parse(recipientkeydata.data.public_key)
+                    }
+                    if (keys_cache.data && keys_cache.data.public_key) {
+                        recipientkeys[activeacc.name.toLowerCase()] = JSON.parse(keys_cache.data.public_key)
+                    }
+                    finalbody = JSON.stringify(await RmailEncrypt(body, recipientkeys))
+                }
+                const sendsuccess = await fetch(`https://mail.rotur.dev/api/v1/rmails?to=${recipient}&subject=${encodeURIComponent(title)}&body=${encodeURIComponent(finalbody)}&attachments=${encodeURIComponent(JSON.stringify(potentialattachment))}${burn ? `&burn_after_read=true` : ``}${encrypted ? `&encrypted=true` : ``}`, {
                     method: 'POST',
                     headers: formdata
                 }).then(res => res.json()).catch(err => {
@@ -1717,7 +2299,7 @@ const trash = []
         }
         postbutton.disabled = true
         postbutton.textContent = 'Sending...'
-        const recipient_exists = await fetch('https://api.rotur.dev/exists?username=' + recipient).then(res => res.json())
+        const recipient_exists = await fetch(`https://api.rotur.dev/v2/users/${recipient}/exists`).then(res => res.json())
         if ((recipient_exists.exists && !recipient_exists.error) || recipient.includes('@')) {
             let potentialattachment = []
             document.getElementById('clearattachment').disabled = true
@@ -1737,10 +2319,27 @@ const trash = []
                     }
                 }
             }
-            const validator = await fetch(`https://api.rotur.dev/generate_validator?auth=${encodeURIComponent(activeacc.token)}&key=rotur-mail`).then(res => res.json()).then(res => res.validator)
+            const validator = await GetValidator()
             const formdata = new FormData()
             formdata.append("Authorization", `Bearer ${validator}`)
-            const sendsuccess = await fetch(`https://mail.rotur.dev/api/v1/rmails/${current_rmail.id}/reply?to=${recipient}&subject=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}&attachments=${encodeURIComponent(JSON.stringify(potentialattachment))}${encrypted ? `&encrypted=true` : ``}`, {
+            let finalbody = body
+            if (encrypted) {
+                const recipientkeydata = await GetRecipientPublicKey(recipient.toLowerCase(), formdata)
+                if (recipientkeydata.error || !recipientkeydata.data.has_key) {
+                    openErrorPopup('Either you or the recipient does not have encryption set up.')
+                    postbutton.disabled = false
+                    postbutton.textContent = 'Send →'
+                    return;
+                }
+                const recipientkeys = {
+                    [recipient.toLowerCase()]: JSON.parse(recipientkeydata.data.public_key)
+                }
+                if (keys_cache.data && keys_cache.data.public_key) {
+                    recipientkeys[activeacc.name.toLowerCase()] = JSON.parse(keys_cache.data.public_key)
+                }
+                finalbody = JSON.stringify(await RmailEncrypt(body, recipientkeys))
+            }
+            const sendsuccess = await fetch(`https://mail.rotur.dev/api/v1/rmails/${current_rmail.id}/reply?to=${recipient}&subject=${encodeURIComponent(title)}&body=${encodeURIComponent(finalbody)}&attachments=${encodeURIComponent(JSON.stringify(potentialattachment))}${encrypted ? `&encrypted=true` : ``}`, {
                 method: 'POST',
                 headers: formdata
             }).then(res => res.json()).catch(err => {

@@ -1,35 +1,52 @@
 :root {
     color: white;
-    font-family: "Golos Text", sans-serif;
-    --bg-color: #0f0052;
-    --scrollbar-bar: #004db1;
-    --scrollbar-bg: #00002b;
-    --headerandfooter: #0012b4;
-    --button: #4f46e5;
-    --buttonhover: #4338ca;
-    --popupbg: #03009C;
-    --customcolor: #FFFFFF;
+    font-family: "Golos Text", Arial;
+    --bg-color: #000000;
+    --scrollbar-bar: #000000;
+    --scrollbar-bg: #000000;
+    --headerandfooter: #000000;
+    --button: #000000;
+    --buttonhover: #000000;
+    --popupbg: #000000;
+    --customcolor: #000000;
 }
 html {
     scrollbar-color: var(--scrollbar-bar) var(--scrollbar-bg);
+    scrollbar-gutter: stable;
+    overflow-y: scroll;
+    background-color: var(--scrollbar-bg);
 }
 body {
     min-width: 400px;
-    height: 600px;
-    min-height: 100vh;
+    min-height: max(100vh, 600px);
     margin: 0;
     background-color: color-mix(in oklab, var(--bg-color), black 35%);
     font-family: "Golos Text";
     font-style: normal;
     font-weight: 400;
     display: flex;
+    flex-grow: 1;
     flex-direction: column;
     transform-origin: top left;
 }
 /*/ Header and Footer /*/
+#header-placeholder, #footer-placeholder {
+    display: flex;
+    flex-direction: row;
+    left: 0;
+    right: 0;
+    width: 100%;
+}
+#header-placeholder {
+    top: 0;
+}
+#footer-placeholder {
+    bottom: 0;
+}
 .header {
     display: flex;
     flex-direction: row;
+    width: 100%;
     min-width: 400px;
     background: var(--headerandfooter)
 }
@@ -44,7 +61,7 @@ body {
     flex: 1;
     text-align: center;
     border: none;
-    font-family: "Golos Text", sans-serif;
+    font-family: "Golos Text", Arial;
     font-size: 12px;
     padding: 0;
     cursor: pointer;
@@ -78,7 +95,7 @@ body {
     margin: 0;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     width: 100%;
 }
 .headerflyout ul li {
@@ -166,6 +183,8 @@ a {
     justify-content: center;
     text-align: center;
     min-width: 400px;
+    width: 100%;
+    min-height: 78px;
     color: white;
     padding: 10px;
     padding-top: 0px;
@@ -181,18 +200,28 @@ a {
     flex-direction: row;
     gap: 25px;
 }
+.container:has(#auth-container) {
+    display: flex;
+    flex-direction: column;
+}
 #auth-container {
     display: flex;
     width: 100%;
     min-width: 400px;
     max-width: 800px;
-    height: 600px;
+    min-height: 400px;
+    flex: 1 1 auto;
     border: 1px solid #cccccc;
+    box-sizing: border-box;
+    align-self: center;
     justify-self: center;
+    overflow-x: hidden;
 }
 #auth-iframe {
+    display: block;
     width: 100%;
-    height: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
     border: none;
 }
 .hidden {
@@ -298,18 +327,21 @@ a {
     max-width: 400px;
     align-self: center;
 }
-.container input[type='text'], .container input[type='number'], .container input[type='search'], .container input[type='password'] {
+.container input[type='text'], .container input[type='number'], .container input[type='search'], .container input[type='password'], #repostsystemnote, #willfield {
     font-size: 14px;
     border-radius: 5px;
     box-sizing: border-box;
     padding: 5px;
     width: 100%;
 }
+#repostsystemnote {
+    margin-bottom: 8px;
+}
 textarea {
     width: 100%;
     height: 100px;
     font-size: 14px;
-    font-family: "Golos Text", sans-serif;
+    font-family: "Golos Text", Arial;
     resize: vertical;
     border-radius: 4px;
 }
@@ -330,7 +362,7 @@ summary {
     margin-bottom: 5px;
     user-select: none;
 }
-input[title], label[title] {
+input[title], label[title], li[title], img[title], p[title], span[title] {
     cursor: help;
 }
 .container button:hover:not([class='tab']):not([class='tab2']):not([class*='hoverexempt']), .popup button:hover, #requiredperms:hover {
@@ -450,6 +482,18 @@ input[title], label[title] {
 p img, h2 img, li img {
     vertical-align: middle;
 }
+p.deleteinstructions {
+    margin-bottom: 5px;
+}
+#voidcreditsinstead {
+    margin-top: 4px;
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    align-items: center;
+    width: 100%;
+    justify-content: center;
+}
 /*/ Popup CSS /*/
 .overlay {
     position: fixed;
@@ -508,34 +552,59 @@ p img, h2 img, li img {
     flex: 1;
 }
 /*/ Wallet Page CSS /*/
-#wallet-container h1, #wallet-container h3 {
+#accountsbysum h3 {
     font-size: 24px;
     color: white;
-    font-weight: 400;
     text-align: center;
 }
-#wallet-container h2 {
+#balancedisplay h2 {
     font-size: 16px;
     color: white;
     text-align: center;
 }
-#wallet-container label, #wallet-container a {
+a.transferuserhref {
     color: white;
     text-decoration: none;
-}
-#wallet-container button {
-    margin-top: 5px;
-    margin-bottom: 5px;
 }
 #transactionpanel, #statspanel, #dangerzone, #followingpanel, #followerspanel, #economicstats, #userclawposts, #useritems, .followingpanel, #dangerousoptionscontainer, #loginhistory, #blacklisted_ips, #standinghistory {
     font-size: 24px;
 }
-
 .dangerzonefineprint {
     font-size: 12px;
     margin: 0;
 }
-
+.compareuserstable {
+    margin-top: 8px;
+}
+.compareuserstable a {
+    font-size: 14px;
+    text-decoration: none;
+}
+table {
+    width: 100%;
+}
+tbody, td {
+    border: 1px solid white;
+    font-size: 14px;
+    width: 100%;
+    margin: 0;
+}
+tr {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    gap: 0px;
+}
+td {
+    flex: 1;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
 #transactionpanel, #statspanel {
     position: relative;
     box-sizing: border-box;
@@ -628,6 +697,7 @@ p[class='partialsuccess'] {
     font-size: 10px;
     margin-top: 3px;
     margin-bottom: 3px;
+    text-decoration: none;
 }
 #claimfineprint img {
     max-width: 16px;
@@ -651,8 +721,10 @@ p[class='partialsuccess'] {
     margin-bottom: 3px;
     align-items: center;
 }
-#wallet-container .transactionentry h1 {
+#transactionpanel .transactionentry h1 {
     text-align: left;
+    font-weight: 400;
+    font-family: "Golos Text", Arial;
 }
 #transactionpanel ul li p a {
     font-size: 14px;
@@ -729,6 +801,7 @@ p[class='specialtransfercase'] {
 }
 #averageprofit {
     font-size: 16px;
+    margin-bottom: 5px;
 }
 #claimcountdowntext {
     margin: 0;
@@ -777,6 +850,13 @@ p[class='specialtransfercase'] {
     font-size: 14px;
     margin: 0;
 }
+.breakdownuserhref {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    text-decoration: none;
+    align-items: center;
+}
 #accountsbysum li:last-child:not(:first-child) {
     border-bottom: none;
     border-top: 2px solid white;
@@ -793,6 +873,39 @@ p[class='specialtransfercase'] {
     align-items: center;
     gap: 4px;
 }
+.compareandcontrastusers {
+    height: 32px;
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+}
+button#compareusersbtn {
+    margin: 0;
+    width: 32px;
+    height: 32px;
+    max-width: 32px;
+    max-height: 32px;
+    aspect-ratio: 1;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center; 
+}
+#fineprintactionbar {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    justify-content: space-evenly;
+}
+#claimfineprint {
+    background: rgb(0, 0, 0, 0.3);
+    border-radius: 5px;
+    padding: 8px;
+}
+#fineprintactionbar button {
+    width: 25%;
+}
 /* TOS CSS */
 #toscontainer {
     display: flex;
@@ -804,6 +917,9 @@ p[class='specialtransfercase'] {
     min-width: 400px;
     height: 400px;
     margin-left: -15px;
+}
+#dailyclaim {
+    margin-bottom: 3px;
 }
 #toscontainer label, #dailycreditnotifsect {
     display: flex;
@@ -846,6 +962,7 @@ p[class='specialtransfercase'] {
     margin-right: -12px;
     pointer-events: none;
     user-select: none;
+    text-align: left;
 }
 .acclistentry:last-child {
     border-bottom: none;
@@ -977,7 +1094,6 @@ input[type="radio"] {
     margin-top: 10px;
 }
 #switchaccbtn {
-    box-shadow: 0px 0px 4px 4px rgba(255, 255, 255, 0.26);
     flex: 9;
     padding: 0;
     height: 32px;
@@ -1008,6 +1124,18 @@ input[type="radio"] {
     align-items: center;
     justify-content: center;
     gap: 4px;
+}
+.tokenloginbar {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    margin-bottom: 5px;
+}
+.labelandinput {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 2px;
 }
 /*/ Lookup CSS /*/
 #usersearchbar, #giftsearch, #postsearchbar, #keylookup, #itemsearch {
@@ -1094,7 +1222,7 @@ hr[class='beforeprofile'] {
     position: relative;
 }
 .socialactionbar {
-    width: 250px;
+    width: 265px;
     position: absolute;
     margin: 0;
     padding: 0;
@@ -1126,7 +1254,7 @@ hr[class='beforeprofile'] {
     padding-left: 0;
     padding-right: 0;
 }
-#profilereload, #profileeditbutton, #addfriend, #profileblockbutton {
+#profilereload, #profileeditbutton, #addfriend, #profileblockbutton, #copyjson {
     flex: 1;
     max-width: 32px;
     aspect-ratio: 1;
@@ -1136,6 +1264,9 @@ hr[class='beforeprofile'] {
     padding: 0;
 }
 #profilereload, #profilereloadedit, #reloadfeed {
+    font-size: 18px;
+}
+#copyjson, #copyuserjson, #copyprofilejson {
     font-size: 18px;
 }
 #reloadfeed {
@@ -1709,6 +1840,9 @@ p[class='claim_user'] a {
     gap: 4px;
     margin-left: auto;
 }
+h2.clawreplyauthor {
+    text-align: left;
+}
 .clawpostactionbar button {
     width: 32px;
     height: 32px;
@@ -1795,6 +1929,7 @@ p[class='claim_user'] a {
 }
 .popup ul[class='likelist'] li a p {
     margin: 0;
+    text-align: left;
 }
 .popup h1 {
     margin: 0;
@@ -1994,10 +2129,14 @@ h4[class='keynamelabel'] {
 #keyfineprint, #keyfineprint a {
     font-size: 10px;
 }
+.keysaccpageheader {
+    width: 100%;
+    position: relative;
+}
 #reloadkeys {
     font-size: 18px;
     position: absolute;
-    top: 12px;
+    top: 0px;
     right: 8px;
     width: 32px;
     aspect-ratio: 1;
@@ -2039,6 +2178,9 @@ h4[class='keynamelabel'] {
     display: flex;
     flex-direction: row;
     gap: 5px;
+}
+select {
+    border-radius: 4px;
 }
 #subfrequencysettings select, #mainkeys select {
     width: 100%;
@@ -2191,9 +2333,8 @@ h4[class='keynamelabel'] {
     align-items: center;
 }
 .ecokeywebhookurl {
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    overflow: hidden;
+    min-width: 0;
+    word-break: break-word;
 }
 .ecokeystatus p, .ecokeyadduserstatus p {
     text-align: center;
@@ -2219,29 +2360,34 @@ h4[class='keynamelabel'] {
     margin: 2px;
     font-size: 14px;
 }
+.ecokeyuserhref {
+    display: flex;
+    flex-direction: row;
+    gap: 6px;
+    align-items: center;
+    text-decoration: none;
+}
 /*/ Profile Editor CSS /*/
-#toggleprofileview {
+.profileeditactionbarbuttons {
     position: absolute;
-    right: 42px;
+    right: 5px;
     top: -23px;
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+}
+.profileeditactionbarbuttons button {
+    width: 32px;
+    height: 32px;
     max-width: 32px;
-    max-height: 32px;
     aspect-ratio: 1;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 0;
 }
-#profilereloadedit {
-    position: absolute;
-    right: 5px;
-    top: -23px;
-    max-width: 32px;
-    aspect-ratio: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
+#editusername {
+    margin-top: 5px;
 }
 #editusername, #editpronouns {
     display: flex;
@@ -2378,6 +2524,12 @@ h4[class='keynamelabel'] {
     align-items: left;
     gap: 5px;
 }
+.editwidgets label {
+    text-wrap: nowrap;
+}
+.editwidgets input:not([type="checkbox"]) {
+    width: 100%;
+}
 .systemsedit, .privateacc, .editdisplayname, .editemail, .editphone {
     padding-left: 5px;
     padding-right: 5px;
@@ -2385,12 +2537,6 @@ h4[class='keynamelabel'] {
     flex-direction: row;
     gap: 4px;
     align-items: center;
-}
-#phonebox, #displaynamebox {
-    width: 50%;
-}
-#emailbox {
-    width: 75%;
 }
 p[class='profilefineprint'] {
     margin: 0;
@@ -2662,7 +2808,7 @@ h2.clawpostauthortitle {
     flex-direction: row;
     gap: 4px;
 }
-.rmailactionbuttons button, #rmailactionbarbuttons button, .rmailreplyactionbar button, .rmailreplyactionlabel button {
+.rmailactionbuttons button, #rmailactionbarbuttons button, .rmailreplyactionbar button, .rmailreplyactionlabel button, #encryptionsettings {
     max-width: 32px;
     max-height: 32px;
     display: flex;
@@ -2738,7 +2884,7 @@ button.rmailunstar {
     font-size: 20px;
     color: goldenrod;
 }
-.rmaildeleteforeveraltoption {
+.rmaildeleteforeveraltoption, .rmailnocachelabel, .quotesystemselector {
     display: flex;
     flex-direction: row;
     gap: 4px;
@@ -2766,6 +2912,10 @@ button.rmailunstar {
     justify-content: right;
     width: 100%;
     height: 32px;
+    pointer-events: none;
+}
+#rmailheaderactionbar button {
+    pointer-events: all;
 }
 #compose_rmail {
     width: 25%;
@@ -2866,6 +3016,27 @@ button.rmailunstar {
     border: 1px solid gray;
     border-radius: 5px;
 }
+.rmailpassphrasecontainer, .deleteaccpasswordcontainer {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+}
+.rmailpassphrasecontainer input, .deleteaccpasswordcontainer input {
+    font-size: 14px;
+    border-radius: 5px;
+    box-sizing: border-box;
+    padding: 5px;
+    width: 100%;
+}
+.rmailpassphrasecontainer button, #tokenloginvisibility, .deleteaccpasswordcontainer button {
+    width: 32px;
+    height: 32px;
+    aspect-ratio: 1;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center; 
+}
 /*/ Item Manager CSS /*/
 #itemmanagerheader {
     display: flex;
@@ -2886,7 +3057,6 @@ ul[class='roturuseritemlist'] {
     border-bottom: 2px solid white;
     padding: 5px;
     position: relative;
-    text-overflow: ellipsis;
     overflow: hidden;
 }
 .roturitem:last-child {
@@ -2929,6 +3099,13 @@ ul[class='roturuseritemlist'] {
     gap: 4px;
     align-items: center;
     justify-content: center;
+}
+.roturitemauthor a {
+    text-decoration: none;
+    display: inline-flex;
+    flex-direction: row;
+    gap: 3px;
+    align-items: center;
 }
 .roturitemdesc, #pronouns, .bio, .giftnote, .rmailpreviewbody, #viewrmailtitletext, #viewrmailbodytext {
     overflow-wrap: break-word;
@@ -2981,6 +3158,14 @@ ul[class='roturuseritemlist'] {
     flex-direction: row;
     align-items: center;
     justify-content: center;
+}
+.itemnameheader h2 {
+    margin: 0;
+    padding-left: 36px;
+    padding-right: 36px;
+    word-break: break-word;
+    box-sizing: border-box;
+    min-width: 0;
 }
 .itemdeletebtn {
     max-width: 32px;
@@ -3064,6 +3249,9 @@ ul[class='roturuseritemlist'] {
 }
 #oceanbluetheme {
     background-color: #0f0052;
+}
+#crimsonredtheme {
+    background-color: #470000;
 }
 #forestgreentheme {
     background-color: #0a3100;
@@ -3494,6 +3682,22 @@ h2[class='badgeintitle2'] {
     margin: 0;
     padding: 0;
 }
+h2.notiftypetitle {
+    margin-bottom: 0;
+}
+.notifinboxlabel {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+}
+.notifinboxlabel select {
+    width: 30%;
+    border-radius: 5px;
+    border: 1px solid gray;
+    padding: 4px;
+    padding-left: 0;
+}
 .senderlistentry:hover {
     background: rgba(255, 255, 255, 0.1);
 }
@@ -3514,6 +3718,25 @@ h2[class='badgeintitle2'] {
 .patchnotelist li {
     margin-bottom: 5px;
 }
+.mwnotifimage {
+    width: 40px;
+    height: 40px;
+    border: 2px solid gray;
+    border-radius: 5px;
+}
+.mwnotifheaderbar {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    align-items: center;
+}
+p.mwnotiftext, p.mwnotiftext a, p.notifbody, .legacynotifdetails li {
+    font-size: 14px;
+}
+p.mwnotiftext a {
+    text-decoration: none;
+    font-weight: 600;
+}
 /* ICN CSS */
 .highlight_yellow {
     background-color: #ffee00;
@@ -3531,6 +3754,7 @@ p[class='icnsyntaxfineprint'] {
     margin-top: 10px;
     transform: scaleY(-1); /* This way, Y goes up, not down, for consistency with other renderers */
     cursor: all-scroll;
+    justify-self: center;
 }
 #canvasbgsettings {
     display: flex;
@@ -3689,17 +3913,14 @@ button[class='viewoverlayinfo'] {
     width: 75%;
     justify-self: center;
 }
-/* New toggle */
-body.make-circular img[src^="https://avatars.rotur.dev/"]:not([src^="https://avatars.rotur.dev/."]):not([class="useravataroverlaypreview"]), body.make-circular .useravatar {
-    border-radius: 50% !important; /* A bad practice, but it's easier than redoing a lot of code */
-    object-fit: cover; 
+.overlaytype {
+    display: inline-flex;
+    flex-direction: row;
+    gap: 3px;
+    align-items: center;
 }
-body.remove-borders img[src^="https://avatars.rotur.dev/"]:not([src^="https://avatars.rotur.dev/."]):not([class="useravataroverlaypreview"]):not([class="useravatarview"]):not([class="useravataredit"]) {
-    border: none !important; /* Still a bad practice, but it's easier than redoing even more code */
-}
-body.make-circular #changeavatarbtn {
-    border-radius: 50%;
-    object-fit: cover; 
+.overlaycreator a {
+    text-decoration: none;
 }
 /* RPC */
 .rpcheadersettings {
@@ -3816,4 +4037,16 @@ button[class='removemodal'] {
     display: flex;
     align-items: center;
     justify-content: center;
+}
+/* New toggle */
+body.make-circular img[src^="https://avatars.rotur.dev/"]:not([src^="https://avatars.rotur.dev/."]):not([class="useravataroverlaypreview"]), body.make-circular .useravatar {
+    border-radius: 50% !important; /* A bad practice, but it's easier than redoing a lot of code */
+    object-fit: cover; 
+}
+body.remove-borders img[src^="https://avatars.rotur.dev/"]:not([src^="https://avatars.rotur.dev/."]):not([class="useravataroverlaypreview"]):not([class="useravatarview"]):not([class="useravataredit"]) {
+    border: none !important; /* Still a bad practice, but it's easier than redoing even more code */
+}
+body.make-circular #changeavatarbtn {
+    border-radius: 50%;
+    object-fit: cover; 
 }

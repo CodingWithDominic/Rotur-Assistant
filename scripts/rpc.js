@@ -13,6 +13,11 @@ const activeacc = await new Promise(resolve =>
     chrome.storage.local.get('activeacc', data => resolve(data.activeacc || {}))
 ) ?? {};
 
+const authform = new FormData()
+if (activeacc.uuid) {
+    authform.append("Authorization", `Bearer ${activeacc.token}`)
+}
+
 const flagged = await new Promise(resolve =>
     chrome.storage.local.get('flagged', data => resolve(data.flagged || []))
 ) ?? [];
@@ -42,7 +47,7 @@ if (!activeacc.uuid) {
         <h1>Rotur RPC</h1>
         <p>Manage your Rotur RPC here</p>
         <hr class="full-size">
-        <h3>You are not signed in! Please head over to the account manager to add an account first.</h3>
+        <h3>You are not signed in! Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to add an account first.</h3>
     `, {sanitizer: sanitizer})
 }
 if (flagged.includes(activeacc.uuid)) {
@@ -84,7 +89,7 @@ let rpc_preference = rpc_json[activeacc.uuid].preference ?? "custom"
 let current_rpc = rpc_json[activeacc.uuid].customdata ?? []
 
 const h2 = document.createElement('h2')
-h2.textContent = 'No modals yet'
+h2.textContent = 'No cards yet'
 
 function CreateModalElement(name, title, desc1, desc2, image, modalid, noappend) {
     const id = modalid ?? Date.now()
@@ -224,7 +229,7 @@ document.addEventListener('click', async function(e) {
                 current_rpc[idx] = newjson
                 rpc_json[activeacc.uuid].customdata = current_rpc
                 chrome.storage.local.set({rpcdata: rpc_json})
-                modal.querySelector('.modalerrorplaceholder').replaceChildren(MiniError('success', 'Modal info saved successfully!'))
+                modal.querySelector('.modalerrorplaceholder').replaceChildren(MiniError('success', 'Card info saved successfully!'))
                 modal.querySelector('.rpcimg').src = newimg
                 if (document.getElementById('rpcenabled').checked) {
                     chrome.runtime.sendMessage({ type: "RPC_ON", data: rpc_json[activeacc.uuid], user: activeacc.uuid, auth: activeacc.token });

@@ -1,8 +1,13 @@
-import { parseHTML, openErrorPopup, openSuccessPopup, sanitize } from "../index.js";
+import { openErrorPopup, openSuccessPopup, sanitize } from "../index.js";
 
 const activeacc = await new Promise(resolve =>
     chrome.storage.local.get('activeacc', data => resolve(data.activeacc || {}))
 ) ?? {};
+
+const authform = new FormData()
+if (activeacc.uuid) {
+    authform.append("Authorization", `Bearer ${activeacc.token}`)
+}
 
 const flagged = await new Promise(resolve =>
     chrome.storage.local.get('flagged', data => resolve(data.flagged || []))
@@ -16,7 +21,7 @@ if (!activeacc.uuid || flagged.includes(activeacc.uuid) || !navigator.onLine) {
 
 const config = {
     elements: ['p', 'img', 'div', 'h1', 'h2', 'h3', 'h4', 'button', 'ul', 'li', 'select', 'option', 'input', 'hr', 'a'],
-    attributes: ['src', 'alt', 'href', 'width', 'height', 'id', 'class', 'data', 'value', 'title', 'disabled', 'type', 'placeholder', 'step']
+    attributes: ['src', 'alt', 'href', 'width', 'height', 'id', 'class', 'data', 'value', 'title', 'disabled', 'type', 'placeholder', 'step', 'style']
 }
 const sanitizer = new Sanitizer(config)
 

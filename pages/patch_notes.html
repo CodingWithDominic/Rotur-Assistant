@@ -2,8 +2,9 @@
 <html>
     <head>
         <meta charset="UTF-8" />
+        <script src="../initialize.js"></script>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link rel="stylesheet" href="../../style.css" />
+        <link rel="stylesheet" href="../style.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&display=swap" rel="stylesheet">
@@ -31,6 +32,7 @@
                             <ul>
                                 <li><a href="patch_notes.html#RA_1.2.1">1.2.1</a></li>
                                 <li><a href="patch_notes.html#RA_1.2.2">1.2.2</a></li>
+                                <li><a href="patch_notes.html#RA_1.2.3">1.2.3</a></li>
                             </ul>
                         </li>
                     </ul>
@@ -47,7 +49,7 @@
                     <h2>1.0.1</h2>
                     <p class="fineprint">May 7, 2026 - A day 1 emergency fix</p>
                     <ul class="patchnotelist">
-                        <li>Fixed a possible XSS vulnerability reported by <a href="lookup.html?user=furina">furina</a>. Turns out, .replace() only replaces the first instance of a charater, rather than all of them. I was also unaware of the .replaceAll() function at the time, which does what I initially thought .replace() did.</li>
+                        <li>Fixed a possible XSS vulnerability reported by <a href="lookup.html?user=furina">furina</a>. Turns out, .replace() only replaces the first instance of a character, rather than all of them. I was also unaware of the .replaceAll() function at the time, which does what I initially thought .replace() did.</li>
                         <li>Added support for pasting images into image pickers via shift + click, mainly to address an issue on some browsers / systems (such as firefox) where the extension would close once the file picker was open.</li>
                         <li>Some wiki corrections</li>
                         <li>Add more tooltips in some places</li>
@@ -112,7 +114,7 @@
                         <li>Double-clicking on an account in the account manager will now trigger an account switch if you're on a supported site.</li>
                         <li>Several wiki corrections, mainly to update any now-outdated information.</li>
                         <li>Any inline images, such as the one in the daily credit notice, now display aligned to the middle, rather than aligned to the bottom.</li>
-                        <li>Added an option to show legacy notifications (the notifications found at https://api.rotur.dev/notifications as opposed to https://api.rotur.dev/notify/log), since thanks to orion, I found out that there are 2 notification endpoints, rather than one.</li>
+                        <li>Added an option to show legacy notifications (the notifications found at https://api.rotur.dev/v2/notifications as opposed to https://api.rotur.dev/v2/notify/log), since thanks to orion, I found out that there are 2 notification endpoints, rather than one.</li>
                         <li>Since the option to show legacy notifications created some room for it, there's now a refresh button for notifications now.</li>
                         <li>Modified the layout of (non-legacy) notifications to prioritize emphasis more on the source, rather than the user associated with that source.</li>
                         <li>Fixed some layout issues regarding quotes and really long words in Rmail titles.</li>
@@ -158,11 +160,11 @@
                         <li>Fixed a bug where equipping an overlay in the profile editor would equip it on the active account shown in the header, rather than the account you are currently editing.</li>
                         <li>Switching accounts using the header right-click menu while editing a profile will now open the editor of the profile of the new account you switched to, rather than the same profile.</li>
                         <li>Added a number to the account manager that shows how many accounts you have added</li>
-                        <li>Economy keys now properly handle pending cancellaions.</li>
+                        <li>Economy keys now properly handle pending cancellations.</li>
                         <li title="Mistium was pumping out new services left and right during 1.2.1's development, like at least 1 new service per day for a good chunk of 1.2.1's development. She's a very fast coder, compared to me. Rotur Assistant would be on version 1.8 if Rotur Assistant development moved at her speed, rather than mine.">Added account switcher support for several new sites/services, and tweaked the login method for some existing sites that were rewritten.</li>
                         <li>Rotur Assistant will no longer prevent you from posting a Claw post if you have just an attachment with no text in the textbox.</li>
                         <li>The placeholder text on Claw's post and reply boxes will now tell you which account you're posting or replying as, to decrease the chance of sending a post or a reply from the wrong account.</li>
-                        <li>Since I happened to (unawaringly) be a test subject of Mistium testing standing, I added a section on profiles that lets you see standing history, since I now had something to reference for it. This is also the first (known) case of standing being seen in action.</li>
+                        <li>Since I happened to (unknowingly) be a test subject of Mistium testing standing, I added a section on profiles that lets you see standing history, since I now had something to reference for it. This is also the first (known) case of standing being seen in action.</li>
                         <li>Added a search bar to the account key manager and the account manager. The searches are case-insensitive.</li>
                         <li>Added a refresh button to the account key manager</li>
                         <li>Tweaked the CSS to allow Rotur Assistant to have a variable width, rather than its width being fixed to 400px.</li>
@@ -190,10 +192,49 @@
                         <li>Fixed a CSS bug on Firefox regarding the header menus</li>
                         <li>Fixed a bug when updating your status on your profile</li>
                         <li title="This was a leftover side effect from the asynchronous fetching the Wallet app now uses to improve performance speed">Fixed a bug where the order of accounts in the wallet's "Breakdown" section would sometimes not match the order of the accounts on your roster if you chose "Account roster order"</li>
-                        <li>Added account switcher support for <a href="https://sable.rotur.dev">https://sable.rotur.dev</a></li>
+                        <li>Added account switcher support for <a href="https://sable.rotur.dev" target="_blank" rel="noopener noreferrer">https://sable.rotur.dev</a> and <a href="https://warp.mistium.com" target="_blank" rel="noopener noreferrer">https://warp.mistium.com</a></li>
                         <li>Fixed a bug with user note management in the settings app</li>
                         <li>Optimized Rmail to only use 1 /all request for all the inboxes, combined with manual sorting, rather than fetching each inbox individually</li>
                         <li>Fixed a bug with searching a key in the account key manager, then creating or deleting a key that matched the search query</li>
+                    </ul>
+                </section>
+                <hr class="full-size dotted_separator">
+                <section id="RA_1.2.3">
+                    <h2>1.2.3</h2>
+                    <p class="fineprint">July 29, 2026 - Wow, you want Rotur Assistant to be as smooth as possible before 1.3</p>
+                    <ul class="patchnotelist">
+                        <li>Fixed a bug where some dates would fail to format, throwing an error in the console and sometimes preventing pages from loading.</li>
+                        <li>Fixed a bug where the widths of the header and footer would break when you enabled "Anchor header/footer to top/bottom" and you were in sidebar or full-site mode</li>
+                        <li>Fixed a bug where the general override option would sometimes cause the page to become unresponsive while on the official <a href="https://originchats.com" target="_blank" rel="noopener noreferrer">OriginChats</a> client.</li>
+                        <li>Fixed 2 broken hyperlinks in the wiki.</li>
+                        <li>Fixed a bug where prices entered when creating an economy key would not get passed to the server, resulting in the prices of newly created keys being 0 no matter what.</li>
+                        <li>Brought the Wiki a little more up to speed</li>
+                        <li>Corrected various typos across Rotur Assistant</li>
+                        <li>Improved switcher support for <a href="https://warp.mistium.com" target="_blank" rel="noopener noreferrer">https://warp.mistium.com</a>.</li>
+                        <li>Code optimizations for profile viewing and editing</li>
+                        <li>New exclusive ICN alias command: "l". This is an alias for the "line" command.</li>
+                        <li>New exclusive ICN alias command: "continue". This is an alias for the "cont" command.</li>
+                        <li>Made the ICN canvas bigger. It will also now resize itself if the window is resized, improving usability in sidebar and full-site mode.</li>
+                        <li>Optimized the manifest.json files to group together sites that share similar base domains (such as any github.io sites)</li>
+                        <li title='This will only work if the site stores the token in localStorage under the name "rotur_token".'>Added switcher support for RoturSDK sites running on localhost:5173. This is mainly to complement <a href="https://music.milosantos.com" target="_blank" rel="noopener noreferrer">NexMusic</a>.</li>
+                        <li>Buffed the feature to override OriginChats general nicknames to also override links too. Furthermore, the option now works on <a href="https://runnova.github.io/indigo" target="_blank" rel="noopener noreferrer">Indigo</a>.</li>
+                        <li>Added switcher support for <a href="https://chat.0stormy.xyz" target="_blank" rel="noopener noreferrer">https://chat.0stormy.xyz</a>, which is just an alias URL for the already-supported <a href="https://antiviiris.github.io/originChats" target="_blank" rel="noopener noreferrer">https://antiviiris.github.io/originChats</a>.</li>
+                        <li>Security improvement: Replaced a lot of ?auth=(token) query parameters to instead use an Authorization header. I have a feeling this may sacrifice performance in some spots though.</li>
+                        <li>Tweaked Rmail to better handle burn after read messages, in response to the Rmail API becoming more locked-down regarding those messages</li>
+                        <li>Rmail now has support for reading and sending proper encrypted Rmails</li>
+                        <li title="This is a slight optimization to help avoid further inflating the 'login' counts of all accounts on your roster.">Balance sums in the Wallet app are now calculated through the https://devfund.rotur.dev/api/me endpoint, not the https://api.rotur.dev/v2/me one.</li>
+                        <li>Tweaked the math behind the wallet's "Recent average profit margin". It will now show you your average gain/loss per entry in your history.</li>
+                        <li>Partial adoption of https://api.rotur.dev/v2/ (Mainly stuff like getting profile information and /me in place of /get_user)</li>
+                        <li>New feature on Claw: The ability to add small notes next to your selected system, such as a status update from that system. This will not work if you select "Unknown System".</li>
+                        <li>Added the ability to copy the raw JSON objects of users' profiles</li>
+                        <li>Cosmetics now show how many people own that cosmetic, without needing to click the &#9432; button</li>
+                        <li>Various minor styling tweaks</li>
+                        <li>The option to toggle between "legacy" notifications and "new" notifications has been replaced by an inbox system, to accomodate MistWarp's notifications, and to allow for flexibility if a new Rotur platform with its own notifications are added.</li>
+                        <li>Fixed the issue of minor layout shifts caused by the scrollbar popping in and out, further improving user experience (I just made the scrollbar always visible via <code>scrollbar-gutter: stable;</code>)</li>
+                        <li>Optimized theme loading when navigating pages</li>
+                        <li>Made usernames in more places clickable (item owners and authors, economy key users, and cosmetic creators)</li>
+                        <li>Changed the pixelated icons on the home page to better fit with the non-pixelated icons</li>
+                        <li>And several more micro-optimizations</li>
                     </ul>
                 </section>
             </div>

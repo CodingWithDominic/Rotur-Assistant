@@ -1,8 +1,19 @@
-import { sanitize, formatDate, parseHTML, CreateEmptyPlaceholder, MiniError } from "../index.js"
+import { sanitize, formatDate, CreateEmptyPlaceholder, MiniError } from "../index.js"
+
+const config = {
+    removeElements: ['iframe', 'script', 'style', 'object', 'embed', 'applet', 'meta', 'link', 'base', 'form'],
+    removeAttributes: ['onload', 'onclick', 'onerror', 'onmouseover', 'onfocus', 'onblur', 'onkeydown', 'onchange', 'onsubmit', 'srcdoc', 'formaction']
+}
+const sanitizer = new Sanitizer(config)
 
 const activeacc = await new Promise(resolve =>
     chrome.storage.local.get('activeacc', data => resolve(data.activeacc || {}))
 ) ?? {};
+
+const authform = new FormData()
+if (activeacc.uuid) {
+    authform.append("Authorization", `Bearer ${activeacc.token}`)
+}
 
 const flagged = await new Promise(resolve =>
     chrome.storage.local.get('flagged', data => resolve(data.flagged || []))
@@ -12,25 +23,25 @@ const controller = new AbortController()
 const requestlimit = setTimeout(() => controller.abort(), 3000);
 
 if (!activeacc.uuid) {
-    document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(
+    document.getElementsByClassName('container')[0].setHTML(
         `<h1>Key Manager (Economy)</h1>
         <p id="keyfineprint">This page is for managing keys that are purchaseable (either one-time or recursively). For the page that manages keys associated with your account, see <a href="../pages/keymanager_acc.html">Key Manager (Account)</a></p>
         <hr class="full-size">
-        <h3>You are not signed in! Please head over to the account manager to add an account first.</h3>`
-    ))
+        <h3>You are not signed in! Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to add an account first.</h3>
+        `, {sanitizer: sanitizer})
 }
 if (flagged.includes(activeacc.uuid)) {
-    document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('container')[0].setHTML(`
         <h1>Key Manager (Economy)</h1>
         <p id="keyfineprint">This page is for managing keys that are purchaseable (either one-time or recursively). For the page that manages keys associated with your account, see <a href="../pages/keymanager_acc.html">Key Manager (Account)</a></p>
         <hr class="full-size">
         <h3>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h3>
-    `))
+    `, {sanitizer: sanitizer})
 }
 
 function openConfirmDeletePopup(keyid) {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Delete Key</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -40,7 +51,7 @@ function openConfirmDeletePopup(keyid) {
             <button id="cancel" class="closebtn">No</button>
             <button class="finaldelete" data-keyid='${keyid}'>Yes</button>
         </div>
-    `)) 
+    `, {sanitizer: sanitizer})
 }
 
 function openConfirmBuyPopup(keyid, keyname, price, usercurrency) {
@@ -53,7 +64,7 @@ function openConfirmBuyPopup(keyid, keyname, price, usercurrency) {
         finalbuyerincome = finalbuyerincome.toFixed(2)
     }
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Confirm Purchase</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -65,12 +76,12 @@ function openConfirmBuyPopup(keyid, keyname, price, usercurrency) {
             <button id="cancel" class="closebtn">Cancel</button>
             <button class="finalbuy" data-keyid='${keyid}'>Confirm & Buy</button>
         </div>
-    `))
+    `, {sanitizer: sanitizer})
 }
 
 function openConfirmCancelPopup(keyid, owner) {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Cancel Subscription</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -80,12 +91,12 @@ function openConfirmCancelPopup(keyid, owner) {
             <button id="cancel" class="closebtn">No</button>
             <button class="finalcancel" data-keyid='${keyid}'>Yes</button>
         </div>
-    `))
+    `, {sanitizer: sanitizer})
 }
 
 function openConfirmRevokePopup(keyid) {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Revoke Key</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -95,12 +106,12 @@ function openConfirmRevokePopup(keyid) {
             <button id="cancel" class="closebtn">No</button>
             <button class="finalrevoke" data-keyid='${keyid}'>Yes</button>
         </div>
-    `))
+    `, {sanitizer: sanitizer})
 }
 
 function openConfirmRemoveUserPopup(user, keyid, nextbilling, amt) {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Remove Access</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -111,7 +122,7 @@ function openConfirmRemoveUserPopup(user, keyid, nextbilling, amt) {
             <button class="finalremoval" data-user="${user}" data-keyid='${keyid}' data-refundamt='${amt}'>Remove</button>
         </div>
         ${nextbilling && nextbilling != "undefined" ? `<label class='refundcheckbox'><input type='checkbox' id='ecokeyrefund'> Refund this user's last purchase (excluding tax)</label>` : ''}
-    `))
+    `, {sanitizer: sanitizer})
 }
 
 function closePopup() {
@@ -123,6 +134,7 @@ function renderUsers(userdata, type, creator, id, price) {
     const userlist = Object.keys(userdata)
     userlist.forEach(user => {
         const usercard = document.getElementById('keyusertemplate').content.cloneNode(true)
+        usercard.querySelector('a').href = `lookup.html?user=${user}`
         usercard.querySelector('img').src = `https://avatars.rotur.dev/${user}`
         usercard.querySelector('img').alt = user
         usercard.querySelector('h2').textContent = `${user} ${user == creator ? "👑" : ""}`
@@ -145,21 +157,21 @@ function renderUsers(userdata, type, creator, id, price) {
 
 async function RenderKeys() {
     if (!navigator.onLine) {
-        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+        document.getElementsByClassName('container')[0].setHTML(`
             <h1>Key Manager (Economy)</h1>
             <p id="keyfineprint">This page is for managing keys that are purchaseable (either one-time or recursively). For the page that manages keys associated with your account, see <a href="../pages/keymanager_acc.html">Key Manager (Account)</a></p>
             <hr class="full-size">
             <h3>A communication error has occurred. If you're sure it's not your connection, then this part of Rotur may be down right now.</h3>
-        `))
+        `, {sanitizer: sanitizer})
         return;
     }
-	const keys = await fetch(`https://api.rotur.dev/keys/mine?auth=${activeacc.token}`, {signal: controller.signal}).then(res => res.json()).catch(err => {
-        document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+	const keys = await fetch(`https://api.rotur.dev/keys/mine`, {signal: controller.signal, headers: authform}).then(res => res.json()).catch(err => {
+        document.getElementsByClassName('container')[0].setHTML(`
             <h1>Key Manager (Economy)</h1>
             <p id="keyfineprint">This page is for managing keys that are purchaseable (either one-time or recursively). For the page that manages keys associated with your account, see <a href="../pages/keymanager_acc.html">Key Manager (Account)</a></p>
             <hr class="full-size">
             <h3>A communication error has occurred. If you're sure it's not your connection, then this part of Rotur may be down right now.</h3>
-        `))
+        `, {sanitizer: sanitizer})
         return;
     })
     clearTimeout(requestlimit)
@@ -167,20 +179,20 @@ async function RenderKeys() {
         if (keys.error.includes('Invalid')) {
             flagged.push(activeacc.uuid)
             chrome.storage.local.set({flagged: flagged})
-            document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+            document.getElementsByClassName('container')[0].setHTML(`
                 <h1>Key Manager (Economy)</h1>
                 <p id="keyfineprint">This page is for managing keys that are purchaseable (either one-time or recursively). For the page that manages keys associated with your account, see <a href="../pages/keymanager_acc.html">Key Manager (Account)</a></p>
                 <hr class="full-size">
                 <h3>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h3>
-            `))
+            `, {sanitizer: sanitizer})
             return;
         } else {
-            document.getElementsByClassName('container')[0].replaceChildren(...parseHTML(`
+            document.getElementsByClassName('container')[0].setHTML(`
                 <h1>Key Manager (Economy)</h1>
                 <p id="keyfineprint">This page is for managing keys that are purchaseable (either one-time or recursively). For the page that manages keys associated with your account, see <a href="../pages/keymanager_acc.html">Key Manager (Account)</a></p>
                 <hr class="full-size">
                 <h3>The sub-token you have granted for your current account does not allow you to view this page. To resolve this issue, please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> and reauthenticate.</h3>
-            `))
+            `, {sanitizer: sanitizer})
         }
     }
     if (!keys) {
@@ -218,7 +230,7 @@ async function RenderKeys() {
             mykey.querySelector('[id*="saveprice-"]').id = `saveprice-${key.key}`
             mykey.querySelector('[id*="savehook-"]').id = `savehook-${key.key}`
             mykey.querySelector('[id*="savename-"]').id = `savename-${key.key}`
-            mykey.querySelector('.ecokeyuserlistcount').textContent = `Users (${Object.keys(key.users).length})`
+            mykey.querySelector('.ecokeyuserlistcount').textContent = `Users - ${Object.keys(key.users).length}`
             mykey.querySelector('.ecokeynewuser').id = `adduser-${key.key}`
             mykey.querySelector('.ecokeyuserlist').replaceChildren(...renderUsers(key.users, key.type, key.creator, key.key, key.price))
             mykey.querySelector('.ecokeyrevoke').id = `revoke-${key.key}`
@@ -226,11 +238,6 @@ async function RenderKeys() {
 
             my_keys_html.push(mykey)
         } else {
-            const config = {
-                elements: ['p', 'img'],
-                attributes: ['src', 'alt', 'width', 'height']
-            }
-            const sanitizer = new Sanitizer(config)
             owned_keys.push(key)
             const boughtkey = document.getElementById('boughtkeytemplate').content.cloneNode(true)
 
@@ -251,7 +258,7 @@ async function RenderKeys() {
             } else {
                 boughtkey.querySelector('.ecokeywebhookdisplay').remove()
             }
-            boughtkey.querySelector('.ecokeyuserlistcount').textContent = `Users (${Object.keys(key.users).length})`
+            boughtkey.querySelector('.ecokeyuserlistcount').textContent = `Users - ${Object.keys(key.users).length}`
             boughtkey.querySelector('.ecokeyuserlist').replaceChildren(...renderUsers(key.users, key.type, key.creator, key.key, key.price))
             boughtkey.querySelector('.ecokeysubcancel').id = `cancel-${key.key}`
             boughtkey.querySelector('.ecokeysubcancel').dataset.owner = key.creator
@@ -280,13 +287,13 @@ async function RenderKeys() {
 }
 
 async function refreshUsers(keyid) {
-	let keys = await fetch(`https://api.rotur.dev/keys/mine?auth=${activeacc.token}`).then(res => res.json())
+	let keys = await fetch(`https://api.rotur.dev/keys/mine`, {headers: authform}).then(res => res.json())
     keys = keys.filter(item => item.key == keyid)
     const key = keys[0]
     const userlist = document.getElementById(`key-${keyid}`).querySelector('[class="ecokeyuserlist"]')
     const userlistcount = document.getElementById(`key-${keyid}`).querySelector('[class="ecokeyuserlistcount"]')
     userlist.replaceChildren(...renderUsers(key.users, key.type, key.creator, key.key, key.price))
-    userlistcount.innerText = `Users (${Object.keys(key.users).length})`
+    userlistcount.innerText = `Users - ${Object.keys(key.users).length}`
 }
 
 if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
@@ -362,7 +369,7 @@ document.addEventListener('click', async function(e) {
     if (e.target.className == "ecokeysave") {
         if (e.target.id.includes('saveprice')) {
             const newprice = document.getElementById(`key-${keyid}`).querySelector('[class="ecokeypriceupdate"]').value
-            const savesuccess = await fetch(`https://api.rotur.dev/keys/update/${keyid}?auth=${activeacc.token}&key=price&data=${isNaN(newprice) ? 0 : newprice}`).then(res => res.json())
+            const savesuccess = await fetch(`https://api.rotur.dev/keys/update/${keyid}?key=price&data=${isNaN(newprice) ? 0 : newprice}`, {headers: authform}).then(res => res.json())
             if (savesuccess.error) {
                 document.getElementById(`key-${keyid}`).querySelector('[class="ecokeystatus"]').replaceChildren(MiniError('failure', savesuccess.error))
             } else {
@@ -372,7 +379,7 @@ document.addEventListener('click', async function(e) {
         }
         if (e.target.id.includes('savehook')) {
             const newhook = document.getElementById(`key-${keyid}`).querySelector('[class="ecokeywebhook"]').value
-            const savesuccess = await fetch(`https://api.rotur.dev/keys/update/${keyid}?auth=${activeacc.token}&key=webhook&data=${encodeURIComponent(newhook)}`).then(res => res.json())
+            const savesuccess = await fetch(`https://api.rotur.dev/keys/update/${keyid}?key=webhook&data=${encodeURIComponent(newhook)}`, {headers: authform}).then(res => res.json())
             if (savesuccess.error) {
                 document.getElementById(`key-${keyid}`).querySelector('[class="ecokeystatus"]').replaceChildren(MiniError('failure', savesuccess.error))
             } else {
@@ -382,7 +389,7 @@ document.addEventListener('click', async function(e) {
         }
         if (e.target.id.includes('savename')) {
             const newname = document.getElementById(`key-${keyid}`).querySelector('[class="ecokeynameupdate"]').value
-            const savesuccess = await fetch(`https://api.rotur.dev/keys/name/${keyid}?auth=${activeacc.token}&name=${newname}`).then(res => res.json())
+            const savesuccess = await fetch(`https://api.rotur.dev/keys/name/${keyid}?name=${newname}`, {headers: authform}).then(res => res.json())
             if (savesuccess.error) {
                 document.getElementById(`key-${keyid}`).querySelector('[class="ecokeystatus"]').replaceChildren(MiniError('failure', savesuccess.error))
             } else {
@@ -417,7 +424,7 @@ document.addEventListener('click', async function(e) {
     if (e.target.className == "ecokeynewuserconfirm") {
         const user = document.getElementById(`key-${keyid}`).querySelector('[class="ecokeynewuser"]').value
         if (user != '') {
-            const addsuccess = await fetch(`https://api.rotur.dev/keys/admin_add/${keyid}?auth=${activeacc.token}&username=${user}`)
+            const addsuccess = await fetch(`https://api.rotur.dev/keys/admin_add/${keyid}?username=${user}`, {headers: authform})
             if (addsuccess.error) {
                 document.getElementById(`key-${keyid}`).querySelector('[class="ecokeyadduserstatus"]').replaceChildren(MiniError('failure', addsuccess.error))
             } else {
@@ -434,27 +441,32 @@ document.addEventListener('click', async function(e) {
         return;
     }
     if (e.target.id == "ecokeycreate") {
+        const target = e.target
+        target.disabled = true
+        target.textContent = "Creating..."
         const newkeyname = document.getElementById('ecokeyname').value
-        let newprice = parseFloat(document.getElementById('ecokeyprice').value)
+        let newprice = parseFloat(document.getElementById('ecokeyprice').value) ?? 0
         const isSubscription = document.getElementById('suboption').checked
         const subperiod = document.getElementById('ecokeyperiod').value
         const subfrequency = document.getElementById('ecokeyfrequency').value
         if (isNaN(newprice)) {
             newprice = 0;
         }
-        const createsuccess = await fetch(`https://api.rotur.dev/keys/create?auth=${activeacc.token}&name=${newkeyname}&subscription=${isSubscription}${isSubscription ? `&period=${subfrequency}&frequency=${subperiod}` : ``}`).then(res => res.json())
+        const createsuccess = await fetch(`https://api.rotur.dev/keys/create?name=${newkeyname}&subscription=${isSubscription}${isSubscription ? `&period=${subfrequency}&frequency=${subperiod}&price=${newprice}` : ``}`, {headers: authform}).then(res => res.json())
         if (createsuccess.error) {
             document.getElementById(`createkeystatusplaceholdereco`).replaceChildren(MiniError('failure', createsuccess.error))
         } else {
             document.getElementById(`createkeystatusplaceholdereco`).replaceChildren(MiniError('success', `Key ${newkeyname} was created successfully!`))
             RenderKeys()
         }
+        target.disabled = false
+        target.textContent = "Create Key"
         return;
     }
     // Popup confirmations
     if (e.target.className == "finaldelete") {
         closePopup()
-        const deletesuccess = await fetch(`https://api.rotur.dev/keys/delete/${keyid}?auth=${activeacc.token}`).then(res => res.json())
+        const deletesuccess = await fetch(`https://api.rotur.dev/keys/delete/${keyid}`, {headers: authform}).then(res => res.json())
         if (deletesuccess.error) {
             document.getElementById(`createkeystatusplaceholdereco`).replaceChildren(MiniError('failure', deletesuccess.error))
         } else {
@@ -465,7 +477,7 @@ document.addEventListener('click', async function(e) {
     }
     if (e.target.className == "finalcancel") {
         closePopup()
-        const cancelsuccess = await fetch(`https://api.rotur.dev/keys/cancel/${keyid}?auth=${activeacc.token}`).then(res => res.json())
+        const cancelsuccess = await fetch(`https://api.rotur.dev/keys/cancel/${keyid}`, {headers: authform}).then(res => res.json())
         if (cancelsuccess.error) {
             document.getElementById(`key-${keyid}`).querySelector('[class="ecokeystatus"]').replaceChildren(MiniError('failure', cancelsuccess.error))
         } else {
@@ -477,7 +489,7 @@ document.addEventListener('click', async function(e) {
         return;
     }
     if (e.target.className == "finalrevoke") {
-        const revokesuccess = await fetch(`https://api.rotur.dev/keys/revoke/${keyid}?auth=${activeacc.token}`).then(res => res.json())
+        const revokesuccess = await fetch(`https://api.rotur.dev/keys/revoke/${keyid}`, {headers: authform}).then(res => res.json())
         closePopup()
         if (revokesuccess.error) {
             document.getElementById(`key-${keyid}`).querySelector('[class="ecokeystatus"]').replaceChildren(MiniError('failure', revokesuccess.error))
@@ -492,13 +504,14 @@ document.addEventListener('click', async function(e) {
         const DoRefund = document.getElementById('ecokeyrefund') ? document.getElementById('ecokeyrefund').checked : false
         const refundamt = (parseFloat(e.target.dataset.refundamt) * 0.9).toFixed(2)
         closePopup()
-        const removesuccess = await fetch(`https://api.rotur.dev/keys/admin_remove/${keyid}?auth=${activeacc.token}&username=${user}`).then(res => res.json())
+        const removesuccess = await fetch(`https://api.rotur.dev/keys/admin_remove/${keyid}?username=${user}`, {headers: authform}).then(res => res.json())
         if (removesuccess.error) {
             document.getElementById(`key-${keyid}`).querySelector('[class="ecokeyadduserstatus"]').replaceChildren(MiniError('failure', removesuccess.error))
         } else {
             if (DoRefund && refundamt > 0) {
-                const refundsuccess = await fetch(`https://api.rotur.dev/me/transfer?auth=${activeacc.token}`, {
+                const refundsuccess = await fetch(`https://api.rotur.dev/me/transfer`, {
                                             method: "POST",
+                                            headers: authform,
                                             body: JSON.stringify({to: user, amount: refundamt, note: `(RA) Refund for your removal from ${keyname}`})
                                         }).then(res => res.json())
                 if (refundsuccess.error) {
@@ -530,7 +543,7 @@ document.addEventListener('click', async function(e) {
 
     if (e.target.className == 'finalbuy') {
         closePopup()
-        const buysuccess = await fetch(`https://api.rotur.dev/keys/buy/${keyid}?auth=${activeacc.token}`)
+        const buysuccess = await fetch(`https://api.rotur.dev/keys/buy/${keyid}`, {headers: authform})
         if (buysuccess.error) {
             document.getElementById('ecokeylookupstatusplaceholder').replaceChildren(MiniError('failure', buysuccess.error))
         } else {

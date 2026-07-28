@@ -1,17 +1,22 @@
-import { parseHTML, sanitize, openSuccessPopup, openErrorPopup, MiniError, CreateEmptyPlaceholder, openWarningPopup } from "../index.js";
+import { sanitize, openSuccessPopup, openErrorPopup, MiniError, CreateEmptyPlaceholder, openWarningPopup } from "../index.js";
 
 const themedata = {
     oceanblue: ["#0F0052", "#004DB1", "#00002B", "#0012B4", "#4F46E5", "#4338CA", "#03009C"],
+    crimsonred: ["#470000", "#cc0000", "#700000", "#bd0000", "#f36868", "#b65454", "#ad003d"],
     forestgreen: ["#0A3100", "#00b83d", "#271e00", "#058a00", "#7c5500", "#bb6a00", "#006b17"],
     orange: ["#6d4100", "#7c280f", "#cf3000", "#741b00", "#FF4C4B", "#df2727", "#df795a"],
-
     darkpink: ["#8b0242", "#ff00aa", "#57002b", "#bd005e", "#c90788", "#b1128e", "#750844"],
-
     blurple: ["#200044", "#35008b", "#28004e", "#4500b4", "#4918cf", "#4a00d4", "#2f009c"],
-    discord: ["#323339", "#7D7E87", "#323339", "#2C2D32", "#5865F2", "#4452BB", "#393A41"],
+    discord: ["#323339", "#7D7E87", "#2C2D32", "#2C2D32", "#5865F2", "#4452BB", "#393A41"],
     midnight: ["#000000", "#4d4d4d", "#242425", "#2e2e2e", "#5a5a5a", "#494949", "#3b3b3b"],
     blackout: ["#000000", "#000000", "#000000", "#000000", "#000000", "#000000", "#000000"] // The "F... it, we ball" version of the midnight theme
 }
+
+const config = {
+    removeElements: ['iframe', 'script', 'style', 'object', 'embed', 'applet', 'meta', 'link', 'base', 'form'],
+    removeAttributes: ['onload', 'onclick', 'onerror', 'onmouseover', 'onfocus', 'onblur', 'onkeydown', 'onchange', 'onsubmit', 'srcdoc', 'formaction']
+}
+const sanitizer = new Sanitizer(config)
 
 let customtheme = await new Promise(resolve =>
     chrome.storage.local.get('customtheme', data => resolve(data.customtheme || ["#000000", "#000000", "#000000", "#000000", "#000000", "#000000", "#000000", "#FFFFFF"]))
@@ -23,22 +28,22 @@ for (let i=0; i< customtheme.length; i++) {
 
 function openConfirmOverwriteNotePopup(user) {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Overwrite Note</h1>
             <button id="popup-x" class="closebtn">✕</button>
         </div>
-        <p id="deleteconfirmdialogue">You already have a note for ${user}. Would you like to overwrite the pre-existing note with the new note?</p>
+        <p id="deleteconfirmdialogue">You already have a note for ${sanitize(user)}. Would you like to overwrite the pre-existing note with the new note?</p>
         <div id="popup-choices">
             <button id="cancel" class="closebtn">No</button>
-            <button class="finalnoteoverwrite" data-user="${user}">Yes</button>
+            <button class="finalnoteoverwrite" data-user="${sanitize(user)}">Yes</button>
         </div>
-    `))
+    `, {sanitizer: sanitizer})
 }
 
 function openConfirmClearNotePopup(user) {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Clear Note</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -46,14 +51,14 @@ function openConfirmClearNotePopup(user) {
         <p id="deleteconfirmdialogue">Are you sure you want to clear the note you have for this user?</p>
         <div id="popup-choices">
             <button id="cancel" class="closebtn">No</button>
-            <button class="finalnoteclear" data-user='${user}'>Yes</button>
+            <button class="finalnoteclear" data-user='${sanitize(user)}'>Yes</button>
         </div>
-    `))
+    `, {sanitizer: sanitizer})
 }
 
 function openConfirmClearNotePopup2(user) {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Clear Note</h1>
             <button id="popup-x" class="closebtn">✕</button>
@@ -61,24 +66,24 @@ function openConfirmClearNotePopup2(user) {
         <p id="deleteconfirmdialogue">You don't have anything typed in the box. Do you want to instead clear the note you have for this user?</p>
         <div id="popup-choices">
             <button id="cancel" class="closebtn">No</button>
-            <button class="finalnoteclear" data-user='${user}' data-origin='clearoverwrite'>Yes</button>
+            <button class="finalnoteclear" data-user='${sanitize(user)}' data-origin='clearoverwrite'>Yes</button>
         </div>
-    `))
+    `, {sanitizer: sanitizer})
 }
 
 function openConfirmClearCachePopup() {
     document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].replaceChildren(...parseHTML(`
+    document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Clear Cache</h1>
             <button id="popup-x" class="closebtn">✕</button>
         </div>
-        <p id="deleteconfirmdialogue">Clear any cached data Rotur Assistant may have? Rotur Assistant caches some stuff in order to improve user experience and reduce overall load on the Rotur API.</p>
+        <p id="deleteconfirmdialogue">Clear any cached data Rotur Assistant may have? Rotur Assistant caches some stuff in order to improve user experience and reduce overall load on the Rotur API. This will not include any cached Rmails.</p>
         <div id="popup-choices">
             <button id="cancel" class="closebtn">Cancel</button>
             <button id="finalcacheclear">Clear Cache</button>
         </div>
-    `))
+    `, {sanitizer: sanitizer})
 }
 
 function closePopup() {
@@ -124,7 +129,6 @@ let app_settings = await new Promise(resolve =>
 
 document.getElementById('roturphotoswarning').style.display = (preferredcdn == 'roturphotos') ? 'block' : 'none'
 document.getElementById('fluficdnwarning').style.display = (preferredcdn == 'fluficdn') ? 'block' : 'none'
-document.getElementById('mistiumwarning').style.display = (preferredcdn == 'mistiums3') ? 'block' : 'none'
 
 document.getElementsByName('cdnoption').forEach(option => {
     if (option.value == preferredcdn) {
@@ -560,7 +564,6 @@ document.getElementById('preferredcdnoptions').addEventListener('change', (e) =>
     chrome.storage.local.set({ preferredcdn: preferredcdn });
     document.getElementById('roturphotoswarning').style.display = (preferredcdn == 'roturphotos') ? 'block' : 'none'
     document.getElementById('fluficdnwarning').style.display = (preferredcdn == 'fluficdn') ? 'block' : 'none'
-    document.getElementById('mistiumwarning').style.display = (preferredcdn == 'mistiums3') ? 'block' : 'none'
 });
 
 document.getElementById('appsizeinput').addEventListener('input', function(e) {
