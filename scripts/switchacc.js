@@ -397,6 +397,12 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
             sendResponse({ result: "done" });
             return;
         }
+        if (url.startsWith('https://connect.rotur.dev')) {
+            localStorage.setItem('rotur_connect_token', message.data)
+            window.location.reload()
+            sendResponse({ result: "done" });
+            return;
+        }
         if (url.startsWith('https://warpdrive.team')) {
             localStorage.setItem('rotur_token', message.data)
             localStorage.setItem('warpdrive_rotur_token', message.data)

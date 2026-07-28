@@ -1,7 +1,7 @@
 import { openErrorPopup, openWarningPopup, CreateEmptyPlaceholder, MiniError } from "../index.js";
 
 const whitelisted_urls = ['https://apps.rotur.dev', 'https://origin.mistium.com', 'https://originchats.mistium.com/app', "https://originchats.com/app", 'https://rotur.dev/me',
-                            'https://warptheme.mistium.com', 'https://notes.rotur.dev', 'https://devfund.rotur.dev', 'https://photos.rotur.dev',
+                            'https://warptheme.mistium.com', 'https://notes.rotur.dev', 'https://devfund.rotur.dev', 'https://photos.rotur.dev', "https://connect.rotur.dev",
                             'https://warpdrive.team', "https://rotur.dev/key-manager", "https://rotur.dev/inventory-manager", "https://graphite.flufi.uk",
                             "https://runnova.github.io/orion", "https://adthoughtsglobal.github.io/Orla", "https://antiviiris.github.io/originChats",
                             'https://git.rotur.dev', 'https://authenticator.rotur.dev', 'https://gate.rotur.dev', 'https://rotur.dev', "https://pounce.rotur.dev",
