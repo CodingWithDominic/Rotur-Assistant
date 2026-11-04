@@ -8,6 +8,7 @@ const sanitizer = new Sanitizer(config)
 
 function BlockGIFs() {
     const TARGET_PREFIX = "https://gifs.originchats.com/api/";
+    const TARGET_PREFIX2 = "https://gifassets.originchats.com/";
     const CUSTOM_IMAGE_URL = "https://i.postimg.cc/1XCBXRcn/Rotur-Assistant-No-Gifs.png";
 
     function observePage() {
@@ -20,7 +21,7 @@ function BlockGIFs() {
     }
 
     function enforceCustomImage(img) {
-        const needsDataUpdate = (img.dataset.imageUrl && img.dataset.imageUrl.startsWith(TARGET_PREFIX));
+        const needsDataUpdate = (img.dataset.imageUrl && (img.dataset.imageUrl.startsWith(TARGET_PREFIX) || img.dataset.imageUrl.startsWith(TARGET_PREFIX2)));
 
         if (needsDataUpdate) {
             observer.disconnect();
