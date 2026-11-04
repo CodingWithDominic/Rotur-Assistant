@@ -127,7 +127,7 @@ let app_settings = await new Promise(resolve =>
     ) ?? default_app_settings;
     delete app_settings.rows
 
-document.getElementById('roturphotoswarning').style.display = (preferredcdn == 'roturphotos') ? 'block' : 'none'
+document.getElementById('ochostwarning').style.display = (preferredcdn == 'ochost') ? 'block' : 'none'
 document.getElementById('fluficdnwarning').style.display = (preferredcdn == 'fluficdn') ? 'block' : 'none'
 
 document.getElementsByName('cdnoption').forEach(option => {
@@ -341,7 +341,7 @@ document.getElementById('gensettings').addEventListener('click', async function(
         if (e.target.checked) {
             settings = replaceCharAtIdx(settings, 8, '1')
             await chrome.declarativeNetRequest.updateDynamicRules({
-                removeRuleIds: [456], 
+                removeRuleIds: [456, 567], 
                 addRules: [{
                     id: 456,
                     priority: 1,
@@ -353,12 +353,23 @@ document.getElementById('gensettings').addEventListener('click', async function(
                         urlFilter: `|https://gifs.originchats.com/api/*`,
                         resourceTypes: ["image", "xmlhttprequest", "sub_frame"]
                     }
+                }, {
+                    id: 567,
+                    priority: 1,
+                    action: {
+                        type: "redirect",
+                        redirect: {url: CUSTOM_IMAGE_URL}
+                    },
+                    condition: {
+                        urlFilter: `|https://gifassets.originchats.com/*`,
+                        resourceTypes: ["image", "xmlhttprequest", "sub_frame"]
+                    }
                 }]
             });
         } else {
             settings = replaceCharAtIdx(settings, 8, '0')
             await chrome.declarativeNetRequest.updateDynamicRules({
-                removeRuleIds: [456]
+                removeRuleIds: [456, 567]
             });
         }
         chrome.storage.local.set({settings: settings})
@@ -562,7 +573,7 @@ document.getElementById('popupsidebaroptions').addEventListener('change', (e) =>
 document.getElementById('preferredcdnoptions').addEventListener('change', (e) => {
     preferredcdn = e.target.value
     chrome.storage.local.set({ preferredcdn: preferredcdn });
-    document.getElementById('roturphotoswarning').style.display = (preferredcdn == 'roturphotos') ? 'block' : 'none'
+    document.getElementById('ochostwarning').style.display = (preferredcdn == 'ochost') ? 'block' : 'none'
     document.getElementById('fluficdnwarning').style.display = (preferredcdn == 'fluficdn') ? 'block' : 'none'
 });
 

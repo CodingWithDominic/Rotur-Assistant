@@ -1,10 +1,13 @@
-import { sanitize, formatDate, CreateEmptyPlaceholder, MiniError } from "../index.js"
+import { sanitize, formatDate, CreateEmptyPlaceholder, MiniError, openErrorPopup, openSuccessPopup } from "../index.js"
 
 const config = {
     removeElements: ['iframe', 'script', 'style', 'object', 'embed', 'applet', 'meta', 'link', 'base', 'form'],
     removeAttributes: ['onload', 'onclick', 'onerror', 'onmouseover', 'onfocus', 'onblur', 'onkeydown', 'onchange', 'onsubmit', 'srcdoc', 'formaction']
 }
 const sanitizer = new Sanitizer(config)
+
+let my_keys = []
+let owned_keys = []
 
 const activeacc = await new Promise(resolve =>
     chrome.storage.local.get('activeacc', data => resolve(data.activeacc || {}))
@@ -90,6 +93,21 @@ function openConfirmCancelPopup(keyid, owner) {
         <div id="popup-choices">
             <button id="cancel" class="closebtn">No</button>
             <button class="finalcancel" data-keyid='${keyid}'>Yes</button>
+        </div>
+    `, {sanitizer: sanitizer})
+}
+
+function openConfirmForfeitPopup(keyid, owner) {
+    document.getElementById('overlay').style.display = 'flex';
+    document.getElementsByClassName('popup')[0].setHTML(`
+        <div id="popup-header">
+            <h1>Give Up Key</h1>
+            <button id="popup-x" class="closebtn">✕</button>
+        </div>
+        <p id="deleteconfirmdialogue">Give up your purchase and access to this key? If you want a refund, you may have to contact ${owner}, the owner of this key.</p>
+        <div id="popup-choices">
+            <button id="cancel" class="closebtn">No</button>
+            <button class="finalforfeit" data-keyid='${keyid}' data-owner='${owner}'>Yes</button>
         </div>
     `, {sanitizer: sanitizer})
 }
@@ -202,8 +220,8 @@ async function RenderKeys() {
     const my_keys_html = []
     const owned_keys_html = []
 
-    let my_keys = []
-    let owned_keys = []
+    my_keys = []
+    owned_keys = []
 
     keys.forEach(key => {
         if (key.creator == activeacc.name) {
@@ -250,11 +268,16 @@ async function RenderKeys() {
             boughtkey.querySelector('.ecokeynameheader').style = "padding-left: 5px; padding-right: 5px;"
             boughtkey.querySelector('.keyidlabel').textContent = `ID: ${key.key}`
             boughtkey.querySelector('.keytypelabel').textContent = `Type: ${key.type}`
-            key.type == 'subscription' ? boughtkey.querySelector('.keybillinglabel').textContent = `Bills every: ${key.subscription.frequency} ${key.subscription.period + (key.subscription.frequency != 1 ? 's' : '')}` : boughtkey.querySelector('.keybillinglabel').remove()
+            boughtkey.querySelector('.keypricelabel').textContent = `Price: ${key.price} RC`
+            if (key.type == 'standard') {
+                boughtkey.querySelector('.ecokeysubcancel').textContent = "Give Up Key"
+                boughtkey.querySelector('.ecokeysubcancel').dataset.standard = "true"
+            }
+            key.type == 'subscription' ? (boughtkey.querySelector('.keybillinglabel').textContent = `Bills every: ${key.subscription.frequency} ${key.subscription.period + (key.subscription.frequency != 1 ? 's' : '')}`) : boughtkey.querySelector('.keybillinglabel').remove()
             if (key.webhook) {
                 boughtkey.querySelector('.ecokeywebhookurl').textContent = `Webhook URL: ${key.webhook}`
                 boughtkey.querySelector('.ecokeycopy').id = `copyhook-${key.key}`
-                boughtkey.querySelector('.ecokeycopy').dataset.webhool = key.webhook
+                boughtkey.querySelector('.ecokeycopy').dataset.webhook = key.webhook
             } else {
                 boughtkey.querySelector('.ecokeywebhookdisplay').remove()
             }
@@ -274,15 +297,9 @@ async function RenderKeys() {
     document.getElementById('boughtkeys').replaceChildren(...owned_keys_html)
     if (my_keys.length == 0) {
         document.getElementById('ownedkeys').replaceChildren(CreateEmptyPlaceholder("You haven't created any keys yet!"))
-        document.getElementById('ownedkeys').style = "border: none;"
-    } else {
-        document.getElementById('ownedkeys').style = "border: 2px solid white;"
     }
     if (owned_keys.length == 0) {
         document.getElementById('boughtkeys').replaceChildren(CreateEmptyPlaceholder("You haven't purchased any keys yet!"))
-        document.getElementById('boughtkeys').style = "border: none;"
-    } else {
-        document.getElementById('boughtkeys').style = "border: 2px solid white;"
     }
 }
 
@@ -323,7 +340,7 @@ if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
             document.getElementById('ecokeylookupstatusplaceholder').replaceChildren(MiniError('failure', keydata.error))
         } else {
             const userinfo = await fetch(`https://api.rotur.dev/profile?name=${activeacc.name}&include_posts=0`).then(res => res.json())
-            const usercurrency = userinfo.currency
+            const usercurrency = (userinfo.currency ?? 0)
             document.getElementById('ecokeylookupplaceholder').style = 'border: 2px solid white; display: block;'
             const h2 = document.createElement('h2')
             const ecokeylookupdiv = document.createElement('div')
@@ -437,7 +454,11 @@ document.addEventListener('click', async function(e) {
         return;
     }
     if (e.target.className == "ecokeysubcancel") {
-        openConfirmCancelPopup(keyid, e.target.dataset.owner)
+        if (e.target.dataset.standard) {
+            openConfirmForfeitPopup(keyid, e.target.dataset.owner)
+        } else {
+            openConfirmCancelPopup(keyid, e.target.dataset.owner)
+        }
         return;
     }
     if (e.target.id == "ecokeycreate") {
@@ -485,6 +506,21 @@ document.addEventListener('click', async function(e) {
             document.getElementById(`key-${keyid}`).querySelector('[class="ecokeysubcancel"]').disabled = true
             document.getElementById(`key-${keyid}`).querySelector('[class="ecokeysubcancel"]').textContent = "Pending Cancellation"
             document.getElementById(`key-${keyid}`).querySelector('[class="ecokeysubcancel"]').title = `This subscription is pending cancellation on ${formatDate(Date.now())}. Until then, you can continue to enjoy any benefits this subscription provides, if any.`
+        }
+        return;
+    }
+    if (e.target.className == "finalforfeit") {
+        closePopup()
+        const cancelsuccess = await fetch(`https://api.rotur.dev/keys/cancel/${keyid}`, {headers: authform}).then(res => res.json())
+        if (cancelsuccess.error) {
+            document.getElementById(`key-${keyid}`).querySelector('[class="ecokeystatus"]').replaceChildren(MiniError('failure', cancelsuccess.error))
+        } else {
+            openSuccessPopup(`Your access to this key has been forfeited. If you want a refund, you may have to contact ${e.target.dataset.owner}, the owner of the key,`)
+            document.querySelector(`#key-${keyid}`)?.remove()
+            owned_keys = owned_keys.filter(key => key.key != keyid)
+            if (owned_keys.length == 0) {
+                document.getElementById('boughtkeys').replaceChildren(CreateEmptyPlaceholder("You haven't purchased any keys yet!"))
+            }
         }
         return;
     }

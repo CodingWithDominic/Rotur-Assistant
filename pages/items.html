@@ -15,6 +15,7 @@
         <script src="../header.js"></script>
         <div class="container">
             <h1 style="margin-bottom: 0;">Item Manager</h1>
+            <p class="fineprint">As of October 23, 2026, The item marketplace has been deprecated. Items can no longer be created, listed, sold, bought, or transferred. You can still view and delete any existing items you own.</p>
             <hr class="full-size" style="margin-bottom: 0;">
             <div id="itemmanagerheader">
                 <button class="itemmantab" id="items_mine" style="border-bottom: 2px solid white;" data-tabidx="0">Mine</button>
@@ -38,23 +39,23 @@
             <form id="create_item" class="itemmanpage" style="display: none;">
                 <label class="createitemnamelabel">
                     Name: 
-                    <input type="text" id="createitemname" placeholder="Item Name">
+                    <input type="text" id="createitemname" placeholder="Item Name" disabled>
                 </label>
                 <label for="createitemdesc" style="text-align: left;">Description:</label>
-                <textarea id="createitemdesc" placeholder="Item Description"></textarea>
+                <textarea id="createitemdesc" placeholder="Item Description" disabled></textarea>
                 <div id="itempriceandsale">
                     <label>
                         Price:
-                        <input type="number" id="createitemprice" placeholder="Price (RC)">
+                        <input type="number" id="createitemprice" placeholder="Price (RC)" disabled>
                     </label>
                     <label class="putupforsalebox">
-                        <input type="checkbox" id="sellitemimmediately">
+                        <input type="checkbox" id="sellitemimmediately" disabled>
                         Put up for sale upon creation
                     </label>
                 </div>
                 <label for="itemjsonmetadata" style="text-align: left;">JSON Metadata (Not visible once created):</label>
-                <textarea id="itemjsonmetadata" placeholder="(Optional) Item JSON Metadata"></textarea>
-                <button id="finalcreateitem">Create Item</button>
+                <textarea id="itemjsonmetadata" placeholder="(Optional) Item JSON Metadata" disabled></textarea>
+                <button id="finalcreateitem" disabled>Create Item</button>
             </form>
             <div id="lookup_item" class="itemmanpage" style="display: none;">
                 <form id="itemsearch">
@@ -99,21 +100,21 @@
                         <p class="roturitemtotalrevenue">0</p>
                     </li>
                 </ul>
-                <button class='buyitem' data-itemname='itemname' data-amt='price' data-owner='user'>Buy (0 RC)</button>
+                <button class='buyitem' data-itemname='itemname' data-amt='price' data-owner='user' disabled>Buy (0 RC)</button>
                 <div class="itemcontrols">
                     <label>
-                        <input type='checkbox' class='isforsale' data-itemname="itemname">
+                        <input type='checkbox' class='isforsale' data-itemname="itemname" disabled>
                         For Sale
                     </label>
                     <label>
                         Price:
-                        <input type='number' class='updateitemprice' placeholder='Price (RC)' name='itempricefield'>
-                        <button class='updateitempricebtn' data-itemname="itemname">Update</button>
+                        <input type='number' class='updateitemprice' placeholder='Price (RC)' name='itempricefield' disabled>
+                        <button class='updateitempricebtn' data-itemname="itemname" disabled>Update</button>
                     </label>
                     <label>
                         Transfer Ownership:
-                        <input type='text' class='itemtransferownership' placeholder='Username' name='potentialnewitemownerfield'>
-                        <button class='beginitemtransfer' data-itemname="itemname">Transfer</button>
+                        <input type='text' class='itemtransferownership' placeholder='Username' name='potentialnewitemownerfield' disabled>
+                        <button class='beginitemtransfer' data-itemname="itemname" disabled>Transfer</button>
                     </label>
                 </div>
                 <details class='itemtransferhistory'>

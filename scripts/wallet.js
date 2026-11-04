@@ -15,6 +15,7 @@ const type_translator =
     in: "Received credits",
     out: "Sent credits",
     tax: "System Tax",
+    transfer_reversal: "Transfer to a user failed",
     gift_claim: "You claimed a gift",
     gift_claimed: "Your gift was claimed",
     gift_create: "You created a gift",
@@ -24,13 +25,35 @@ const type_translator =
     escrow_out: "Devfund Contribution",
     cosmetic_sale: "Someone bought your cosmetic",
     cosmetic_purchase: "You bought a cosmetic",
-    cosmetic_platform: "A cosmetic sale happened on your platform",
-    group_tip: "Tip from a group you're in",
+    cosmetic_platform: "A cosmetic sale happened on your platform", // Only Mist can see this
+    cosmetic_refund: "A cosmetic purchase was refunded",
+    cosmetic_gift: "You bought a cosmetic gift",
+    banner_unlock: "You unlocked profile banners",
     gift_refund: "You revoked a gift",
     group_create: "You created a group",
     group_tip: "You tipped a group",
+    group_tip_withdrawal: "You withdrew from a group's tip jar",
+    group_tip_refund: "Group tip refund from group deletion",
     group_entry_fee: "You paid a fee to join a group",
-    transfer: "You purchased credits from Ko-fi"
+    group_entry_fee_refund: "Refund of a group entry fee",
+    credit_purchase: "You purchased credits with real money",
+    sable_credit_purchase: "You bought SC for RC",
+    bounty_funded: "You created a bounty",
+    bounty_refund: "You revoked a bounty",
+    bounty_earning: "Bounty marked as completed",
+    commerce_payment: "You made a purchase or a donation",
+    commerce_earning: "Someone either donated to you or bought one of your products",
+    commerce_refund: "Someone requested a refund of a Misc. Purchase",
+    commerce_refund_returned: "Return of earnings from Misc. Purchase refund",
+    commerce_refund_reversed: "A refund of the refund of a Misc. Purchase",
+    claw_promotion: "You promoted a Claw post",
+    claw_promotion_refund: "Claw promotion refund",
+    claw_payout: "Claw Engagement Bonus",
+    claw_seed: "You contributed to the Claw creator payout pool", // Only the "rotur" account can see this
+    group_role_purchase: "You bought a group role",
+    group_role_subscription: "Recurring payment for a group role",
+    pet_purchase: "You bought a pet",
+    pet_purchase_refund: "A pet purchase was refunded"
 }
 
 const config = {
@@ -88,9 +111,9 @@ function openPopup(senderbal, recipientdata, amt, note) {
         </div>
         <h2>Transferring ${amt} credit${amt != 1 ? 's' : ''} to: ${recipientdata.username}</h2>
         <p>Your Balance: ${FixDecimal(senderbal)} -> ${FixDecimal(senderbal - amt)}</p>
-        <p>${recipientdata.username}'s Balance: ${recipientdata.username == 'rotur' ? '1 -> 1' : `${FixDecimal(recipientdata.currency)} -> ${FixDecimal(recipientdata.currency + amt)}`}</p>
+        <p>${recipientdata.username}'s Balance: ${recipientdata.username == 'rotur' ? `${FixDecimal(recipientdata.currency ?? 0)} -> ${FixDecimal(recipientdata.currency ?? 0)}` : `${FixDecimal(recipientdata.currency ?? 0)} -> ${FixDecimal((recipientdata.currency ?? 0) + amt)}`}</p>
         ${(note != "" ? `<p class='transactionnote'>With note: ${sanitize(note.substring(0, 50))}</p>` : "")}
-        ${recipientdata.username == 'rotur' ? `<p class='specialtransfercase'>Note: The "rotur" Rotur account has a special property where its balance remains at 1 no matter what transaction it's involved in. This means that any credits sent to it are effectively voided.` : ``}
+        ${recipientdata.username == 'rotur' ? `<p class='specialtransfercase'>Note: The "rotur" Rotur account has a special property where its balance remains fixed no matter what transaction it's involved in. This means that any credits sent to it are effectively voided.` : ``}
         <div id="popup-choices">
             <button id="cancel" class="closebtn">Cancel</button>
             <button id="finaltransfer">Confirm & Send</button>
@@ -166,8 +189,8 @@ async function getTransactionHistory(accdata) {
     const transactiondata = accdata['sys.transactions'] ?? []
     const transactionhtml = []
     let profit = 0
-    if (transactiondata.length > 0) {
-        profit = transactiondata[0].new_total - transactiondata[transactiondata.length - 1].new_total
+    if (transactiondata.length > 1) {
+        profit = transactiondata[0].new_total - transactiondata[transactiondata.length - 2].new_total
     } else {
         profit = 0;
     }
@@ -176,11 +199,11 @@ async function getTransactionHistory(accdata) {
         const transaction_snippet = transactiondata[i]
         const finaldate = formatDate(transaction_snippet.time)
         const newtotal = transaction_snippet.new_total ?? 0
-        const user_avatar = (transaction_snippet.user.length > 28 && transaction_snippet.user.includes('-')) ? `Spectator` : transaction_snippet.user
-        const user_name = (transaction_snippet.user.length > 28 && transaction_snippet.user.includes('-')) ? `Unknown User` : transaction_snippet.user
+        const user_avatar = (transaction_snippet.user?.length > 28 && transaction_snippet.user?.includes('-')) ? `Spectator` : (transaction_snippet.user || "Rotur")
+        const user_name = ((transaction_snippet.user.length > 28 && transaction_snippet.user.includes('-')) ? `Unknown User` : transaction_snippet.user) || "Rotur"
         const type = (type_translator[transaction_snippet.type] ?? `Misc. Transaction (${transaction_snippet.type})`)
         const transactioncard = document.getElementById('transactiontemplate').content.cloneNode(true)
-        const exceptions = ['gift_create', 'gift_refund', 'group_create', 'group_tip', 'group_entry_fee', 'escrow_in', 'escrow_out']
+        const exceptions = ['gift_create', 'gift_refund', 'group_create', 'group_tip', 'group_entry_fee', 'escrow_in', 'escrow_out', 'bounty_funded', 'bounty_refund']
         const userexception = exceptions.includes(transaction_snippet.type)
         transactioncard.querySelector('h1').textContent = type
         if (type.length > 22) {
@@ -210,7 +233,8 @@ async function getTransactionHistory(accdata) {
         document.getElementById('transactioncontrols').style.display = 'block'
         document.getElementById('transactionlist').replaceChildren(...transactionhtml)
     }
-    document.getElementById('averageprofit').innerText = `Recent average profit margin: ${FixDecimal(profit / (transactiondata.length - 1))}`
+    document.getElementById("historytab").textContent = `History - ${transactionhtml.length}`
+    document.getElementById('averageprofit').innerText = `Recent average profit margin: ${FixDecimal(profit / ((transactiondata.length - 1) || 1))}`
     transactionsopen = true
     return;
 }
@@ -228,12 +252,12 @@ async function getEconomicData(currentaccdata) {
     const stats = (stats_cache1 ? stats_cache1 : await fetch('https://api.rotur.dev/v2/stats/economy').then(res => res.json()))
     const accdata = (stats_cache2 ? stats_cache2 : currentaccdata)
 
-    const cents = parseFloat(stats.currency_comparison.cents.split('¢')[0])
-    const pence = parseFloat(stats.currency_comparison.pence.split('p')[0])
+    const cents = parseFloat((stats?.currency_comparison?.cents ?? "4¢").split('¢')[0])
+    const pence = parseFloat((stats?.currency_comparison?.pence ?? "3p").split('p')[0])
 
     document.getElementById('statslist').setHTML(`
         <h2>General Stats</h2>
-        <p>Each credit is worth about $${(cents / 100).toFixed(2)} or £${(pence / 100).toFixed(2)}.</p>
+        <p title="currency_comparison was quietly removed from /stats/economy. Because of this, Rotur Assistant now uses flat rates of 4 cents and 3 pence per credit in its calculations. These values are based on what they were being rounded off to right before the quiet removal.">Each credit is worth about $${(cents / 100).toFixed(2)} or £${(pence / 100).toFixed(2)}.</p>
         <p>The average user has around ${stats.average.toFixed(2)} credits, which means that they have around $${(stats.average * (cents / 100)).toFixed(2)} or £${(stats.average * (pence / 100)).toFixed(2)} worth of credits.</p>
         <p>There are a total of ${stats.total.toFixed(2)} credits in circulation. This means the entire rotur economy is worth a grand total of $${(stats.total * (cents / 100)).toFixed(2)} or £${(stats.total * (pence / 100)).toFixed(2)}.</p>
         <p>The recent economical variance is ${stats.variance.toFixed(2)}.</p>
@@ -465,17 +489,7 @@ async function walletpage() {
         document.getElementsByClassName('container')[0].setHTML(`
             <h1>Your Wallet</h1>
             <hr class="full-size">
-            <div id='toscontainer'>
-                <h4>The Rotur TOS was updated since your last visit. As a result, accounts can't access or perform certain actions until they accept the TOS again. Accept the new terms?</h4>
-                <button id='accepttos'>Accept Terms</button>
-                ${accounts.length > 1 ? `
-                <label id='tosbulkaccept'>
-                    <input type='checkbox' id='bulkacceptoption'>
-                    Accept TOS on all added accounts
-                </label>` : ``}
-                <div id='tosiframeplaceholder'></div>
-                <a href='https://rotur.dev/terms-of-service' target='_blank' rel='noopener noreferrer'>Rotur Terms of Service</a>
-            </div>
+            <h4>The Rotur TOS was updated since your last visit. As a result, accounts can't access or perform certain actions until they accept the TOS again. Log onto <a href='https://rotur.dev/' target='_blank' rel='noopener noreferrer'>rotur.dev</a> using your current account and accept the terms on there.</h4>
         `, {sanitizer: sanitizer})
         return;
     }
@@ -652,7 +666,7 @@ document.addEventListener('click', async function(e) {
             document.getElementById('statsreload').textContent = '…'
             document.getElementById('statsreload').disabled = true
             stats_cache1 = await fetch('https://api.rotur.dev/v2/stats/economy').then(res => res.json())
-            stats_cache2 = await fetch(`https://api.rotur.dev/profile?name=${activeacc.name}&include_posts=no`).then(res => res.json())
+            stats_cache2 = await fetch(`https://api.rotur.dev/profile?name=${activeacc.name}&include_posts=no`, {headers: authform}).then(res => res.json())
             getEconomicData(stats_cache2)
             reloadinprogress = true
             statsopen = false
@@ -664,8 +678,8 @@ document.addEventListener('click', async function(e) {
             const num = parseFloat(document.getElementById('econcalc').value)
             const stats = stats_cache1
             const accdata = stats_cache2
-            const cents = parseFloat(stats.currency_comparison.cents.split('¢')[0])
-            const pence = parseFloat(stats.currency_comparison.pence.split('p')[0])
+            const cents = parseFloat((stats?.currency_comparison?.cents ?? "4¢").split('¢')[0])
+            const pence = parseFloat((stats?.currency_comparison?.pence ?? "3p").split('p')[0])
             if (!isNaN(num)) {
                 document.getElementById('calcresults').setHTML(`
                     <p>${num} RC is approximately equal to $${(num * (cents / 100)).toFixed(2)} or £${(num * (pence / 100)).toFixed(2)}.</p>
@@ -681,11 +695,11 @@ document.addEventListener('click', async function(e) {
             const claimbtn = (e.target.id == 'dailyclaim') ? e.target : document.getElementById('dailyclaim')
             claimbtn.disabled = true
             claimbtn.textContent = 'Claiming...'
-            const activeaccdata2 = await fetch(`https://api.rotur.dev/profile?name=${activeacc.name}&include_posts=no`).then(res => res.json())
-            const multiplier = (activeaccdata2.subscription == "Pro" || activeaccdata2.subscription == "Max") ? 3 : ((activeaccdata2.subscription == "Drive") ? 2 : 1)
+            const activeaccdata2 = await fetch(`https://api.rotur.dev/profile?name=${activeacc.name}&include_posts=no`, {headers: authform}).then(res => res.json())
+            const multiplier = (activeaccdata2.subscription == "Pro" || activeaccdata2.subscription == "Max") ? 3 : ((activeaccdata2.subscription == "Plus") ? 2 : 1)
             document.getElementById('claimstatusplaceholder').replaceChildren()
-            if (activeaccdata2.currency <= 1000) {
-                if ((activeaccdata2.currency > 500) && (e.target.id == 'dailyclaim')) {
+            if (activeaccdata2.currency <= 1000000000) {
+                if ((activeaccdata2.currency > 500000000) && (e.target.id == 'dailyclaim')) {
                     openDailyClaimPopup()
                     claimbtn.textContent = 'Claim Daily Credit'
                     claimbtn.disabled = false
@@ -705,7 +719,13 @@ document.addEventListener('click', async function(e) {
                 document.getElementById('claimstatusplaceholder').replaceChildren(MiniError('failure', `Daily claim failed. ${waittime.includes('NaN') ? dailysuccess.error : `Please wait ${waittime}`}.`))
                 claimbtn.disabled = false
             } else {
-                if (activeaccdata2.currency > 500) {
+                if ((typeof sum_cache[0]) != "number") {
+                    sum_cache[0] = parseFloat(sum_cache[0])
+                    if (isNaN(sum_cache[0])) {
+                        sum_cache[0] = 0
+                    }
+                }
+                if (activeaccdata2.currency > 500000000) {
                     document.getElementById('claimstatusplaceholder').replaceChildren(MiniError('partialsuccess', `While the daily claim was successful, you only received half the credits as normal, since your balance is greater than 500.`))
                     bal_cache += 0.5 * multiplier // I almost switched this out because apparently, dailysuccess was supposed to also return the amount received according to the docs, but in testing, that was not true. The returned object only has the message saying the claim was successful.
                     sum_cache[0] += 0.5 * multiplier
@@ -745,7 +765,7 @@ document.addEventListener('click', async function(e) {
             } else if (transferamt <= 0) {
                 potentialerrormsg = `Minimum amount must be 0.01`
             } else {
-                recipientdata = await fetch(`https://api.rotur.dev/profile?name=${document.getElementById('transferuser').value}&include_posts=no`).then(res => res.json())
+                recipientdata = await fetch(`https://api.rotur.dev/profile?name=${document.getElementById('transferuser').value}&include_posts=no`, {headers: authform}).then(res => res.json())
                 if (recipientdata.error) {
                     potentialerrormsg = `This user does not exist`
                 } else if (recipientdata.id == activeacc.uuid) {
@@ -837,6 +857,20 @@ if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
             return;
         }
 
+        if (user1data.private || user2data.private) {
+            if (user1data.private && user2data.private) {
+                document.getElementById('compareerror').replaceChildren(MiniError("failure", "Both users have private profiles"))
+            } else if (user1data.private) {
+                document.getElementById('compareerror').replaceChildren(MiniError("failure", "User 1 has a private profile"))
+            } else if (user2data.private) {
+                document.getElementById('compareerror').replaceChildren(MiniError("failure", "User 2 has a private profile")) // Over-engineering at its finest
+            }
+            setTimeout(() => {
+                document.getElementById('compareerror').replaceChildren()
+            }, 10000)
+            return;
+        }
+
         const user1bal = FixDecimal(user1data.currency ?? 0)
         const user2bal = FixDecimal(user2data.currency ?? 0)
 
@@ -845,12 +879,12 @@ if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
         const majorbal = (user1bal > user2bal) ? user1bal : user2bal
         const minorbal = (user1bal > user2bal) ? user2bal : user1bal
         const baldiff = FixDecimal(majorbal - minorbal)
-        let multiplier = majorbal / minorbal
+        let multiplier = FixDecimal(majorbal / minorbal)
         if (multiplier == Infinity) {
             multiplier = '∞'
         }
-        const cents = parseFloat(stats.currency_comparison.cents.split('¢')[0])
-        const pence = parseFloat(stats.currency_comparison.pence.split('p')[0])
+        const cents = parseFloat((stats?.currency_comparison?.cents ?? "4¢").split('¢')[0])
+        const pence = parseFloat((stats?.currency_comparison?.pence ?? "3p").split('p')[0])
         
         document.getElementById('compareusersdata').setHTML(`
             <table class="compareuserstable">

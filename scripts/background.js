@@ -209,39 +209,6 @@ chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIn
 });
 
 chrome.runtime.onStartup.addListener(async () => {
-    chrome.storage.local.get("alarms", async function ({ alarms = {} }) {
-        const dailycreditsettings = await new Promise(resolve => chrome.storage.local.get('dailycreditsettings', data => resolve(data.dailycreditsettings || []))
-        ) ?? [];
-        const now = Date.now();
-
-        Object.entries(alarms).forEach(([id, meta]) => {
-
-            const notifid = (id + '_' + String(now));
-            if (meta.triggerAt > now) {
-                chrome.alarms.get(id, (existing) => {
-                    if (!existing) {
-                        chrome.alarms.create(id, { when: meta.triggerAt });
-                    }
-                });
-            } else {
-                if (dailycreditsettings.includes(id)) {
-                    chrome.notifications.create(notifid, {
-                        type: "basic",
-                        iconUrl: "../images/icon128.png",
-                        title: `${meta.label}: Daily Credit available!`,
-                        message: `Your Daily Credit is ready to claim for the account: ${meta.label}`,
-                        buttons: [
-                            { title: 'Claim Daily Credit' },
-                        ],
-                        priority: 2,
-                    });
-                }
-                delete alarms[id];
-            }
-        });
-        chrome.storage.local.set({ alarms });
-    });
-
     const rpcactive = await new Promise(resolve =>
         chrome.storage.local.get('rpcactive', data => resolve(data.rpcactive || ''))
     ) ?? '';

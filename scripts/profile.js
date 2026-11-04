@@ -6,6 +6,7 @@ let tosrecentlyaccepted = false
 let cosmetic_cache = ''
 let active_cache = ''
 let formdata_cache = ''
+let young_account = false
 
 const config = {
     removeElements: ['script', 'style', 'object', 'embed', 'applet', 'meta', 'link', 'base'],
@@ -74,7 +75,7 @@ let systemcache = ''
 const controller = new AbortController()
 const requestlimit = setTimeout(() => controller.abort(), 5000);
 
-const known_badges = ['Architext', "Asier System", "Bugger", "colon three", "dev", "discord", "friendly", "gingerbug", "Nex", "originOS", "orion", "pro", "rich", "Spark", "rotur", "Constellinux", "HuopaOS", "kyrOS", "flf", "Rotur Assistant", "geec os", "OliveOS", "Warpdrive", "passNet", "PassNet", "originChats", "Fluoride", "fluoride", 'plus', 'mistwarp']
+const known_badges = ['Architext', "Asier System", "Bugger", "colon three", "dev", "discord", "friendly", "gingerbug", "Nex", "originOS", "orion", "rich", "Spark", "rotur", "Constellinux", "HuopaOS", "kyrOS", "flf", "Rotur Assistant", "OliveOS", "geec os", "Warpdrive", "passNet", "PassNet", "originChats", "Fluoride", "fluoride", 'mistwarp', 'inviter', 'membership', 'account-age', 'subscriber-tenure', 'pioneer', 'hoarder', 'community-pillar', 'keyholder', 'developer', 'official', 'stars']
 
 const security_questions = [
     {question: "Who created Rotur?", answers: ["sophie", "mist", "mistium"]},
@@ -223,6 +224,21 @@ function openSystemPopup(system_name, owner) {
     `, { sanitizer: sanitizer });
 }
 
+function openEmailPopup(email) {
+    document.getElementById('overlay').style.display = 'flex';
+    document.getElementsByClassName('popup')[0].setHTML(`
+        <div id="popup-header">
+            <h1>Confirm new E-mail</h1>
+            <button id="popup-x" class="closebtn">✕</button>
+        </div>
+        <p id="deleteconfirmdialogue">Change your e-mail to ${email}? Do note that once you change your e-mail, you will be locked out of your Rotur account until you verify the new e-mail. If you don't have access to the e-mail, or the e-mail is non-existent, then you may have to contact Mistium for help in regaining access to your Rotur account. Rotur Assistant nor its developer(s) will not be held responsible for you losing access to your account this way.</p>
+        <div id="popup-choices">
+            <button id="cancel" class="closebtn">Cancel</button>
+            <button id="finalemailconfirm" data-keyname='email'>Confirm</button>
+        </div>
+    `, {sanitizer: sanitizer})
+}
+
 function openPFPPopup() {
     document.getElementById('overlay').style.display = 'flex';
     document.getElementsByClassName('popup')[0].setHTML(`
@@ -247,10 +263,10 @@ function openBannerPopup() {
             <button id="popup-x" class="closebtn">✕</button>
         </div>
         <img src="${image_cache}" width=240 height=80>
-        <p id="deleteconfirmdialogue">This is what your banner will look like. Change your banner to this? ${["Pro", "Max"].includes(altdata_cache.subscription) ? `Since you have ${altdata_cache.subscription ?? "Free"}, this process is free!` : `Do note that by proceeding, you will be charged 10 credits.`} Banners are stored as 900x300 images, meaning banners have a 3:1 aspect ratio.</p>
+        <p id="deleteconfirmdialogue">This is what your banner will look like. Change your banner to this? ${["Pro", "Max"].includes(altdata_cache.subscription) ? `Since you have ${altdata_cache.subscription ?? "Free"}, this process is free!` : (userdata_cache["sys.banner"] ? "Since you have banners unlocked already, this process is free!" : (`Do note that by proceeding, you will be charged 30 credits. All subsequent banner changes will be free once you pay.`))} Banners are stored as 900x300 images, meaning banners have a 3:1 aspect ratio.</p>
         <div id="popup-choices">
             <button id="cancel" class="closebtn">Cancel</button>
-            <button class="finalbannerchange">Set${["Pro", "Max"].includes(altdata_cache.subscription ?? "Free") ? `` : ` (-10 RC)`}</button>
+            <button class="finalbannerchange">Set${(["Pro", "Max"].includes(altdata_cache.subscription ?? "Free") || userdata_cache['sys.banner']) ? `` : ` (-30 RC)`}</button>
         </div>
     `, { sanitizer: sanitizer });
 }
@@ -399,22 +415,23 @@ function openDeleteAccountPopupFinal() {
             <h1>Delete Account (Final)</h1>
             <button id="popup-x" class="closebtn">✕</button>
         </div>
+        ${young_account ? `` : `
         <div id='securitycheckheader'>
             <h2 style='margin-bottom: 6px;'>Security Check</h2>
             <button id="newsecurityquestion" title="New Question" style="font-size: 18px;">⟳</button>
         </div>
+        `}
         <div id="securitycontainer">
+            ${young_account ? `<p>Since this account is less than a day old, some steps have been omitted.</p>` : `
             <p id="securityquestion" class="deleteinstructions"></p>
             <input type="text" id='securityanswer'>
-            <p class="deleteinstructions">In the box below, type the following: "I, (name), am completely sure that I want to delete my Rotur account."</p>
-            <input type="text" id='securitystatement'>
-
+            `}
             <p class="deleteinstructions">Enter account password:</p>
             <div class="deleteaccpasswordcontainer">
                 <input type="password" id='deleteaccpassword'>
                 <button id='deleteaccpasswordvisibility' data-visible="false"><img src="../images/misc_icons/invisible.png" width="24" height="24"></button>
             </div>
-
+            
             <p class="deleteinstructions" style='display: none;'>In the box below, type "Yes, I am sure of this"</p>
             <input type="text" id='securitystatement2' style='display: none;'>
 
@@ -425,7 +442,11 @@ function openDeleteAccountPopupFinal() {
                 Void my credits instead
             </label>
         </div>
-        <div id="popup-choices">
+        <label id='contentdeletionrequestlabel'>
+            <input type="checkbox" id='contentdeletionrequest'>
+            Also request removal of associated content
+        </label>
+        <div id="popup-choices" style='margin-top: 5px'>
             <button id="cancel" class="closebtn">Cancel</button>
             <button id="finalfinaldeleteacc_extremelydangerous_theresnogoingback" title="There is no other confirmation screen beyond this one. Only proceed if you are ABSOLUTELY sure with deleting this account.">Delete Account</button>
         </div>
@@ -954,11 +975,6 @@ async function GetMyCosmetics() {
         return [h2];
     }
     document.getElementById('randomoverlay').style.display = (cosmetic_html.length > 1) ? 'block' : 'none'
-    if (supportwarning) {
-        const warning = document.createElement('p')
-        warning.textContent = 'As of now, Rotur Assistant only supports the "Overlay" cosmetic type. Support for different cosmetic types will be added in future updates, once Rotur adds them, if they are added.'
-        cosmetic_html.unshift('warning')
-    }
     return cosmetic_html
 }
 
@@ -990,14 +1006,16 @@ function renderFollowingFollowers(list, x, action, appendto) {
     document.getElementById(appendto).replaceChildren(...return_html)
 }
 
-async function renderProfile(userdata, altdata, token) {
+async function renderProfile(userdata, altdata) {
     biocharlimit = biocharlimitmap[altdata.subscription]
+    young_account = ((Date.now() - (altdata.created ?? 0)) < 86400000)
     const clawposts = altdata.posts ?? []
     const name = userdata.username
     const balance = userdata['sys.currency'] ?? 0
     const id = userdata['sys.id'] ?? "Unknown ID"
-    const followingPromise = fetch(`https://api.rotur.dev/v2/users/${name}/following`).then(res => res.json()).catch(err => {console.error(err); return ({})});
-    const followersPromise = fetch(`https://api.rotur.dev/v2/users/${name}/followers`).then(res => res.json()).catch(err => {console.error(err); return ({})});;
+    const followingPromise = fetch(`https://api.rotur.dev/v2/users/${name}/following`, {headers: formdata_cache}).then(res => res.json()).catch(err => {console.error(err); return ({})});
+    const followingPromise2 = fetch(`https://api.rotur.dev/v2/me/following`, {headers: formdata_cache}).then(res => res.json()).catch(err => {console.error(err); return ({})});
+    const followersPromise = fetch(`https://api.rotur.dev/v2/users/${name}/followers`, {headers: formdata_cache}).then(res => res.json()).catch(err => {console.error(err); return ({})});;
     const useritemsPromise = fetch(`https://api.rotur.dev/v2/users/${name}/items`).then(res => res.json()).catch(err => {console.error(err); return ([])});;
     const standingPromise = fetch(`https://api.rotur.dev/v2/standing?username=${name}`).then(res => res.json()).catch(err => {console.error(err); return ({})});;
     const economyPromise = fetch(`https://api.rotur.dev/v2/stats/economy`).then(res => res.json()).catch(err => {console.error(err); return ({})});;
@@ -1005,16 +1023,16 @@ async function renderProfile(userdata, altdata, token) {
     const cosmeticpromise = GetMyCosmetics()
     const systempromise = getSystemData()
 
-    const [followingData, followersData, useritems, standingData, economydata, outgoing_requests, cosmeticdata, system_data] = await Promise.all([followingPromise, followersPromise, useritemsPromise, standingPromise, economyPromise, outgoingPromise, cosmeticpromise, systempromise]);
+    const [followingData, followingData2, followersData, useritems, standingData, economydata, outgoing_requests, cosmeticdata, system_data] = await Promise.all([followingPromise, followingPromise2, followersPromise, useritemsPromise, standingPromise, economyPromise, outgoingPromise, cosmeticpromise, systempromise]);
 
-    const following = followingData.following ?? []
+    const following = followingData.deprecated ? (followingData2.following ?? []) : (followingData.following ?? [])
     const followers = followersData.followers ?? []
     const friends = userdata['sys.friends'] ?? []
     const requests = userdata['sys.requests'] ?? []
     const blocked_users = userdata['sys.blocked'] ?? []
-    const cents = parseFloat(economydata.currency_comparison.cents.split('¢')[0])
-    const pence = parseFloat(economydata.currency_comparison.pence.split('p')[0])
-    const badges = userdata['sys.badges'] ?? []
+    const cents = parseFloat((economydata?.currency_comparison?.cents ?? "4¢").split('¢')[0])
+    const pence = parseFloat((economydata?.currency_comparison?.pence ?? "3p").split('p')[0])
+    const badges = altdata.badges ?? []
     const statusdata = userdata['sys.status'] ?? {presence: "invisible", status: ''}
     blacklisted_ips = userdata['blocked_ips'] ?? []
     if (typeof blacklisted_ips !== 'object') {
@@ -1030,18 +1048,24 @@ async function renderProfile(userdata, altdata, token) {
     const logins = (userdata["sys.logins"] ?? []).reverse()
     const total_logins = userdata["sys.total_logins"] ?? 0
 
-    old_values = [userdata.username ?? '', userdata.pronouns ?? '', userdata.bio ?? '', userdata.display_name ?? '', userdata.email ?? '', userdata.phone ?? '', userdata.system ?? 'Rotur Assistant', userdata.private ?? false]
+    old_values = [userdata.username ?? '', userdata.pronouns ?? '', userdata.bio ?? '', userdata.display_name ?? '', userdata.email ?? '', userdata.phone ?? '', userdata.system ?? 'Rotur Assistant', userdata.private ?? false, userdata.theme?.accent]
     new_values = [...old_values]
 
     if ((userdata.system.toLowerCase() == 'passnet') && !(badges.some(item => item.name.toLowerCase() == 'passnet'))) {
         badges.push({name: "PassNet", description: "This account was created on PassNet", icon: ''})
     }
+    if (userdata.discord_id) {
+        badges.push({name: "discord", id: "discord", description: "This user linked their Discord account to Rotur", icon: ''})
+    }
     const badgelist = document.getElementById('badges')
     badgelist.replaceChildren()
     for (let i=0; i<badges.length; i++) {
-        let badge_name = known_badges.includes(badges[i].name) ? badges[i].name : `placeholder`
+        let badge_name = (badges[i].id.startsWith('app:') ? badges[i].name : badges[i].id)
         if (badge_name == 'fluoride') {
             badge_name = 'Fluoride'
+        }
+        if (!known_badges.includes(badge_name)) {
+            badge_name = 'placeholder'
         }
 
         const li = document.createElement('li')
@@ -1054,15 +1078,15 @@ Original badge description: ${badges[i].description}` : `${badges[i].name}
         
 ${badges[i].description}`}`
         img.alt = badges[i].name
-        img.width = 16
-        img.height = 16
+        img.width = 24
+        img.height = 24
         li.appendChild(img)
         badgelist.appendChild(li)
     }
     if (badges.length == 0) {
         document.querySelector('.badgelabel').remove()
     }
-    const joindate = formatDate(userdata.created)
+    const joindate = formatDate(altdata.created)
     const economy_html = []
     const h2 = document.createElement('h2')
     h2.textContent = "General Statistics"
@@ -1082,8 +1106,9 @@ ${badges[i].description}`}`
     const profile = document.getElementById('lookupplaceholder')
     profile.querySelector("#userbannerimg").src = `https://avatars.rotur.dev/.banners/${name}`
     profile.querySelector("#userbannerimg").alt = `${name}'s Banner`
+    profile.querySelector('#displaynamebox').placeholder = name
 
-    profile.querySelector('#changebannerbtn').textContent = `Change Banner... (${["Pro", "Max"].includes(altdata.subscription) ? "Free!" : "-10 RC"})`
+    profile.querySelector('#changebannerbtn').textContent = `Change Banner... (${(["Pro", "Max"].includes(altdata.subscription) || userdata_cache['sys.banner']) ? "Free!" : "-30 RC"})`
     profile.querySelector('#useravatarimg').src = `https://avatars.rotur.dev/${name}`
     profile.querySelector('#useravatarimg').alt = `${name}'s Avatar`
     if (settings[0] == '0') {
@@ -1118,6 +1143,7 @@ ${badges[i].description}`}`
     profile.querySelector(`option[value="${statusdata.presence}"]`).selected = true
     profile.querySelector('#statustextbox').value = statusdata.status
     profile.querySelector('.joindate').textContent = `Member since: ${joindate}`
+    profile.querySelector('#accentbox').value = userdata.theme?.accent ?? "#000000"
 
     profile.querySelector('#displaynamebox').value = userdata.display_name ?? ''
     profile.querySelector('#emailbox').value = userdata.email ?? ''
@@ -1131,12 +1157,17 @@ ${badges[i].description}`}`
     profile.querySelector('#accidx').textContent = altdata.index
     profile.querySelector('#grouptagstatus').setHTML((altdata.group_tag ? `<a href="https://rotur.dev/groups/${sanitize(altdata.group_tag)}" target='_blank' rel='noopener noreferrer'>${sanitize(altdata.group_tag)}</a>` : 'None'), {sanitizer: sanitizer})
 
-    profile.querySelector('#standingstatus').textContent = standingData.error ? "Banned" : standingData.standing.replace(/^./, char => char.toUpperCase())
+    profile.querySelector('#standingstatus').textContent = altdata.aura ?? "Unknown"
     profile.querySelector('#roturuuidinfo').textContent = id
     if (userdata.discord_id) {
         profile.querySelector('#discordidinfo').textContent = userdata.discord_id
     } else {
         profile.querySelector('#discordidcontainer')?.remove()
+    }
+    if (altdata.owner) {
+        profile.querySelector('.subaccountnote').setHTML(`Sub-account of <a href="lookup.html?user=${altdata.owner}" style="text-decoration: none;"><img src="https://avatars.rotur.dev/${altdata.owner}" width=20 height=20 style="border-radius: 2px;"> ${altdata.owner}</a>`, {sanitizer: sanitizer})
+    } else {
+        profile.querySelector('.subaccountnote').remove()
     }
     friends.length ? renderFollowingFollowers(friends, true, 'Unfriend', 'friendslist') : ``
     requests.length ? renderFollowingFollowers(requests, true, 'acceptdeclinereq', 'requestslist') : ``
@@ -1146,8 +1177,9 @@ ${badges[i].description}`}`
     blocked_users.length ? renderFollowingFollowers(blocked_users, true, 'Unblock', 'blockedlist') : ``
     altdata.posts ? profile.querySelector('#clawpostslist').replaceChildren(...renderClawFeed(altdata.posts)) : ``
     useritems ? profile.querySelector('#profileitemlist').replaceChildren(...getItems(useritems)) : ``
+    profile.querySelector('#followersdisclaimer').textContent = `This user is actually followed by ${altdata.followers ?? 0} ${altdata.followers == 1 ? "person" : "people"}. The data shown below may be inaccurate.`
 
-    profile.querySelector('#overlayssummary').textContent = `Overlays - ${cosmetic_cache?.length ?? 0}`
+    profile.querySelector('#overlayssummary').textContent = `Overlays - ${cosmetic_cache?.filter(cosmetic => cosmetic.cosmetic_type == "overlay")?.length ?? 0}`
     profile.querySelector('#friendssummary').textContent = `Friends - ${friends.length}`
     profile.querySelector('#requestssummary').textContent = `Incoming Requests - ${requests.length}`
     profile.querySelector('#outgoingsummary').textContent = `Outgoing Requests - ${outgoing_requests.length}`
@@ -1226,7 +1258,7 @@ async function performSearch(user) {
         `, {sanitizer: sanitizer})
         return;
     })
-    const altdata_promise = fetch(`https://api.rotur.dev/profile?id=${activeobject.uuid}`).then(res => res.json())
+    const altdata_promise = fetch(`https://api.rotur.dev/profile?id=${activeobject.uuid}`, {headers: {"Authorization": `Bearer ${activeobject.token}`}}).then(res => res.json())
     const [userdata, altdata] = await Promise.all([userdata_promise, altdata_promise])
     if ((userdata.error && (userdata.error == "Invalid authentication credentials") && !userdata.username) || (userdata['sys.banned'])) {
         flagged.push(activeobject.uuid)
@@ -1245,17 +1277,7 @@ async function performSearch(user) {
     }
     if (!userdata['sys.tos_accepted']) {
         document.getElementsByClassName('container')[0].setHTML(`
-            <div id='toscontainer'>
-                <h4>The Rotur TOS was updated since this account's last visit. As a result, accounts can't access or perform certain actions until they accept the TOS again. Accept the new terms?</h4>
-                <button id='accepttos'>Accept Terms</button>
-                ${accounts.length > 1 ? `
-                <label id='tosbulkaccept'>
-                    <input type='checkbox' id='bulkacceptoption'>
-                    Accept TOS on all added accounts
-                </label>` : ``}
-                <div id='tosiframeplaceholder'></div>
-                <a href='https://rotur.dev/terms-of-service' target='_blank' rel='noopener noreferrer'>Rotur Terms of Service</a>
-            </div>
+            <h4>The Rotur TOS was updated since your last visit. As a result, accounts can't access or perform certain actions until they accept the TOS again. Log onto <a href='https://rotur.dev/' target='_blank' rel='noopener noreferrer'>rotur.dev</a> using your current account and accept the terms on there.</h4>
         `, {sanitizer: sanitizer})
         return;
     }
@@ -1264,7 +1286,7 @@ async function performSearch(user) {
     }
     userdata_cache = userdata;
     altdata_cache = altdata;
-    renderProfile(userdata, altdata, activeobject.token)
+    renderProfile(userdata, altdata)
 }
 
 async function checkParam() {
@@ -1464,6 +1486,11 @@ document.addEventListener('click', async function(e) {
             return;
         }
         case ('saveemail'): {
+            openEmailPopup(document.getElementById('emailbox').value)
+            return;
+        }
+        case ('finalemailconfirm'): {
+            closePopup()
             await updateProfileField(4, 'emailbox', 'email', 'E-mail successfully updated');
             return;
         }
@@ -1542,11 +1569,15 @@ document.addEventListener('click', async function(e) {
             new_values[5] = document.getElementById('phonebox').value;
             new_values[6] = document.getElementById('profileselectsystem').value;
             new_values[7] = JSON.stringify(document.getElementById('privateacc').checked);
+            new_values[6] = document.getElementById('accentbox').value;
 
             let errorlogger = 0;
             let successlogger = 0;
 
             for (let i = 0; i < new_values.length; i++) {
+                if (i == 4) {
+                    continue;
+                }
                 if (old_values[i] !== new_values[i]) {
                     const keyupdate = await fetch(`https://api.rotur.dev/users`, {
                         method: 'PATCH', 
@@ -1635,7 +1666,7 @@ document.addEventListener('click', async function(e) {
                 if (blocksuccess.error) {
                     openErrorPopup(blocksuccess.error);
                 } else {
-                    document.getElementById('blacklisted_ips_summary').textContent = `Blocked IPs (${blacklisted_ips.length})`;
+                    document.getElementById('blacklisted_ips_summary').textContent = `Blocked IPs - ${blacklisted_ips.length}`;
                     if (blacklisted_ips.length === 0) {
                         const li = document.createElement('li');
                         const h2 = document.createElement('h2');
@@ -1735,7 +1766,8 @@ document.addEventListener('click', async function(e) {
         case ('randomoverlay'): {
             target.textContent = 'Equipping...';
             target.disabled = true;
-            const random_overlay = (cosmetic_cache[Math.floor(Math.random() * cosmetic_cache.length)] ?? cosmetic_cache[0]);
+            const owned_overlays = cosmetic_cache.filter(overlay => (overlay.cosmetic_type == "overlay"))
+            const random_overlay = (owned_overlays[Math.floor(Math.random() * owned_overlays.length)] ?? owned_overlays[0])
             if (active_cache?.overlay?.id !== random_overlay.id) {
                 await EquipCosmetic(random_overlay.id, true);
             } else {
@@ -1765,53 +1797,53 @@ document.addEventListener('click', async function(e) {
             return;
         }
         case ('finalfinaldeleteacc_extremelydangerous_theresnogoingback'): {
-            const answer = document.getElementById('securityanswer').value;
-            const statement = document.getElementById('securitystatement').value;
+            const answer = document.getElementById('securityanswer')?.value ?? '';
             const voidcredits = document.getElementById('voidcredits').checked;
+            const deletecontent = document.getElementById('contentdeletionrequest')?.checked ?? false
+            const password = document.getElementById('deleteaccpassword').value
             const balance = altdata_cache.currency;
             if (document.getElementById('securitystatement2').value === '') {
-                if (question_cache.answers.includes(answer.toLowerCase())) {
-                    const deleteRegex = new RegExp(`^i,? ${activeobject.name.toLowerCase()},? am completely sure that i want to delete my rotur account\\.?$`, 'i');
+                if (young_account || question_cache.answers.includes(answer.toLowerCase())) {
                     const willuser = (document.getElementById('willfield').value || "Dominic")
-                    if (deleteRegex.test(statement)) {
-                        const validuser = await fetch(`https://api.rotur.dev/get_user?username=${activeobject.name}&password=${encodeURIComponent(document.getElementById('deleteaccpassword').value)}`).then(res => res.json())
-                        if (!validuser.username) {
+                    const validuser = await fetch(`https://api.rotur.dev/get_user?username=${activeobject.name}&password=${encodeURIComponent(password)}`).then(res => res.json())
+                    if (!validuser.username) {
+                        document.getElementsByClassName('popup')[0].style.background = '';
+                        document.getElementsByClassName('overlay')[0].style.background = '';
+                        openErrorPopup(`Invalid account password`)
+                        return;
+                    }
+                    if (!voidcredits && (balance > 0)) {
+                        const willsuccess = await fetch(`https://api.rotur.dev/me/transfer`, {
+                            method: "POST",
+                            headers: formdata_cache,
+                            body: JSON.stringify({to: willuser, amount: balance, note: `[RA] Account deleted (Name: ${activeobject.name})`})
+                        }).then(res => res.json());
+                        if (willsuccess.error) {
                             document.getElementsByClassName('popup')[0].style.background = '';
                             document.getElementsByClassName('overlay')[0].style.background = '';
-                            openErrorPopup(`Invalid account password`)
+                            openErrorPopup(`Failed to transfer your credits to ${willuser}. The user may not exist.`)
                             return;
                         }
-                        if (!voidcredits && (balance > 0)) {
-                            const willsuccess = await fetch(`https://api.rotur.dev/me/transfer`, {
-                                method: "POST",
-                                headers: formdata_cache,
-                                body: JSON.stringify({to: willuser, amount: balance, note: `[RA] Account deleted (Name: ${activeobject.name})`})
-                            }).then(res => res.json());
-                            if (willsuccess.error) {
-                                document.getElementsByClassName('popup')[0].style.background = '';
-                                document.getElementsByClassName('overlay')[0].style.background = '';
-                                openErrorPopup(`Failed to transfer your credits to ${willuser}. The user may not exist.`)
-                                return;
-                            }
-                        }
-                        const deletesuccess = await fetch(`https://api.rotur.dev/users/${activeobject.name}`, {
-                            method: 'DELETE',
-                            headers: formdata_cache
-                        }).then(res => res.json()); // The smoking gun
-                        if (deletesuccess.error) {
-                            openErrorPopup(`Failed to delete your Rotur account. ${voidcredits ? "" : `If you change your mind, you may have to ask ${willuser} for your credits back. `}\nError Details: ${deletesuccess.error}`);
-                        } else {
-                            openDeleteSuccessPopup("Your Rotur account has been successfully deleted. Thank you for being a part of Rotur, and by extension, Rotur Assistant. We're sad to see you go. You will be returned to the account manager shortly.");
-                            const newaccounts = accounts.filter(item => item.uuid !== activeobject.uuid);
-                            const newactiveacc = (activeacc.uuid === activeobject.uuid) ? (newaccounts[0] ?? {}) : activeacc;
-                            chrome.storage.local.set({userdata: newaccounts});
-                            chrome.storage.local.set({activeacc: newactiveacc});
-                            setTimeout(() => {
-                                window.location.href = "../pages/accounts.html";
-                            }, 15000);
-                        }
+                    }
+                    const deletesuccess = await fetch(`https://api.rotur.dev/users/${encodeURIComponent(activeobject.name)}`, {
+                        method: 'DELETE',
+                        headers: formdata_cache,
+                        body: JSON.stringify({
+                            password: password,
+                            delete_content: deletecontent
+                        })
+                    }).then(res => res.json()); // The smoking gun
+                    if (deletesuccess.error) {
+                        openErrorPopup(`Failed to delete your Rotur account. ${(voidcredits || (balance < 0.01)) ? "" : `If you change your mind, you may have to ask ${willuser} for your credits back. `}\nError Details: ${deletesuccess.error}`);
                     } else {
-                        openErrorPopup("The security statement was wrong.");
+                        openDeleteSuccessPopup("Your Rotur account has been successfully deleted. Thank you for being a part of Rotur, and by extension, Rotur Assistant. We're sad to see you go. You will be returned to the account manager shortly.");
+                        const newaccounts = accounts.filter(item => item.uuid !== activeobject.uuid);
+                        const newactiveacc = (activeacc.uuid === activeobject.uuid) ? (newaccounts[0] ?? {}) : activeacc;
+                        chrome.storage.local.set({userdata: newaccounts});
+                        chrome.storage.local.set({activeacc: newactiveacc});
+                        setTimeout(() => {
+                            window.location.href = "../pages/accounts.html";
+                        }, 15000);
                     }
                 } else {
                     openErrorPopup('The security question was wrong.');
@@ -1836,7 +1868,7 @@ document.addEventListener('click', async function(e) {
             if (blocksuccess.error) {
                 openErrorPopup(blocksuccess.error);
             } else {
-                document.getElementById('blacklisted_ips_summary').textContent = `Blocked IPs (${blacklisted_ips.length})`;
+                document.getElementById('blacklisted_ips_summary').textContent = `Blocked IPs - ${blacklisted_ips.length}`;
                 target.closest('.listip').remove();
                 if (blacklisted_ips.length === 0) {
                     const li = document.createElement('li');
@@ -1902,7 +1934,7 @@ document.addEventListener('click', async function(e) {
                 openErrorPopup(request.error);
             } else {
                 document.getElementById('friendslist').querySelector(`[data-user="${user}"]`).remove();
-                document.getElementById('friendssummary').textContent = `Friends (${document.getElementById("friendslist").childElementCount})`;
+                document.getElementById('friendssummary').textContent = `Friends - ${document.getElementById("friendslist").childElementCount}`;
                 if (document.getElementById('friendslist').childElementCount === 0) {
                     document.getElementById('friendslist').replaceChildren(CreateEmptyPlaceholder("You have not befriended any users yet"));
                 }
@@ -1917,7 +1949,7 @@ document.addEventListener('click', async function(e) {
                 openErrorPopup(request.error);
             } else {
                 document.getElementById('blockedlist').querySelector(`[data-user="${user}"]`).remove();
-                document.getElementById('blockedsummary').textContent = `Blocked (${document.getElementById("blockedlist").childElementCount})`;
+                document.getElementById('blockedsummary').textContent = `Blocked - ${document.getElementById("blockedlist").childElementCount}`;
                 if (document.getElementById("blockedlist").childElementCount === 0) {
                     document.getElementById('blockedlist').replaceChildren(CreateEmptyPlaceholder("You have not blocked any users yet"));
                 }
@@ -1932,7 +1964,7 @@ document.addEventListener('click', async function(e) {
                 openErrorPopup(request.error);
             } else {
                 document.getElementById('followinglist').querySelector(`[data-user="${user}"]`).remove();
-                document.getElementById('followingsummary').textContent = `Following (${document.getElementById("followinglist").childElementCount})`;
+                document.getElementById('followingsummary').textContent = `Following - ${document.getElementById("followinglist").childElementCount}`;
                 if (document.getElementById("followinglist").childElementCount === 0) {
                     document.getElementById('followinglist').replaceChildren(CreateEmptyPlaceholder("You have not followed any users yet"));
                 }
@@ -1947,7 +1979,7 @@ document.addEventListener('click', async function(e) {
                 openErrorPopup(request.error);
             } else {
                 document.getElementById('outgoinglist').querySelector(`[data-user="${user}"]`).remove();
-                document.getElementById('outgoingsummary').textContent = `Outgoing Requests (${document.getElementById("outgoinglist").childElementCount})`;
+                document.getElementById('outgoingsummary').textContent = `Outgoing Requests - ${document.getElementById("outgoinglist").childElementCount}`;
                 if (document.getElementById("outgoinglist").childElementCount === 0) {
                     document.getElementById('outgoinglist').replaceChildren(CreateEmptyPlaceholder("You have no outgoing friend requests."));
                 }
@@ -1962,7 +1994,7 @@ document.addEventListener('click', async function(e) {
                 openErrorPopup(request.error);
             } else {
                 document.getElementById('requestslist').querySelector(`[data-user="${user}"]`).remove();
-                document.getElementById('requestssummary').textContent = `Friend Requests (${document.getElementById("requestslist").childElementCount})`;
+                document.getElementById('requestssummary').textContent = `Friend Requests - ${document.getElementById("requestslist").childElementCount}`;
                 if (document.getElementById("requestslist").childElementCount === 0) {
                     document.getElementById('requestslist').replaceChildren(CreateEmptyPlaceholder("You have no pending friend requests."));
                 }
@@ -1979,7 +2011,7 @@ document.addEventListener('click', async function(e) {
                 newfriend.querySelector('button').dataset.user = user;
                 newfriend.querySelector('button').dataset.action = "Unfriend";
                 document.getElementById('friendslist').appendChild(newfriend);
-                document.getElementById('friendssummary').textContent = `Friends (${document.getElementById('friendslist').childElementCount})`;
+                document.getElementById('friendssummary').textContent = `Friends - ${document.getElementById('friendslist').childElementCount}`;
             }
             return;
         }
@@ -1991,7 +2023,7 @@ document.addEventListener('click', async function(e) {
                 openErrorPopup(request.error);
             } else {
                 document.getElementById('requestslist').querySelector(`[data-user="${user}"]`).remove();
-                document.getElementById('requestssummary').textContent = `Friend Requests (${document.getElementById("requestslist").childElementCount})`;
+                document.getElementById('requestssummary').textContent = `Friend Requests - ${document.getElementById("requestslist").childElementCount}`;
                 if (document.getElementById("requestslist").childElementCount === 0) {
                     document.getElementById('requestslist').replaceChildren(CreateEmptyPlaceholder("You have no pending friend requests."));
                 }
@@ -2117,7 +2149,7 @@ document.addEventListener('click', async function(e) {
             await fetch(`https://api.rotur.dev/delete?id=${postid}`, {headers: formdata_cache}).then(res => res.json());
             closePopup();
             document.getElementById(`post-${postid}`).remove();
-            document.getElementById(`clawpostssummary`).textContent = `Claw Posts (${document.getElementById(`clawpostslist`).childElementCount})`;
+            document.getElementById(`clawpostssummary`).textContent = `Claw Posts - ${document.getElementById(`clawpostslist`).childElementCount}`;
             if (document.getElementById(`clawpostslist`).childElementCount === 0) {
                 document.getElementById(`clawpostslist`).remove();
                 document.getElementById('userclawposts').appendChild(CreateEmptyPlaceholder('You have not created any claw posts yet.', true));
@@ -2210,6 +2242,7 @@ document.addEventListener('click', async function(e) {
             if (bannerUpdate.error) {
                 openErrorPopup(bannerUpdate.error);
             } else {
+                userdata_cache['sys.banner'] = true
                 openSuccessPopup('Your banner was successfully changed.');
                 document.getElementById('userbannerimg').src = `https://avatars.rotur.dev/.banners/${activeobject.name}`;
             }
@@ -2225,7 +2258,11 @@ document.addEventListener('click', async function(e) {
             return;
         }
         case ('finaldeleteacc1'): {
-            openDeleteAccountPopup2();
+            if (young_account) {
+                openDeleteAccountPopupFinal()
+            } else {
+                openDeleteAccountPopup2();
+            }
             return;
         }
         case ('finaldeleteacc2'): {

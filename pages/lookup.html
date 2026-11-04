@@ -77,7 +77,10 @@
                     </div>
                     <p class='socialstatus'>Follows you</p>
                 </div>
-                <h1 id="usertitle">User</h1>
+                <div class="profileusernames">
+                    <h1 id="usertitle">User</h1>
+                    <span id="userdisplayname">Display Name</span>
+                </div>
                 <!-- Only show if user status is visible -->
                 <p class="userstatus">Status</p>
                 <hr class="full-size dotted_separator" id="status_separator">
@@ -89,7 +92,8 @@
                 <p class='bio' title="User's Bio"></p>
             </div>
             <div class="userinfo2">
-            <p class="joindate">Member since: 1/1/1970</p>
+                <p class="joindate">Member since: 1/1/1970</p>
+                <p class="subaccountnote">Sub-account of <a href="lookup.html?user=Dominic">Dominic</a></p>
                 <ul id="morebasicinfo">
                     <li>
                         <h3 class="infolabel">Balance</h3>
@@ -113,9 +117,9 @@
                         <h3 class="infolabel">Group Tag</h3>
                         <p class='supplementaryinfo' id="groupinfo">None</p>
                     </li>
-                    <li>
-                        <h3 class="infolabel">Standing</h3>
-                        <p class='supplementaryinfo' id="standinginfo">Good</p>
+                    <li title="Calculated based on the total number of Claw likes and RoturForums upvotes, minus the total number of Claw dislikes and RoturForums downvotes.">
+                        <h3 class="infolabel">Aura</h3>
+                        <p class='supplementaryinfo' id="standinginfo">0</p>
                     </li>
                 </ul>
                 <div id="useruuidplaceholder">
@@ -123,6 +127,11 @@
                     <p class='supplementaryinfo' id="uuidinfo">id</p>
                 </div>
                 <hr class="uuidbar">
+                <div id="discordidcontainer">
+                    <h3 class="infolabel">Discord ID</h3>
+                    <p class='supplementaryinfo' id="discordidinfo">1234567887656432</p>
+                    <hr>
+                </div>
                 <div id='roturassistantnote'>
                     <h3>User note</h3>
                     <p id='ranotefineprint'>Leave a private, personal note about this user here. Only you will be able to see this note. To get around requiring a Rotur subscription, Rotur Assistant uses its own notes system, independent of the one Rotur itself has.</p>
@@ -138,6 +147,7 @@
                 <hr>
                 <details id="followingpanel">
                     <summary id="followingsummary">Following (0)</summary>
+                    <p id="followingdisclaimer">This user actually follows XYZ people. The data shown below may be inaccurate.</p>
                     <ul class='followuserlist' id="followinglist">
                         <li>
                             <h2>This user has not followed anyone yet.</h2>
@@ -147,6 +157,7 @@
                 <hr class="dotted_separator">
                 <details id="followerspanel">
                     <summary id="followerssummary">Followers (0)</summary>
+                    <p id="followersdisclaimer">This user is actually followed by XYZ people. The data shown below may be inaccurate.</p>
                     <ul class='followuserlist' id="followerslist">
                         <li>
                             <h2>This user has no followers yet.</h2>

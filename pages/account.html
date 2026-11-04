@@ -40,6 +40,11 @@
                         <input type='text' class='profileeditinput' id='usernamebox' value='Template' placeholder='Username'>
                         <button class='profilesavebtn' title='Save Username' id='savename'><img src='../images/misc_icons/save.png' width=24 height=24></button>
                     </div>
+                    <div class='editdisplayname'>
+                        <label for='displaynamebox'>Display Name: </label>
+                        <input type='text' class='profileeditinput' id='displaynamebox' value='' placeholder='Display Name'>
+                        <button class='profilesavebtn' title='Save Display Name' id='savedisplayname'><img src='../images/misc_icons/save.png' width=24 height=24></button>
+                    </div>
                     <div id='editpronouns'>
                         <label for='pronounsbox'>Pronouns: </label>
                         <input type='text' class='profileeditinput' id='pronounsbox' value='' placeholder='Pronouns'>
@@ -69,20 +74,21 @@
                 </div>
                 <div class="userinfoedit2">
                     <p class="joindate">Member since: 1/1/1970</p>
+                    <p class="subaccountnote">Sub-account of <a href="lookup.html?user=Dominic">Dominic</a></p>
                     <hr class="dotted_separator">
                     <div class='editwidgets'>
-                        <div class='editdisplayname'>
-                            <label for='displaynamebox'>Display Name¹: </label>
-                            <input type='text' class='profileeditinput' id='displaynamebox' value='' placeholder='Display Name'>
-                            <button class='profilesavebtn' title='Save Display Name' id='savedisplayname'><img src='../images/misc_icons/save.png' width=24 height=24></button>
+                        <div class='editaccentcolor' style="display: none;">
+                            <label for='accentcolorsetting'>Accent Color: </label>
+                            <input type='color' class='profileeditcolorinput' id='accentbox' value='#000000'>
+                            <button class='profilesavebtn' title='Save Accent Color' id='saveaccent'><img src='../images/misc_icons/save.png' width=24 height=24></button>
                         </div>
                         <div class='editemail'>
-                            <label for='emailbox'>E-mail: </label>
-                            <input type='text' class='profileeditinput' id='emailbox' value='' placeholder='E-mail' autocomplete="email">
-                            <button class='profilesavebtn' title='Save E-mail' id='saveemail'><img src='../images/misc_icons/save.png' width=24 height=24></button>
+                            <label for='emailbox'>E-mail¹: </label>
+                            <input type='text' class='profileeditinput' id='emailbox' value='' placeholder='E-mail' autocomplete="email" disabled>
+                            <button class='profilesavebtn' title='Save E-mail' id='saveemail' disabled><img src='../images/misc_icons/save.png' width=24 height=24></button>
                         </div>
                         <div class='editphone'>
-                            <label for='phonebox'>Phone #¹: </label>
+                            <label for='phonebox'>Phone #²: </label>
                             <input type='text' class='profileeditinput' id='phonebox' value='' placeholder='Phone'>
                             <button class='profilesavebtn' title='Save Phone' id='savephone'><img src='../images/misc_icons/save.png' width=24 height=24></button>
                         </div>
@@ -95,14 +101,13 @@
                         </div>
                         <div class='privateacc'>
                             <input type='checkbox' id='privateacc'>
-                            <label for='privateacc'>Private Account²</label>
+                            <label for='privateacc'>Private Account</label>
                             <button class='profilesavebtn' title='Save Private Status' id='saveprivate'><img src='../images/misc_icons/save.png' width=24 height=24></button>
                         </div>
                         <div class='saveallbtncontainer'>
                             <button id='profilesaveall' title='Save All'><img src='../images/misc_icons/save.png' width=24 height=24> Save All</button>
                         </div>
-                        <p class=profilefineprint>¹Display Name and Phone are unused so far. These fields mainly exist here for parity with https://rotur.dev/me (the older version)</p>
-                        <p class=profilefineprint>²Setting your account to private does not stop any information, such as your balance, from being truly private, as it will still be available in the API.</p>
+                        <p class=profilefineprint>¹ For security reasons, it is recommended to change this setting on <a href="https://rotur.dev/account" target="_blank" rel="noopener noreferrer">rotur.dev</a><br><br>² Phone numbers are unused so far. This field mainly exist here for parity with https://rotur.dev/me (the older version)</p>
                     </div>
                     <ul id="morebasicinfo">
                         <li>
@@ -127,9 +132,9 @@
                             <h3 class="infolabel">Group Tag</h3>
                             <p class='supplementaryinfo' id="grouptagstatus">None</p>
                         </li>
-                        <li>
-                            <h3 class="infolabel">Standing</h3>
-                            <p class='supplementaryinfo' id="standingstatus">Good</p>
+                        <li title="Calculated based on the total number of Claw likes and RoturForums upvotes, minus the total number of Claw dislikes and RoturForums downvotes.">
+                            <h3 class="infolabel">Aura</h3>
+                            <p class='supplementaryinfo' id="standingstatus">0</p>
                         </li>
                     </ul>
                     <h3 class="infolabel">Rotur UUID</h3>
@@ -170,6 +175,7 @@
                     <hr class="dotted_separator">
                     <details class="followingpanel">
                         <summary id='followerssummary'>Followers (0)</summary>
+                        <p id="followersdisclaimer">This user is actually followed by XYZ people. The data shown below may be inaccurate.</p>
                         <ul class='followuserlist' id="followerslist"><li><h2>You have no followers yet.</h2></li></ul>
                     </details>
                     <hr class="dotted_separator">

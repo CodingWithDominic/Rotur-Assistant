@@ -17,20 +17,28 @@ if (tab && tab == 'docs') {
 const icn_default = 
 {
     background: 'white',
-    grid: 'true',
-    exclusive: 'true',
-    gridsize: 10
+    grid: true,
+    exclusive: true,
+    gridsize: 10,
+    realtime: false,
+    preserve: true
 }
 
 let icn_settings = await new Promise(resolve =>
     chrome.storage.local.get('icn_settings', data => resolve(data.icn_settings || icn_default))
 ) ?? icn_default;
 
-document.getElementById('specialcommands').checked = icn_settings.exclusive
-document.getElementById('togglegrid').checked = icn_settings.grid
-document.getElementById('gridsizeslider').value = icn_settings.gridsize
+let icn_lastsession = await new Promise(resolve =>
+    chrome.storage.local.get('icn_lastsession', data => resolve(data.icn_lastsession || ""))
+) ?? ""
+
+document.getElementById('specialcommands').checked = icn_settings.exclusive ?? true
+document.getElementById('togglegrid').checked = icn_settings.grid ?? true
+document.getElementById('gridsizeslider').value = icn_settings.gridsize ?? 10
 document.getElementById('gridsizeslider').disabled = !document.getElementById('togglegrid').checked
-document.getElementById('gridslidervalue').textContent = icn_settings.gridsize
+document.getElementById('gridslidervalue').textContent = icn_settings.gridsize ?? "10"
+document.getElementById('realtimerendering').checked = icn_settings.realtime ?? false
+document.getElementById('preservesession').checked = icn_settings.preserve ?? true
 
 Array.from(document.getElementsByName('canvasbg')).forEach(bg => {
     if (bg.value == icn_settings.background) {
@@ -484,6 +492,7 @@ function exportToICNFile(icndata, name) {
 document.addEventListener('click', async function(e) {
     if (e.target.className == 'closebtn') {
         closePopup()
+        return;
     }
     if (e.target.className == 'tab') {
         Array.from(document.getElementsByClassName('tab')).forEach(tab => {
@@ -493,12 +502,18 @@ document.addEventListener('click', async function(e) {
         document.getElementById('icneditor').style.display = (e.target.id == 'icneditortab') ? 'block' : 'none'
         document.getElementById('icnsettings').style.display = (e.target.id == 'icnsettingstab') ? 'flex' : 'none'
         document.getElementById('icndocs').style.display = (e.target.id == 'icndocstab') ? 'block' : 'none'
+        if (e.target.id == 'icneditortab') {
+            document.getElementsByClassName('container')[0].style.maxWidth = "1200px"
+        } else {
+            document.getElementsByClassName('container')[0].style.maxWidth = "600px"
+        }
         return;        
     }
     if (e.target.id == 'rendericn') {
         icn_cache = document.getElementById('icn_field').value
         icn_cache = parseICN(icn_cache)
         renderICN(icn_cache)
+        return;
     }
     if (e.target.id == 'icn_linebyline') {
         const rawText = document.getElementById('icn_field').value;
@@ -545,13 +560,26 @@ document.addEventListener('click', async function(e) {
         }
 
         document.getElementById('icn_field').value = formattedLines.join('\n');
+        return;
     }
     if (e.target.id == 'icn_oneline') {
         document.getElementById('icn_field').value = document.getElementById('icn_field').value.replace(/\s+/g, ' ')
+        return;
     }
     if (e.target.id == 'specialcommands') {
         icn_settings.exclusive = e.target.checked
         chrome.storage.local.set({icn_settings: icn_settings})
+        return;
+    }
+    if (e.target.id == 'realtimerendering') {
+        icn_settings.realtime = e.target.checked
+        chrome.storage.local.set({icn_settings: icn_settings})
+        return;
+    }
+    if (e.target.id == 'preservesession') {
+        icn_settings.preserve = e.target.checked
+        chrome.storage.local.set({icn_settings: icn_settings})
+        return;
     }
     if (e.target.id == 'icn_import') {
         if (e.shiftKey) {
@@ -579,39 +607,85 @@ document.addEventListener('click', async function(e) {
         closePopup()
         exportToICNFile(document.getElementById('icn_field').value, document.getElementById('icnfilename').value)
         document.getElementById('icnfilename').value = ''
+        return;
     }
     if (e.target.id == 'togglegrid') {
         document.getElementById('gridsizeslider').disabled = !document.getElementById('togglegrid').checked
         icn_settings.grid = document.getElementById('togglegrid').checked
         chrome.storage.local.set({icn_settings: icn_settings})
         renderICN(icn_cache)
+        return;
     }
     if (e.target.id == 'resetcamera') {
         startX = 0
         startY = 0
-        offsetX = Math.round((clamp(document.body.clientWidth, 400, 630) - 30) / 2)
-        offsetY = 185;
+        offsetX = Math.round(canvas.width / 2)
+        offsetY = Math.round(canvas.height / 2)
         scale = 5;
         initialOffsetX = 0;
         initialOffsetY = 0;
         scrollLeft = 0
         scrollTop = 0;
         renderICN(icn_cache)
+        return;
     }
 })
 
 function fixCanvasWidth() {
-    const newwidth = (clamp(document.body.clientWidth, 400, 630) - 30)
-    document.getElementById('icn_canvas').width = newwidth
+    const cv = document.getElementById('icn_canvas')
+    const wide = document.getElementById('icneditorlayout').classList.contains('wide')
+    const oldheight = cv.height
+    let newwidth = clamp(document.body.clientWidth, 400, 660) - 30 // stacked default
+    let newheight = 370
+
+    if (wide) {
+        newwidth = cv.clientWidth // CSS makes the canvas fill its column; match the buffer to it
+        const left = document.getElementById('icnsect1')
+        const reset = document.getElementById('resetcamera')
+        const rs = getComputedStyle(reset)
+        const cs = getComputedStyle(cv)
+        const used = reset.offsetHeight
+            + parseFloat(rs.marginTop) + parseFloat(rs.marginBottom)
+            + parseFloat(cs.marginTop) + parseFloat(cs.marginBottom)
+            + parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth)
+        newheight = Math.max(200, Math.floor(left.offsetHeight - used))
+    }
+
+    cv.width = newwidth
+    cv.height = newheight
     offsetX = Math.round(newwidth / 2)
+    offsetY += (newheight - oldheight) / 2
     renderICN(icn_cache)
 }
 
-fixCanvasWidth()
+let old_height = 200
+function fitEditorHeight() {
+    const field = document.getElementById('icn_field')
+    const top = field.getBoundingClientRect().top + window.scrollY
+    const below = document.getElementById('rendericn').offsetHeight
+        + document.getElementById('footer-placeholder').offsetHeight
+        + 40 // margins/padding around the Render button and footer; tweak to taste
+    field.style.height = `${Math.max(200, window.innerHeight - top - below)}px`
+}
+
+function AdjustLayout() {
+    const field = document.getElementById('icn_field')
+    const wide = document.body.clientWidth > 984
+    document.getElementById('icneditorlayout').classList.toggle('wide', wide)
+
+    if (wide) {
+        field.style.resize = 'none'
+        fitEditorHeight()
+    } else {
+        field.style.resize = 'vertical'
+        field.style.height = `${old_height}px`
+    }
+    fixCanvasWidth()
+}
 
 window.addEventListener('resize', () => {
-    fixCanvasWidth()
-});
+    AdjustLayout()
+})
 
 document.getElementById('canvasbgsettings').addEventListener('change', function(e) {
     const newbg = e.target.value
@@ -646,6 +720,28 @@ document.getElementById('gridsizeslider').addEventListener('change', function(e)
 document.getElementById('gridsizeslider').addEventListener('input', function(e) {
     document.getElementById('gridslidervalue').textContent = e.target.value
 })
+
+document.getElementById('icn_field').addEventListener('input', function(e) {
+    if (icn_settings.realtime ?? false) {
+        icn_cache = document.getElementById('icn_field').value
+        icn_cache = parseICN(icn_cache)
+        renderICN(icn_cache)
+    }
+    if (icn_settings.preserve ?? true) {
+        icn_lastsession = document.getElementById('icn_field').value
+        chrome.storage.local.set({icn_lastsession: icn_lastsession})
+    }
+})
+
+AdjustLayout()
+AdjustLayout()
+
+if (icn_settings.preserve ?? true) {
+    document.getElementById('icn_field').value = icn_lastsession
+    icn_cache = icn_lastsession
+    icn_cache = parseICN(icn_cache)
+    renderICN(icn_cache)
+}
 
 /* This code originated from the browser extension: Rotur Assistant
 For those who need a pure JS implementation of ICN, that's not dependent on Scratch's infrastructure

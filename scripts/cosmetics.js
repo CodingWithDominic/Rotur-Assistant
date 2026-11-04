@@ -38,10 +38,7 @@ if (!activeacc.uuid) {
     `, {sanitizer: sanitizer})
 }
 if (flagged.includes(activeacc.uuid)) {
-    document.getElementsByClassName('container')[0].setHTML(`
-        <h1>Cosmetics</h1>
-        <p>Manage your cosmetics and shop for new ones</p>
-        <hr class="full-size">
+    document.getElementsByClassName('cosmeticlist')[0].setHTML(`
         <h3>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h3>
     `, {sanitizer: sanitizer})
 }
@@ -53,6 +50,7 @@ let user_sub = "Free"
 let order = 'newest'
 let unowned = false
 let canbuycosmetics = true
+let discount_rate = 1
 
 let user_balance = 0
 let mistium_balance = 0
@@ -79,9 +77,6 @@ async function getBalances() {
         flagged.push(activeacc.uuid)
         chrome.storage.local.set({flagged: flagged})
         document.getElementById('cosmeticlist').setHTML(`
-            <h1>Cosmetics</h1>
-            <p>Manage your cosmetics and shop for new ones</p>
-            <hr class="full-size">
             <h3>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h3>
         `, {sanitizer: sanitizer})
         canbuycosmetics = false
@@ -89,7 +84,8 @@ async function getBalances() {
     }
     user_sub = user_balance['sys.subscription']?.tier ?? "Free"
     user_balance = user_balance['sys.currency'] ?? 0
-    mistium_balance = await fetch(`https://api.rotur.dev/profile?name=Mist`).then(res => res.json()) // Cache the balance
+    discount_rate = (user_sub.toLowerCase() == 'free' ? 1 : 0.8)
+    mistium_balance = await fetch(`https://api.rotur.dev/profile?name=Mist`, {headers: authform}).then(res => res.json()) // Cache the balance
     mistium_balance = mistium_balance.currency ?? 0
 }
 
@@ -137,9 +133,9 @@ function OpenConfirmCosmeticPurchasePopup(name, cosmetic_id, price, creator_perc
         <p>Your Balance: ${user_balance} -> ${FixDecimal(user_balance - (((100 - creator_perc) / 100) * price))}</p>
         ${((creator_perc > 0) && (creator_perc < 100) && (creator.toLowerCase() != 'mist')) ? `<p title='Mistium receives a 20% cut of every cosmetic purchase.'>Mist's Balance: ${mistium_balance} -> ${FixDecimal(mistium_balance + (((100 - creator_perc) / 100) * price))}</p>` : ``}
             ` : `
-        <p>Your Balance: ${user_balance} -> ${FixDecimal(user_balance - price)}</p>
-        <p>${sanitize(creator)}'s Balance: ${creator_bal} -> ${FixDecimal(creator_bal + ((((creator_perc == 0 || creator.toLowerCase() == 'mist') ? 100 : creator_perc) / 100) * price))}</p>
-        ${((creator_perc > 0) && (creator_perc < 100) && (creator.toLowerCase() != 'mist')) ? `<p title='Mistium receives a 20% cut of every cosmetic purchase.'>Mist's Balance: ${mistium_balance} -> ${FixDecimal(mistium_balance + (((100 - creator_perc) / 100) * price))}</p>` : ``}`}
+        <p>Your Balance: ${user_balance} -> ${FixDecimal((user_balance - (price * discount_rate)))}</p>
+        <p>${sanitize(creator)}'s Balance: ${creator_bal} -> ${FixDecimal(creator_bal + ((((creator_perc == 0 || (creator.toLowerCase() == 'mist')) ? 100 : creator_perc) / 100) * (price * ((creator.toLowerCase() == 'mist' && discount_rate == 0.8) ? 0.8 : 1))))}</p>
+        ${((creator_perc > 0) && (creator_perc < 100) && (creator.toLowerCase() != 'mist') && (discount_rate == 1)) ? `<p title='Mistium receives a 20% cut of every cosmetic purchase.'>Mist's Balance: ${mistium_balance} -> ${FixDecimal(mistium_balance + (((100 - creator_perc) / 100) * price))}</p>` : ``}`}
             `}
         <div id="popup-choices">
             <button id="cancel" class="closebtn">Cancel</button>
@@ -148,7 +144,7 @@ function OpenConfirmCosmeticPurchasePopup(name, cosmetic_id, price, creator_perc
     `, {sanitizer: sanitizer})
 }
 
-function OpenCosmeticInfoPopup(data) {
+function OpenCosmeticInfoPopup(data, delisted) {
     document.getElementById('overlay').style.display = 'flex';
     document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
@@ -170,10 +166,11 @@ function OpenCosmeticInfoPopup(data) {
     const li8 = document.createElement('li')
     const li9 = document.createElement('li')
     const li10 = document.createElement('li')
+    const li11 = document.createElement('li')
     document.getElementById('popupinfolist').style.display = 'block'
-    document.getElementById('popupinfolist').replaceChildren(...[li1, li2, li3, li4, li5, li6, li7, li8, li9, li10])
+    document.getElementById('popupinfolist').replaceChildren(...[li1, li2, li3, li4, li5, li6, li7, li8, li9, li10, li11])
 
-    li1.textContent = `Name: ${data.name}`
+    li1.textContent = `Name: ${data.name ?? "Unknown"}`
     li2.textContent = `ID: ${data.id}`
     li3.textContent = `Created by: ${data.creator}`
     li4.textContent = `Description: ${data.description ?? 'None'}`
@@ -182,16 +179,21 @@ function OpenCosmeticInfoPopup(data) {
     li7.textContent = `Owners: ${data.purchases}`
     li8.textContent = `Creator cut: ${data.creator_pct ?? 0}%`
     li9.textContent = `Created on: ${formatDate(data.created_at)}`
-    li10.textContent = `Total Income: ${(data.price * data.purchases * ((data.creator_pct ?? 0) / 100))} RC`
+    li10.textContent = `Calculated Total Income: ${(data.price * data.purchases * ((data.creator_pct ?? 0) / 100))} RC`
+    li10.title = "This number is calculated based on Price * Owners * Cut_percentage. This may not reflect the actual total income if the owner buys their own cosmetic or if the price of the cosmetic changes."
+    li11.textContent = "⚠️ This cosmetic has been delisted. You can still use it, but it will no longer be available to purchase or obtain for future users."
 
     if (data.price == 0) {
         li6.textContent = "Price: Free"
-        li10.textContent = "Total Income: 0 RC"
+        li10.textContent = "Calculated Total Income: 0 RC"
         li8.remove()
     }
     if (data.creator.toLowerCase() == 'mist') {
-        li10.textContent = `Total Income: ${data.price * data.purchases} RC`
+        li10.textContent = `Calculated Total Income: ${data.price * data.purchases} RC`
         li8.remove()
+    }
+    if (delisted) {
+        li11.remove()
     }
 }
 
@@ -244,9 +246,9 @@ function CreateShopCosmeticElement(cosmetic) {
     cosmeticcard.querySelector('.overlaycreator').setHTML(`By: <a href="lookup.html?user=${cosmetic.creator}"><img src='https://avatars.rotur.dev/${cosmetic.creator}' alt='${cosmetic.creator}' width='16' height='16' class='creatorpfp'> ${cosmetic.creator}</a>`, {sanitizer: sanitizer})
     cosmeticcard.querySelector('.viewoverlayinfo').dataset.cosmeticid = cosmetic.id
     cosmeticcard.querySelector('.buyoverlay').dataset.cosmeticid = cosmetic.id
-    cosmeticcard.querySelector('.buyoverlay').textContent = `Buy (${(cosmetic.price ?? 0) == 0 ? "Free" : (cosmetic.price + " RC")})`
+    cosmeticcard.querySelector('.buyoverlay').textContent = `Buy (${(cosmetic.price ?? 0) == 0 ? "Free" : ((cosmetic.price * discount_rate) + " RC")})`
     cosmeticcard.querySelector('.equipoverlay').remove()
-    if (cosmetic_cache.some(item => item.id == cosmetic.id)) {
+    if (cosmetic_cache && cosmetic_cache.some(item => item.id == cosmetic.id)) {
         cosmeticcard.querySelector('.buyoverlay').disabled = true
         cosmeticcard.querySelector('.buyoverlay').textContent = "Purchased"
     }
@@ -266,14 +268,11 @@ async function GetMyCosmetics() {
         if (cosmetic_cache.error) {
             if (!flagged.includes(activeacc.uuid)) {
                 document.getElementById('cosmeticlist').setHTML(`
-                    <h1>Cosmetics</h1>
-                    <p>Manage your cosmetics and shop for new ones</p>
-                    <hr class="full-size">
                     <h3>The sub-token you have granted for your current account does not allow you to view your cosmetics. To resolve this issue, please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> and reauthenticate.</h3>
                 `, {sanitizer: sanitizer})
             }
             canbuycosmetics = false
-            cosmetic_cache = ({"active_cosmetics":{},"owned_cosmetics":[]})
+            cosmetic_cache = []
             return;
         }
         active_cache = { ...cosmetic_cache.active_cosmetics }
@@ -296,18 +295,17 @@ async function GetMyCosmetics() {
         document.getElementById('cosmeticlist').replaceChildren(h3)
     }
     document.getElementById('randomoverlay').style.display = (cosmetic_html.length > 1) ? 'block' : 'none'
-    if (supportwarning) {
+    if (supportwarning && !document.getElementById('mycosmetics').querySelector('.cosmeticsupportwarning')) {
         const warning = document.createElement('p')
-        warning.textContent = 'As of now, Rotur Assistant only supports the "Overlay" cosmetic type. Support for different cosmetic types will be added in future updates, once Rotur adds them, if they are added.'
+        warning.className = 'cosmeticsupportwarning'
+        warning.textContent = 'As of now, Rotur Assistant only supports the "Overlay" cosmetic type. Support for different cosmetic types will be added in future updates.'
         document.getElementById('cosmeticlist').insertAdjacentElement('beforebegin', warning) // Futureproofing once Rotur adds more cosmetics
     }
 }
 
-
-
 async function GetShopCosmetics() {
     if (shop_cache == '') {
-        shop_cache = await fetch(`https://api.rotur.dev/cosmetics/shop`).then(res => res.json()).catch(err => {
+        shop_cache = await fetch(`https://api.rotur.dev/cosmetics/shop?limit=9999`).then(res => res.json()).catch(err => {
             return ({error: 'An unknown error occurred'})
         })
         if (shop_cache.error) {
@@ -353,11 +351,12 @@ async function GetShopCosmetics() {
     })
     document.getElementById('cosmeticshoplist').replaceChildren(...shop_html)
     if (unowned && document.getElementById('cosmeticshoplist').childElementCount == 0) {
-        document.getElementById('cosmeticshoplist').replaceChildren(CreateEmptyPlaceholder('You own all the cosmetics!', true))
+        document.getElementById('cosmeticshoplist').replaceChildren(CreateEmptyPlaceholder('You own all the (supported) cosmetics!', true))
     }
-    if (supportwarning) {
+    if (supportwarning && !document.getElementById('shopcosmetics').querySelector('.cosmeticsupportwarning')) {
         const warning = document.createElement('p')
-        warning.textContent = 'As of now, Rotur Assistant only supports the "Overlay" cosmetic type. Support for different cosmetic types will be added in future updates, once Rotur adds them, if they are added.'
+        warning.className = "cosmeticsupportwarning"
+        warning.textContent = 'As of now, Rotur Assistant only supports the "Overlay" cosmetic type. Support for different cosmetic types will be added in future updates.'
         document.getElementById('cosmeticshoplist').insertAdjacentElement('beforebegin', warning) // Futureproofing once Rotur adds more cosmetics
     }
     document.getElementById('cosmeticviewoptions').style.display = 'flex'
@@ -388,7 +387,7 @@ async function EquipCosmetic(cosmetic, isRNG) {
         openErrorPopup(cosmeticsuccess.error)
     } else {
         if ((document.getElementById('mycosmetics').style.display == 'none') || isRNG) {
-            openSuccessPopup(`Successfully equipped the cosmetic "${shop_cache.find(cosmetic2 => cosmetic2.id == cosmetic).name}"!`)
+            openSuccessPopup(`Successfully equipped the cosmetic "${(shop_cache.find(cosmetic2 => cosmetic2.id == cosmetic) ?? cosmetic_cache.find(cosmetic2 => cosmetic2.id == cosmetic)).name}"!`)
         }
         active_cache.overlay = shop_cache.find(cosmetic2 => cosmetic2.id == cosmetic)
         if (document.querySelector('[data-equipped="true"]')) {
@@ -400,12 +399,6 @@ async function EquipCosmetic(cosmetic, isRNG) {
         document.getElementById(`mine_${cosmetic}`).querySelector('.equipoverlay').dataset.equipped = 'true'
         document.getElementById(`mine_${cosmetic}`).style.background = '#00a2ff4b'
     }
-}
-
-if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
-    getBalances()
-    await GetMyCosmetics()
-    await GetShopCosmetics(order, unowned)
 }
 
 async function BuyCosmetic(cosmetic) {
@@ -488,8 +481,9 @@ document.addEventListener('click', async function(e) {
             break;
         }
         case ('viewoverlayinfo'): {
-            const cosmetic_data = shop_cache.find(cosmetic => cosmetic.id == e.target.dataset.cosmeticid)
-            OpenCosmeticInfoPopup(cosmetic_data)
+            const cosmetic_data = shop_cache.find(cosmetic => cosmetic.id == e.target.dataset.cosmeticid) ?? cosmetic_cache.find(cosmetic => cosmetic.id == e.target.dataset.cosmeticid)
+            const delisted = (shop_cache.find(cosmetic => cosmetic.id == e.target.dataset.cosmeticid) ? true : false)
+            OpenCosmeticInfoPopup(cosmetic_data, delisted)
             break;
         }
     }
@@ -537,7 +531,8 @@ document.addEventListener('click', async function(e) {
             break;
         }
         case ('randomoverlay'): {
-            const random_overlay = (cosmetic_cache[Math.floor(Math.random() * cosmetic_cache.length)] ?? cosmetic_cache[0])
+            const owned_overlays = cosmetic_cache.filter(overlay => (overlay.cosmetic_type == "overlay"))
+            const random_overlay = (owned_overlays[Math.floor(Math.random() * owned_overlays.length)] ?? owned_overlays[0])
             const target = e.target
             target.disabled = true
             target.textContent = 'Equipping...'
@@ -591,3 +586,9 @@ document.getElementById('overlaypreviewselector')?.addEventListener('change', fu
     };
     reader.readAsDataURL(preview_cache);
 })
+
+if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
+    getBalances()
+    await GetMyCosmetics()
+    await GetShopCosmetics(order, unowned)
+}

@@ -25,6 +25,10 @@ const real_time = await new Promise(resolve =>
     chrome.storage.local.get('claw_realtime', data => resolve(data.claw_realtime || false))
 ) ?? false;
 
+const preferredcdn = await new Promise(resolve =>
+    chrome.storage.local.get('preferredcdn', data => resolve(data.preferredcdn || "roturcdn"))
+) ?? "roturcdn";
+
 if (!navigator.onLine) {
     document.getElementsByClassName('container')[0].setHTML(`
         <h1>Claw</h1>
@@ -41,7 +45,7 @@ if (real_time) {
 
 async function getSystems(elementid) {
     if (system_cache.length == 0) {
-        const systems = await fetch(`https://api.rotur.dev/v2/systems`).then(res => res.json())
+        const systems = await fetch(`https://api.rotur.dev/v2/systems `).then(res => res.json())
         system_cache = Object.keys(systems)
     }
     let systemoptions = ``
@@ -117,7 +121,7 @@ const charlimitmap =
 }
 let charlimit = 300
 if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
-    charlimit = await fetch(`https://api.rotur.dev/profile?id=${activeacc.uuid}`).then(res => res.json()).then(res => (charlimit[res.subscription] ?? 300)).catch(err => {
+    const profiledata = await fetch(`https://api.rotur.dev/profile?id=${activeacc.uuid}`, {headers: authform}).then(res => res.json()).catch(err => {
         document.getElementsByClassName('container')[0].setHTML(`
             <h1>Claw</h1>
             <hr class="full-size">
@@ -125,7 +129,9 @@ if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
         `, {sanitizer: sanitizer})
         return 300;
     })
+    charlimit = charlimitmap[profiledata.subscription ?? "Free"]
     document.getElementById('postcontent').placeholder = `Share something to Claw...\n(Posting as ${activeacc.name})`
+    document.getElementById('limit-post').textContent = `0/${charlimit}`
 }
 if (!activeacc.uuid) {
     const h3 = document.createElement('h3')
@@ -134,7 +140,7 @@ if (!activeacc.uuid) {
 }
 if (flagged.includes(activeacc.uuid)) {
     const h3 = document.createElement('h3')
-    h3.textContent = 'Due to an authentication issue that has been detected with your current account, interaction features has been disabled.'
+    h3.textContent = 'Due to an authentication issue that has been detected with your current account, some interaction features have been disabled.'
     document.getElementById('postwindow').replaceChildren(h3)
 }
 
@@ -262,7 +268,7 @@ function createPostElement(post) {
             clawpost.querySelector('.replyboxplaceholder').querySelectorAll(':not(h2)').forEach(elemNode => {
                 elemNode.remove()
             })
-            clawpost.querySelector('.replyboxplaceholder').querySelector('h2').textContent = 'Due to an authentication issue that has been detected with your current account, interaction features has been disabled.'
+            clawpost.querySelector('.replyboxplaceholder').querySelector('h2').textContent = 'Due to an authentication issue that has been detected with your current account, some interaction features have been disabled.'
             clawpost.querySelector('.replyboxplaceholder').querySelector('h2').style = "font-size: 16px;"
         } else {
             clawpost.querySelector('.replyboxplaceholder').querySelector('h2').remove()
@@ -509,7 +515,7 @@ function updatepostcontrols() {
     document.getElementById('postcontent').disabled = (lastquery != 'feed')
     document.getElementById('clawimage').disabled = (lastquery != 'feed')
     document.getElementById('system').disabled = (lastquery != 'feed')
-    document.getElementById('systemmiscinfo').disabled = (lastquery != 'feed')
+    document.getElementById('systemmiscinfo').disabled = ((lastquery != 'feed') || (document.getElementById('system').value == "Unknown"))
     document.getElementById('profileonly').disabled = (lastquery != 'feed')
     document.getElementById('sendpost').disabled = ((lastquery != 'feed') || (document.getElementById('sendpost').value.length > charlimit))
 }

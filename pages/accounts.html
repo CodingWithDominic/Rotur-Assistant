@@ -38,12 +38,17 @@
             </div>
             <p style="display: none;">Due to Google limitations on sync storage size, uploading to sync is unavailable if you have more than 20 accounts added.</p>
             <div id="syncstatusplaceholder"></div>
-            <hr class="full-size">
+            <hr class="full-size dotted_separator">
             <div id="importexportroster">
                 <button id="importroster">Import Roster</button>
                 <button id="exportroster">Export Roster</button>
             </div>
             <input type="file" id="importrosterbtn" style="display: none;" accept=".json,application/json">
+            <hr class="full-size">
+            <details>
+                <summary>Disclaimer</summary>
+                <p>If you're making a secret (undercover) account, then beware that Mistium can easily see which accounts are ran by the same person, via this <a href="https://i.postimg.cc/05G8Zthc/admin-graph.png" target="_blank" rel="noopener noreferrer">admin graph</a>. Known factors used for linking are similar E-mails, same IP hashes, and sub-accounts. If you plan on creating a secret account without Sophie knowing it's you, it's recommended to use a VPN and not use an E-mail too similar to what you used for your main account. Because of this, it's also recommended not to have both your main account and your secret account on the same roster together, because whatever accounts are on your roster, Mistium can likely see grouped together on the aforementioned <a href="https://i.postimg.cc/05G8Zthc/admin-graph.png" target="_blank" rel="noopener noreferrer">admin graph</a>. It's also recommended to not use the same browser profile your main account uses, to help keep internet footprints separate.</p>
+            </details>
             <script type="module" src="../scripts/accounts.js"></script>
         </div>
         <div class="overlay" id="overlay">

@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Rotur Assistant",
-    "version": "1.2.3",
+    "version": "1.2.4",
     "description": "Manage and keep up with most of your Rotur things in one place. Anywhere on the web, anytime.",
     "browser_specific_settings": {
         "gecko": {
@@ -28,10 +28,10 @@
     "side_panel": {
         "default_path": "index.html"
     },
-    "host_permissions": ["https://*.mistium.com/*", "https://*.rotur.dev/*", "https://*.flufi.uk/*", "https://*.github.io/*", "https://*.warpdrive.team/*", "https://*.originchats.com/*", "https://*.milosantos.com/*", "http://localhost/*", "https://*.0stormy.xyz/*"],
+    "host_permissions": ["<all_urls>"],
     "content_scripts": [
         {
-            "matches": ["https://*.mistium.com/*", "https://*.rotur.dev/*", "https://*.flufi.uk/*", "https://*.github.io/*", "https://*.warpdrive.team/*", "https://*.originchats.com/*", "https://*.milosantos.com/*", "http://localhost/*", "https://*.0stormy.xyz/*"],
+            "matches": ["<all_urls>"],
             "js": ["scripts/switchacc.js"],
             "all_frames": true,
             "run_at": "document_end"

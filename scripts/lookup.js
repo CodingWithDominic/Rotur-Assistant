@@ -5,6 +5,7 @@ let reloadinprogress = false
 let userdata_cache = ''
 let you_cache = ''
 let outgoing_cache = ''
+let my_following_cache = ''
 
 let user_cache = 'MRBELLY'
 
@@ -100,7 +101,7 @@ const charlimitmap =
 
 let clawcharlimit = 300
 
-const known_badges = ['Architext', "Asier System", "Bugger", "colon three", "dev", "discord", "friendly", "gingerbug", "Nex", "originOS", "orion", "pro", "rich", "Spark", "rotur", "Constellinux", "HuopaOS", "kyrOS", "flf", "Rotur Assistant", "OliveOS", "geec os", "Warpdrive", "passNet", "PassNet", "originChats", "Fluoride", "fluoride", 'plus', 'mistwarp']
+const known_badges = ['Architext', "Asier System", "Bugger", "colon three", "dev", "discord", "friendly", "gingerbug", "Nex", "originOS", "orion", "rich", "Spark", "rotur", "Constellinux", "HuopaOS", "kyrOS", "flf", "Rotur Assistant", "OliveOS", "geec os", "Warpdrive", "passNet", "PassNet", "originChats", "Fluoride", "fluoride", 'mistwarp', 'inviter', 'membership', 'account-age', 'subscriber-tenure', 'pioneer', 'hoarder', 'community-pillar', 'keyholder', 'developer', 'official', 'stars']
 
 // Re-using code from claw.js for the claw posts section
 
@@ -612,7 +613,8 @@ function getItems(itemdata) {
             buybtn.dataset.owner = item.owner
             buybtn.dataset.amt = item.price
             buybtn.textContent = `Buy (${item.price} RC)`
-            buybtn.disabled = (!item.selling || item.owner == activeacc.name || !activeacc.uuid)
+            buybtn.disabled = true
+            buybtn.title = "Rotur items have been deprecated. They are still viewable, just not purchaseable anymore."
 
             roturitem.querySelector('.transferhistory').replaceChildren(...formatTransferHistory(item.transfer_history))
             item_html.push(roturitem)
@@ -639,7 +641,7 @@ function openPopup() {
     document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>${is_banned ? 'Banned User' : 'Private Profile'}</h1>
-            <button id="popup-x" class="closebtn">✕</button>
+            <button id="popup-x" class="closebtn" data-closeprivate="true">✕</button>
         </div>
         <h3>${is_banned ? "This user's account has been banned. View anyways?" : "This user's 'private' setting is set to true. View anyways?"}</h3>
         <div id="popup-choices">
@@ -685,9 +687,12 @@ function renderFollowingFollowers(list) {
 async function renderProfile(userdata, you) {
     const clawposts = userdata.posts ?? []
     const name = userdata.username
-    const balance = userdata.currency
-    const id = userdata.id
+    const balance = userdata.currency ?? 0
+    const id = userdata.id ?? "Unknown"
+    const displayname = userdata.display_name == name ? null : userdata.display_name // Don't show the display name if it's equal to the username
     const badges = userdata.badges ?? []
+    const theme = userdata.theme ?? {}
+    console.log(theme)
     const promise_followingData = fetch(`https://api.rotur.dev/v2/users/${encodeURIComponent(name)}/following`).then(res => res.json()).catch(err => {console.error(err); return ({})});
     const promise_followersData = fetch(`https://api.rotur.dev/v2/users/${encodeURIComponent(name)}/followers`).then(res => res.json()).catch(err => {console.error(err); return ({})});
     const promise_standingData = fetch(`https://api.rotur.dev/v2/standing?username=${encodeURIComponent(name)}`).then(res => res.json()).catch(err => {console.error(err); return ({})});
@@ -698,8 +703,8 @@ async function renderProfile(userdata, you) {
     const followers = followersData.followers ?? []
     const userstatus = userdata.status ?? {} // GET /status/get?name= returns the same thing as this btw
     useritems.reverse()
-    const cents = parseFloat(economydata.currency_comparison.cents.split('¢')[0])
-    const pence = parseFloat(economydata.currency_comparison.pence.split('p')[0])
+    const cents = parseFloat((economydata?.currency_comparison?.cents ?? "4¢").split('¢')[0])
+    const pence = parseFloat((economydata?.currency_comparison?.pence ?? "3p").split('p')[0])
     let isfollowinguser = false
     let isfollowedbyuser = false
     let isfriends = false
@@ -708,7 +713,7 @@ async function renderProfile(userdata, you) {
     let outgoingrequest = false
     if (activeacc.uuid && !flagged.includes(activeacc.uuid) && you) {
         isfollowinguser = following.includes(activeacc.name)
-        isfollowedbyuser = followers.includes(activeacc.name)
+        isfollowedbyuser = (followers.includes(activeacc.name) || my_following_cache.includes(name))
         isfriends = you['sys.friends'] && you['sys.friends'].includes(name)
         requestinprogress = you['sys.requests'] && you['sys.requests'].includes(name)
         isBlocked = you['sys.blocked'] && you['sys.blocked'].includes(name)
@@ -719,17 +724,22 @@ async function renderProfile(userdata, you) {
     const profile = document.getElementById('profiletemplate').content.cloneNode(true)
     const joindate = formatDate(userdata.created)
 
-    if ((userdata.system.toLowerCase() == 'passnet') && !(badges.some(item => item.name.toLowerCase() == 'passnet'))) {
+    if ((userdata.system?.toLowerCase() == 'passnet') && !(badges.some(item => item.name.toLowerCase() == 'passnet'))) {
         badges.push({name: "PassNet", description: "This account was created on PassNet", icon: ''})
+    }
+    if (userdata.discord_id) {
+        badges.push({name: "discord", id: "discord", description: "This user linked their Discord account to Rotur", icon: ''})
     }
     const badgelist = profile.querySelector('#badges')
     badgelist.replaceChildren()
     for (let i=0; i<badges.length; i++) {
-        let badge_name = known_badges.includes(badges[i].name) ? badges[i].name : `placeholder`
+        let badge_name = (badges[i].id.startsWith('app:') ? badges[i].name : badges[i].id)
         if (badge_name == 'fluoride') {
             badge_name = 'Fluoride'
         }
-
+        if (!known_badges.includes(badge_name)) {
+            badge_name = 'placeholder'
+        }
         const li = document.createElement('li')
         const img = document.createElement('img')
         img.src = `../images/badges/${badge_name}.png`
@@ -740,8 +750,8 @@ Original badge description: ${badges[i].description}` : `${badges[i].name}
         
 ${badges[i].description}`}`
         img.alt = badges[i].name
-        img.width = 16
-        img.height = 16
+        img.width = 24
+        img.height = 24
         li.appendChild(img)
         badgelist.appendChild(li)
     }
@@ -803,7 +813,12 @@ ${badges[i].description}`}`
         }
     }
 
-    profile.querySelector('#usertitle').textContent = is_banned ? user_cache : name // Get around banned users showing up as "usernameloli" regardless of query
+    profile.querySelector('#usertitle').textContent = is_banned ? user_cache : (displayname ? displayname : name) // Get around banned users showing up as "usernameloli" regardless of query
+    if (displayname) {
+        profile.querySelector('#userdisplayname').textContent = ("AKA " + name)
+    } else {
+        profile.querySelector('#userdisplayname').remove()
+    }
     profile.querySelector('#pronouns').innerText = (userdata.pronouns ?? '')
     profile.querySelector('#pronouns').title = `${name}'s Pronouns`
     if (userstatus.status) {
@@ -826,7 +841,12 @@ ${badges[i].description}`}`
         profile.querySelector('.bio').innerText = (userdata.bio ?? '')
         profile.querySelector('.bio').title = `${name}'s Bio`
     } else {
-        profile.querySelector('.bio').remove()
+        if (!is_banned && userdata.private) {
+            profile.querySelector('.bio').textContent = "This user's profile is set to private. Because of this, some details may appear as unknown."
+            profile.querySelector('.bio').title = `${name}'s Bio`
+        } else {
+            profile.querySelector('.bio').remove()
+        }
     }
     if (is_banned) {
         profile.querySelector(".userbanner").src = `../images/misc_assets/banned_banner.png`
@@ -880,12 +900,22 @@ ${badges[i].description}`}`
 
     profile.querySelector('.joindate').textContent = `Member since: ${joindate}`
     profile.querySelector('#balanceinfo').textContent = balance
-    profile.querySelector('#systeminfo').textContent = (userdata.system || "Heaven")
-    profile.querySelector('#subinfo').textContent = (userdata.subscription || "Expired")
+    profile.querySelector('#systeminfo').textContent = (userdata.system || (is_banned ? "Heaven" : "Unknown"))
+    profile.querySelector('#subinfo').textContent = (userdata.subscription || (is_banned ? "Expired" : "Unknown"))
     profile.querySelector('#accidx').textContent = userdata.index ?? "Unknown"
     profile.querySelector('#groupinfo').setHTML((userdata.group_tag ? `<a href="https://rotur.dev/groups/${sanitize(userdata.group_tag)}" target='_blank' rel='noopener noreferrer'>${sanitize(userdata.group_tag)}</a>` : 'None'), {sanitizer: sanitizer})
-    profile.querySelector('#standinginfo').textContent = standingData.error ? "Banned" : standingData.standing.replace(/^./, char => char.toUpperCase())
+    profile.querySelector('#standinginfo').textContent = userdata.aura ?? "Unknown"
     profile.querySelector('#uuidinfo').textContent = id
+    if (userdata.discord_id) {
+        profile.querySelector('#discordidinfo').textContent = userdata.discord_id
+    } else {
+        profile.querySelector('#discordidcontainer')?.remove()
+    }
+    if (userdata.owner) {
+        profile.querySelector('.subaccountnote').setHTML(`Sub-account of <a href="lookup.html?user=${userdata.owner}" style="text-decoration: none;"><img src="https://avatars.rotur.dev/${userdata.owner}" width=20 height=20 style="border-radius: 2px;"> ${userdata.owner}</a>`, {sanitizer: sanitizer})
+    } else {
+        profile.querySelector('.subaccountnote')?.remove()
+    }
     profile.querySelector('#rausernotefield').value = (notes[name] ?? '')
     profile.querySelector('#ranotecharlimit').textContent = `${(notes[name] ?? '').length}/300`;
     if (!id) {
@@ -909,6 +939,8 @@ ${badges[i].description}`}`
     useritems ? profile.querySelector('.roturuseritemlist').replaceChildren(...getItems(useritems)) : ``
     profile.querySelector('#followingsummary').textContent = `Following - ${following.length}`
     profile.querySelector('#followerssummary').textContent = `Followers - ${followers.length}`
+    profile.querySelector('#followingdisclaimer').textContent = `This user actually follows ${userdata.following ?? 0} ${userdata.following == 1 ? "person" : "people"}. The data shown below may be inaccurate.`
+    profile.querySelector('#followersdisclaimer').textContent = `This user is actually followed by ${userdata.followers ?? 0} ${userdata.followers == 1 ? "person" : "people"}. The data shown below may be inaccurate.`
     profile.querySelector('#clawpostssummary').textContent = `Claw Posts - ${clawposts.length}`
     profile.querySelector('#useritemssummary').textContent = `Items - ${useritems.length}`
     profile.querySelector('#economicplaceholder').replaceChildren(...economy_html)
@@ -916,6 +948,9 @@ ${badges[i].description}`}`
     document.getElementsByClassName('beforeprofile')[0].style.display = 'block'
     document.getElementById('lookupplaceholder').replaceChildren(profile)
     document.getElementById('lookupplaceholder').style = 'border: 2px solid white; display: flex;'
+    if (theme.accent) {
+    //    document.getElementById('lookupplaceholder').style.background = (theme.accent || "transparent")
+    }
     document.getElementById('lookuperror').replaceChildren()
 }
 
@@ -947,7 +982,7 @@ async function performSearch(user) {
         }
     }
     document.getElementById('lookuperror').replaceChildren(MiniError('partialsuccess', 'Loading...'))
-    const userdata = await fetch(`https://api.rotur.dev/profile?${searchtype2}=${user}`, {signal: controller2.signal}).then(res => res.json()).catch((err) => {
+    const userdata = await fetch(`https://api.rotur.dev/profile?${searchtype2}=${user}`, {signal: controller2.signal, headers: authform}).then(res => res.json()).catch((err) => {
         document.getElementById('lookuperror').replaceChildren(MiniError('failure', `An error occurred while searching this user's profile. This could be due to a deadlock, Rotur being down, or your internet connection. Please try again later.`))
         clearTimeout(requestlimit2)
         setTimeout(function() {
@@ -990,6 +1025,7 @@ async function performSearch(user) {
                 you = null;
             } else {
                 outgoing_cache = activeacc.uuid ? (outgoing_cache ? outgoing_cache : await fetch(`https://api.rotur.dev/friends/requests_out`, {headers: authform}).then(res => res.json()).then(res => res.requests_out)) : []
+                my_following_cache = activeacc.uuid ? (my_following_cache ? my_following_cache : await fetch(`https://api.rotur.dev/v2/me/following`, {headers: authform}).then(res => res.json()).then(res => res.following)) : []
             }
         }
     }
@@ -1047,6 +1083,7 @@ checkParam()
 document.getElementById('usersearchbar').addEventListener('submit', (event) => {
     event.preventDefault();
     const query = document.getElementById('usersearchbarinput').value;
+    closePopup()
     performSearch(query);
 });
 
@@ -1345,7 +1382,7 @@ document.addEventListener('click', async function(e) {
                 getElement(`roturitem_${itemName.replaceAll(' ', '~')}`).remove();
                 
                 const itemContainer = document.getElementsByClassName('roturuseritemlist')[0];
-                getElement('useritemssummary').textContent = `Items (${itemContainer.childElementCount})`;
+                getElement('useritemssummary').textContent = `Items - ${itemContainer.childElementCount}`;
                 
                 if (itemContainer.childElementCount === 0) {
                     itemContainer.remove();
@@ -1360,7 +1397,6 @@ document.addEventListener('click', async function(e) {
         case 'deletebtn':
             openDeletePopup(target.dataset.postid);
             return;
-
         case 'closebtn':
             closePopup();
             if (target.dataset?.closeprivate) {
@@ -1375,7 +1411,7 @@ document.addEventListener('click', async function(e) {
             getElement(`post-${postid}`).remove();
             
             const postsList = getElement('clawpostslist');
-            getElement('clawpostssummary').textContent = `Claw Posts (${postsList.childElementCount})`;
+            getElement('clawpostssummary').textContent = `Claw Posts - ${postsList.childElementCount}`;
             
             if (postsList.childElementCount === 0) {
                 postsList.remove();

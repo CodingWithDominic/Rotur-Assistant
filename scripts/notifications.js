@@ -46,7 +46,7 @@ const type_lookup = {
     follow: 'You gained a new follower!',
     item_purchased: 'You bought an item',
     item_sold: 'Someone bought your item!',
-    notification: 'Non-legacy Notification',
+    notification: 'Platform Notification',
     item_received: 'Someone gave you an item',
     repost: "Someone reposted your Claw post!",
     like: "Someone liked your Claw post!"
@@ -59,11 +59,9 @@ const mw_type_lookup = {
     love: "Project Love",
     comment: "Project Comment",
     profile_comment: "Profile Comment",
-    reply: "New Reply"
+    reply: "New Reply",
+    moderation: "Moderation Notice"
 }
-
-document.getElementById('legacynotifs').checked = legacynotifs
-
 if (!activeacc.uuid) {
     document.getElementsByClassName('container')[0].setHTML(
         `<h1>Notifications</h1>
@@ -293,9 +291,13 @@ function LoadInbox(inbox) {
                         const notifcard = document.getElementById('legacynotiftemplate2').content.cloneNode(true)
                         notifcard.querySelector('.notiftypetitle').textContent = type
                         notifcard.querySelector('h3').textContent = ((notif.source ?? "Unknown Source") + " • " + (notif.title ?? "Unknown Title"))
-                        notifcard.querySelector('.notiftimeinfo').textContent = timestamp
+                        if (notif.body) {
+                            notifcard.querySelector('.notifbody').innerText = notif.body
+                        } else {
+                            notifcard.querySelector('.notifbody').remove()
+                        }
                         notifcard.querySelector('.notifsenderinfo').setHTML(`Sender: <a href="lookup.html?user=${notif.from}"><img src="https://avatars.rotur.dev/${notif.from}" alt="${notif.from}" width="16" height="16"> ${notif.from}</a>`, {sanitizer: sanitizer})
-                        notifcard.querySelector('.fineprint').textContent = `ID: ${id}`
+                        notifcard.querySelector('.fineprint').textContent = `${timestamp} • ID: ${id}`
                         notifs_html.push(notifcard)
                     } else {
                         const notifcard = document.getElementById('legacynotiftemplate').content.cloneNode(true)
@@ -315,32 +317,32 @@ function LoadInbox(inbox) {
                     const notiftext = (() => {
                         switch (notif.type) {
                             case ('news'): {
-                                return `A new announcement was made: <a href="https://warp.mistium.com/news" target="_blank" rel="noopener noreferrer">${sanitize(notif.title)}</a>`
+                                return `A new announcement was made: <a href="https://mistwarp.org/news" target="_blank" rel="noopener noreferrer">${sanitize(notif.title ?? "Unknown Title")}</a>`
                             }
                             case ('purchase'): {
-                                return `<a href="lookup.html?user=${sanitize(notif.actor ?? "Spectator")}">${sanitize(user)}</a> bought your project: <a href="https://warp.mistium.com/project/${encodeURIComponent(notif.projectId)}" target="_blank" rel="noopener noreferrer">${sanitize(notif.projectTitle)}</a> for ${notif.amount ?? 0} ${(notif.amount == 1) ? 'credit' : 'credits'}.`
+                                return `<a href="lookup.html?user=${sanitize(notif.actor ?? "Spectator")}">${sanitize(user)}</a> bought your project: <a href="https://mistwarp.org/project/${encodeURIComponent(notif.projectId)}" target="_blank" rel="noopener noreferrer">${sanitize(notif.projectTitle)}</a> for ${notif.amount ?? 0} ${(notif.amount == 1) ? 'credit' : 'credits'}.`
                             }
                             case ('remix'): {
-                                return `<a href="lookup.html?user=${sanitize(notif.actor ?? "Spectator")}">${sanitize(user)}</a> remixed one of your projects: <a href="https://warp.mistium.com/project/${encodeURIComponent(notif.projectId)}" target="_blank" rel="noopener noreferrer">${sanitize(notif.projectTitle)}</a>.`
+                                return `<a href="lookup.html?user=${sanitize(notif.actor ?? "Spectator")}">${sanitize(user)}</a> remixed one of your projects: <a href="https://mistwarp.org/project/${encodeURIComponent(notif.projectId)}" target="_blank" rel="noopener noreferrer">${sanitize(notif.projectTitle)}</a>.`
                             }
                             case ('love'): {
-                                return `<a href="lookup.html?user=${sanitize(notif.actor ?? "Spectator")}">${sanitize(user)}</a> loved your project <a href="https://warp.mistium.com/project/${encodeURIComponent(notif.projectId)}" target="_blank" rel="noopener noreferrer">${sanitize(notif.projectTitle)}</a>.`
+                                return `<a href="lookup.html?user=${sanitize(notif.actor ?? "Spectator")}">${sanitize(user)}</a> loved your project <a href="https://mistwarp.org/project/${encodeURIComponent(notif.projectId)}" target="_blank" rel="noopener noreferrer">${sanitize(notif.projectTitle)}</a>.`
                             }
                             case ('comment'): {
-                                return `<a href="lookup.html?user=${sanitize(notif.actor ?? "Spectator")}">${sanitize(user)}</a> commented on your project <a href="https://warp.mistium.com/project/${encodeURIComponent(notif.projectId)}#comment-id-${encodeURIComponent(notif.commentId)}" target="_blank" rel="noopener noreferrer">${sanitize(notif.projectTitle)}</a>.`
+                                return `<a href="lookup.html?user=${sanitize(notif.actor ?? "Spectator")}">${sanitize(user)}</a> commented on your project <a href="https://mistwarp.org/project/${encodeURIComponent(notif.projectId)}#comment-id-${encodeURIComponent(notif.commentId)}" target="_blank" rel="noopener noreferrer">${sanitize(notif.projectTitle)}</a>.`
                             }
                             case ('profile_comment'): {
-                                return `<a href="lookup.html?user=${sanitize(notif.actor ?? "Spectator")}">${sanitize(user)}</a> commented on <a href="https://warp.mistium.com/users/${encodeURIComponent(activeacc.name)}" target="_blank" rel="noopener noreferrer">your profile</a>.`
+                                return `<a href="lookup.html?user=${sanitize(notif.actor ?? "Spectator")}">${sanitize(user)}</a> commented on <a href="https://mistwarp.org/users/${encodeURIComponent(activeacc.name)}" target="_blank" rel="noopener noreferrer">your profile</a>.`
                             }
                             case ('reply'): {
                                 if (notif.projectId) {
-                                    return `<a href="lookup.html?user=${sanitize(notif.actor ?? "Spectator")}">${sanitize(user)}</a> replied to your comment on <a href="https://warp.mistium.com/project/${encodeURIComponent(notif.projectId)}#comment-id-${encodeURIComponent(notif.commentId)}" target="_blank" rel="noopener noreferrer">${sanitize(notif.projectTitle)}</a>.`
+                                    return `<a href="lookup.html?user=${sanitize(notif.actor ?? "Spectator")}">${sanitize(user)}</a> replied to your comment on <a href="https://mistwarp.org/project/${encodeURIComponent(notif.projectId)}#comment-id-${encodeURIComponent(notif.commentId)}" target="_blank" rel="noopener noreferrer">${sanitize(notif.projectTitle)}</a>.`
                                 } else {
-                                    return `<a href="lookup.html?user=${sanitize(notif.actor ?? "Spectator")}">${sanitize(user)}</a> replied to your comment on <a href="https://warp.mistium.com/users/${encodeURIComponent(notif.profile)}#comment-id-${encodeURIComponent(notif.commentId)}" target="_blank" rel="noopener noreferrer">${sanitize(notif.profile)}'s profile</a>.`
+                                    return `<a href="lookup.html?user=${sanitize(notif.actor ?? "Spectator")}">${sanitize(user)}</a> replied to your comment on <a href="https://mistwarp.org/users/${encodeURIComponent(notif.profile)}#comment-id-${encodeURIComponent(notif.commentId)}" target="_blank" rel="noopener noreferrer">${sanitize(notif.profile)}'s profile</a>.`
                                 }
                             }
                             default: {
-                                return `Rotur Assistant does not recognize this notification type yet. In the meantime, check out the notification <a href="https://warp.mistium.com/notifications" target="_blank" rel="noopener noreferrer">here</a>.`
+                                return notif.message ?? `Rotur Assistant does not recognize this notification type yet. In the meantime, check out the notification <a href="https://mistwarp.org/notifications" target="_blank" rel="noopener noreferrer">here</a>.`
                             }
                         }
                     })()
@@ -522,7 +524,7 @@ document.addEventListener('click', async function(e) {
             "fingerprint": fingerprint
         })}).then(res => res.json())
         if (createsuccess.error) {
-            document.getElementById('notifendpointstatus').replaceChildren(MiniError('success', createsuccess.error))
+            document.getElementById('notifendpointstatus').replaceChildren(MiniError('failure', createsuccess.error))
         } else {
             if (createsuccess.updated) {
                 document.getElementById('notifendpointstatus').replaceChildren(MiniError('success', "Endpoint added successfully!"))

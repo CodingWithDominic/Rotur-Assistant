@@ -588,7 +588,7 @@ if (!activeacc.uuid) {
             imagetarget.style.display = 'block'
             images.forEach(image => {
                 const img = document.createElement('img')
-                img.src = image
+                img.src = `https://wsrv.nl/?url=${encodeURIComponent(image)}`
                 const imgload = (e) => {
                     img.removeEventListener('load', imgload)
                     img.removeEventListener('error', imgerror)
@@ -610,7 +610,7 @@ if (!activeacc.uuid) {
                 images2.forEach(image => {
                     if (image.mime_type.startsWith('image/')) {
                         const img = document.createElement('img')
-                        img.src = image.url
+                        img.src = `https://wsrv.nl/?url=${encodeURIComponent(image.url)}`
                         img.addEventListener('error', (e) => {
                             e.target.src = 'https://i.postimg.cc/BZMMMNWw/RA-Error-Attachment.png'
                         })
@@ -632,7 +632,7 @@ if (!activeacc.uuid) {
             } catch {
                 images2.forEach(image => {
                     const img = document.createElement('img')
-                    img.src = image
+                    img.src = `https://wsrv.nl/?url=${encodeURIComponent(image)}`
                     img.addEventListener('error', (e) => {
                         e.target.src = 'https://i.postimg.cc/BZMMMNWw/RA-Error-Attachment.png'
                     })
@@ -1492,7 +1492,7 @@ if (!activeacc.uuid) {
                                 cached_rmails_data[activeacc.uuid] = cached_rmails
                                 chrome.storage.local.set({cached_rmails: cached_rmails_data}) // If it's a cached Rmail, only do the decryption once forever
                             } catch {
-                                reply.body = "Rotur Assistant failed to decrypt this reply. Check your encryption settings."
+                                reply.body = "Rotur Assistant failed to decrypt this reply. If you're sure your encryption settings are correct, then chances are, this encrypted reply was not addressed to you."
                             }
                         }
                         const li = document.createElement('li')
@@ -1509,7 +1509,7 @@ if (!activeacc.uuid) {
                     document.getElementById('rmailreplies').style.display = 'block'
                     document.getElementById('rmailreplies').replaceChildren(CreateEmptyPlaceholder('Loading Replies...'))
                     const validator = await GetValidator()
-                    if (!(maildata.is_encrypted || maildata.burn_after_read)) {
+                    if (!maildata.burn_after_read) {
                         const formdata = new FormData()
                         formdata.append("Authorization", `Bearer ${validator}`)
                         if (!rmailthread) {
@@ -1533,7 +1533,7 @@ if (!activeacc.uuid) {
                                         reply.body = await RmailDecrypt(JSON.parse(reply.body), activeacc.name.toLowerCase())
                                         reply.is_encrypted = false
                                     } catch {
-                                        reply.body = "Rotur Assistant failed to decrypt this reply. Check your encryption settings."
+                                        reply.body = "Rotur Assistant failed to decrypt this reply. If you're sure your encryption settings are correct, then chances are, this encrypted reply was not addressed to you."
                                     }
                                 }
                                 const li = document.createElement('li')
@@ -1543,6 +1543,10 @@ if (!activeacc.uuid) {
                             }
                             document.getElementById('rmailreplies').replaceChildren(...reply_elements)
                         }
+                    } else {
+                        document.getElementById('rmailreplyhr').style.display = 'none'
+                        document.getElementById('rmailreplies').style.display = 'none'
+                        document.getElementById('rmailreplies').replaceChildren()                        
                     }
                 } else {
                     replies_cache = []

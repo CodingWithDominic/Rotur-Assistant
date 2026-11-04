@@ -59,33 +59,6 @@ if (flagged.includes(activeacc.uuid)) {
     `, {sanitizer: sanitizer})
 }
 
-function OpenDisclaimerPopup(warning) {
-    document.getElementById('overlay').style.display = 'flex';
-    document.getElementsByClassName('popup')[0].setHTML(`
-        <div id="popup-header">
-            <h1>Disclaimer</h1>
-            <button id="popup-x" class="closebtn">✕</button>
-        </div>
-        <p id="popupdialogue">Due to extension limitations, this setting depends on external software, NexRPC, being installed, in order to function properly. NexRPC is a desktop RPC program developed by Milodev123.</p>
-        <label>
-            <input type='checkbox'>
-            Don't show this again
-        </label>
-        <div id="popup-choices">
-            <button id="cancel" class="closebtn">Back</button>
-            <button id="trustnexrpc">Proceed</button>
-        </div>
-    `, {sanitizer: sanitizer})
-}
-
-function replaceCharAtIdx(string, index, newchar) {
-    let strArray = string.split('');
-    strArray[index] = newchar;
-    let newStr = strArray.join('');
-    return newStr;
-}
-
-let rpc_preference = rpc_json[activeacc.uuid].preference ?? "custom"
 let current_rpc = rpc_json[activeacc.uuid].customdata ?? []
 
 const h2 = document.createElement('h2')

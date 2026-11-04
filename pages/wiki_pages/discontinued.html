@@ -23,8 +23,8 @@
                 <p>This used to be originOS's equivalent of an Assembly-style language. However, as OSL got more and more optimized, to the point where the speed of OSL superseded that of OASM, OASM was phased out, and eventually removed.</p>
                 <h2>Summit</h2>
                 <p>Replaced by phosphorus, though as of now, development of phosphorus seems to be moving slowly.</p>
-                <h2>Aura</h2>
-                <p>Tracked by an account's sys.aura key, this would track how long a user has spent logged into origin. This was removed when Rattus decided to leave origin running for several days, racking up tens of thousands of aura points before Mistium intervened and manually reset it. Mistium then added a cap for it at 5,000, which when exceeded, would automatically reset the aura back to 0. Shortly after, aura was removed altogether.</p>
+                <h2>Aura (old version)</h2>
+                <p>Tracked by an account's sys.aura key, this would track how long a user has spent logged into OriginOS. This was removed when Rattus decided to leave origin running for several days, racking up tens of thousands of aura points before Mistium intervened and manually reset it. Mistium then added a cap for it at 5,000, which when exceeded, would automatically reset the aura back to 0. Shortly after, aura was removed altogether. Eventually, Aura came back in a different form. Now, Aura is now based on how many total likes you have on Claw, combined with the number of upvotes you have on RoturForums.</p>
                 <h2>Rotur Marriage</h2>
                 <p>This was once added because Mistium wanted to "rotur-marry" <a href="../lookup.html?user=iris">iris</a>, a very close friend of hers. Since marrying someone on rotur provided no real benefit between the two users, and people mainly married their alts using it, it was removed. The sys.marriage key can still be found on accounts today that were married prior to removal.</p>
                 <h2>Credit leaderboard</h2>
@@ -43,6 +43,12 @@
                 <h2>Credit Gambling</h2>
                 <p>Back then, you could gamble credits. You either had a 39% chance of doubling your bid, and a 61 percent chance of losing it all. The maximum you could gamble in one go was 50 credits. This was eventually removed due to UK laws regarding gambling any form of currency that could be seen as legal tender (or could be used as an alternative to real currency).</p>
                 <p class="fineprint">Mini-Trivia: Once this feature was introduced, hyperinflation occurred, since there initially wasn't a cap on how much could be gambled in one go. Because of this, someone racked up tens of thousands of credits and then started paying random people 5,000+ credits each. Because of this, gambling was toned down heavily, the 50-credit cap was introduced, odds were adjusted, and the entire Rotur economy was reset because of it, with all accounts (that existed at the time) starting over from 5 credits.</p>
+                <h2>Rotur Items</h2>
+                <p>As of October 23, 2026, Rotur items became deprecated. They can still be viewed and deleted, just not created, bought, sold, nor transferred.</p>
+                <h2>Currency comparison</h2>
+                <p>As of October 24, 2026, the <code>currency_comparison</code> JSON key was quietly removed from https://api.rotur.dev/stats/economy. This, combined with the ability to buy credits being removed, was an effort to disconnect Rotur Credits from real-world money and make them not have any possible real-world value. For fun, Rotur Assistant still calculates 1 RC to be worth $0.04 or £0.03 (based on what they were being frequently rounded off to right before the removal of <code>currency_comparison</code>) in places like the <a href="../wallet.html">wallet</a> app.</p>
+                <h2>Trust score API</h2>
+                <p>This endpoint allowed users who were subscribed to Rotur Pro or Rotur Max to view the trust score of any user. The API would factor in things like account age, login IP diversity, standing history, and more, to determine how 'trustworthy' a user is. This was likely either removed altogether due to privacy reasons, or made admin-only. Rotur Assistant considered adding its own version of this API, accessible to all users but based on less factors, but for now, the idea was shelved due to the removal of the official API.</p>
             </div>
         </div>
         <footer id="footer-placeholder"></footer>

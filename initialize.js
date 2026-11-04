@@ -36,3 +36,15 @@ if (document.body) {
 } else {
     document.addEventListener('DOMContentLoaded', updateTheme)
 }
+
+function isRunningInPopup() {
+  const views = chrome.extension.getViews({ type: "popup" });
+  return views.includes(window);
+}
+document.addEventListener("DOMContentLoaded", () => {
+    if (isRunningInPopup()) {
+        document.documentElement.style.scrollbarGutter = "auto";
+        document.documentElement.style.overflowY = "auto";
+        document.body.style.width = "400px";
+    }
+});

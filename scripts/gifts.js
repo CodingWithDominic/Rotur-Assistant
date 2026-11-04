@@ -1,4 +1,4 @@
-import { sanitize, formatDate, CreateEmptyPlaceholder, MiniError } from "../index.js"
+import { sanitize, formatDate, CreateEmptyPlaceholder, MiniError, FixDecimal } from "../index.js"
 
 const accounts = await new Promise(resolve =>
     chrome.storage.local.get('userdata', data => resolve(data.userdata || []))
@@ -17,7 +17,9 @@ const flagged = await new Promise(resolve =>
 ) ?? [];
 
 let giftdata_cache = ''
+let claimed_cache = ''
 let filter_cache = 'all'
+let filter_cache2 = 'newest'
 
 const config = {
     elements: ['p', 'img', 'div', 'h1', 'h2', 'h3', 'h4', 'button', 'ul', 'li', 'select', 'option', 'a', 'br', 'hr'],
@@ -50,7 +52,7 @@ function closePopup() {
 
 function renderGifts(filter) {
     const giftdata = giftdata_cache
-    let giftsArray = giftdata.gifts
+    let giftsArray = [ ...giftdata.gifts]
     const gift_count = giftsArray.length
     
     if (filter == 'claimed') {
@@ -59,7 +61,7 @@ function renderGifts(filter) {
     if (filter == 'unclaimed') {
         giftsArray = giftsArray.filter(gift => !gift.claimed_by)
     }
-    document.getElementById('giftmanagerheader').replaceChildren(CreateEmptyPlaceholder(`Manage Existing Gifts - ${giftsArray.length}`, true))
+    document.getElementById('giftmanagerheader').textContent = `Manage Existing Gifts - ${giftsArray.length}`
     let giftlisthtml = document.createElement('ul')
     if (giftsArray.length == 0) {
         giftlisthtml = document.createElement('h3')
@@ -72,14 +74,14 @@ function renderGifts(filter) {
         giftsArray.forEach(gift_snippet => {
             const giftcard = document.getElementById('giftcardtemplate').content.cloneNode(true)
             giftcard.querySelector('.gifttitle').textContent = `Gift created on ${formatDate(gift_snippet.created_at)}`
-            giftcard.querySelector('.giftamount').textContent = `Amount: ${gift_snippet.amount} RC`
+            giftcard.querySelector('.giftamount').textContent = (gift_snippet.tier ? `Tier: ${gift_snippet.tier}` : (gift_snippet.cosmetic_name ? `Cosmetic: ${gift_snippet.cosmetic_name}` : `Amount: ${gift_snippet.amount} RC`))
             gift_snippet.note ? (giftcard.querySelector('.giftnote').innerText = `Note: ${gift_snippet.note}`) : giftcard.querySelector('.giftnote').remove()
             giftcard.querySelector('.giftexpirationdate').textContent = ("Expires: " + (gift_snippet.expires_at ? formatDate(gift_snippet.expires_at) : "Never"))
             giftcard.querySelector('.giftcode').textContent = ("Code: " + gift_snippet.code)
             giftcard.querySelector('.giftid').textContent = ("ID: " + gift_snippet.id)
             gift_snippet.claimed_by ? giftcard.querySelector('.claim_user').setHTML(`Claimed by: <a href="lookup.html?user=${gift_snippet.claimed_by}" style="text-decoration: none;"><img src='https://avatars.rotur.dev/${gift_snippet.claimed_by}' width="24" height="24"> ${gift_snippet.claimed_by}</a>`, {sanitizer: sanitizer}) : giftcard.querySelector('.claim_user').remove()
-            gift_snippet.claimed_at ? giftcard.querySelector('.claimdate').textContent = formatDate(gift_snippet.claimed_at) : giftcard.querySelector('.claimdate').remove()
-            if (!gift_snippet.claimed_at) {
+            gift_snippet.claimed_at ? giftcard.querySelector('.claimdate').textContent = `Claimed at: ${formatDate(gift_snippet.claimed_at)}` : (gift_snippet.cancelled_at ? giftcard.querySelector('.claimdate').textContent = `Revoked at: ${formatDate(gift_snippet.cancelled_at)}` : giftcard.querySelector('.claimdate').remove())
+            if (!gift_snippet.claimed_at && !gift_snippet.cancelled_at) {
                 giftcard.querySelector('.copyurl').dataset.giftid = gift_snippet.code
                 giftcard.querySelector('.revoke').dataset.giftid = gift_snippet.code
                 giftcard.querySelector('.revoke').title = "While you will be refunded the gift's main value, you will not be refunded the tax spent when you initially created the gift."
@@ -98,7 +100,62 @@ function renderGifts(filter) {
     document.getElementById('giftsplaceholder').replaceChildren(giftlisthtml)
 }
 
-async function getGifts(filter) {
+function renderGifts2(filter) {
+    const giftdata = claimed_cache
+    let giftincome = 0
+    let giftsArray = [ ...giftdata.gifts ]
+    const gift_count = giftsArray.length
+    switch (filter) {
+        case ('oldest'): {
+            giftsArray.reverse()
+            break;
+        }
+        case ('createdoldest'): {
+            giftsArray.sort((a, b) => a.created_at - b.created_at)
+            break;
+        }
+        case ('creatednewest'): {
+            giftsArray.sort((a, b) => b.created_at - a.created_at)
+            break;
+        }
+        case ('high'): {
+            giftsArray.sort((a, b) => b.amount - a.amount)
+            break;
+        }
+        case ('low'): {
+            giftsArray.sort((a, b) => a.amount - b.amount)
+            break;
+        }
+    }
+    document.getElementById('claimedgiftheader').textContent = `Gifts You Claimed - ${gift_count}`
+    let giftlisthtml = document.createElement('ul')
+    if (gift_count == 0) {
+        giftlisthtml = document.createElement('h3')
+        giftlisthtml.textContent = `You have not claimed any gifts yet`
+    } else {
+        giftsArray.forEach(gift_snippet => {
+            if (gift_snippet.kind == "credits") {
+                giftincome += gift_snippet.amount
+            }
+            const giftcard = document.getElementById('claimedgiftcardtemplate').content.cloneNode(true)
+            giftcard.querySelector('.gifttitle').textContent = `Gift created on ${formatDate(gift_snippet.created_at)}`
+            giftcard.querySelector('.giftamount').textContent = (gift_snippet.tier ? `Tier: ${gift_snippet.tier}` : (gift_snippet.cosmetic_name ? `Cosmetic: ${gift_snippet.cosmetic_name}` : `Amount: ${gift_snippet.amount} RC`))
+            gift_snippet.note ? (giftcard.querySelector('.giftnote').innerText = `Note: ${gift_snippet.note}`) : giftcard.querySelector('.giftnote').remove()
+            giftcard.querySelector('.giftexpirationdate').textContent = ("Expires: " + (gift_snippet.expires_at ? formatDate(gift_snippet.expires_at) : "Never"))
+            giftcard.querySelector('.giftcode').textContent = ("Code: " + gift_snippet.code)
+            giftcard.querySelector('.giftid').textContent = ("ID: " + gift_snippet.id)
+            giftcard.querySelector('.creator_user').setHTML(`Created by: <a href="lookup.html?user=${gift_snippet.creator_id}" style="text-decoration: none;"><img src='https://avatars.rotur.dev/${gift_snippet.creator_id}' width="24" height="24"> ${gift_snippet.creator_id}</a>`, {sanitizer: sanitizer})
+            gift_snippet.claimed_by ? giftcard.querySelector('.claim_user').setHTML(`Claimed by: <a href="lookup.html?user=${gift_snippet.claimed_by}" style="text-decoration: none;"><img src='https://avatars.rotur.dev/${gift_snippet.claimed_by}' width="24" height="24"> ${gift_snippet.claimed_by}</a>`, {sanitizer: sanitizer}) : giftcard.querySelector('.claim_user').remove()
+            gift_snippet.claimed_at ? giftcard.querySelector('.claimdate').textContent = `Claimed at: ${formatDate(gift_snippet.claimed_at)}` : (gift_snippet.cancelled_at ? giftcard.querySelector('.claimdate').textContent = `Revoked at: ${formatDate(gift_snippet.cancelled_at)}` : giftcard.querySelector('.claimdate').remove())
+            giftlisthtml.appendChild(giftcard)
+        })
+        giftincome = FixDecimal(giftincome)
+    }
+    document.getElementById('giftincome').textContent = `Total income from gifts: ${giftincome} RC`
+    document.getElementById('claimedgiftsplaceholder').replaceChildren(giftlisthtml)
+}
+
+async function getGifts() {
     if (!navigator.onLine) {
         document.getElementsByClassName('container')[0].setHTML(`
             <h1>Gift Manager</h1>
@@ -150,9 +207,38 @@ async function getGifts(filter) {
                 return;
             }
         }
-        giftdata_cache.gifts = giftdata_cache.gifts.reverse()
     }
-    renderGifts(filter)
+    renderGifts(filter_cache)
+    if (claimed_cache == '') {
+        claimed_cache = await fetch(`https://api.rotur.dev/v2/gifts/received`, {headers: authform}).then(res => res.json()).catch(err => {
+            document.getElementsByClassName('container')[0].setHTML(`
+                <h1>Gift Manager</h1>
+                <hr class="full-size">
+                <h3>A communication error has occurred. If you're sure it's not your connection, then Rotur may be down right now.</h3>
+            `, {sanitizer: sanitizer})
+            return;
+        })
+        if (claimed_cache.error) {
+            if (claimed_cache.error == "Invalid authentication key") {
+                flagged.push(activeacc.uuid)
+                chrome.storage.local.set({flagged: flagged})
+                document.getElementsByClassName('container')[0].setHTML(`
+                    <h1>Gift Manager</h1>
+                    <hr class="full-size">
+                    <h3>An authentication issue has been detected with your selected account. Please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> to resolve it.</h3>
+                `, {sanitizer: sanitizer})
+                return;
+            } else {
+                document.getElementsByClassName('container')[0].setHTML(`
+                    <h1>Gift Manager</h1>
+                    <hr class="full-size">
+                    <h3>The sub-token you have granted for your current account does not allow you to view this page. To resolve this issue, please head over to the <a href='accounts.html' style="text-decoration: underline;">account manager</a> and reauthenticate.</h3>
+                `, {sanitizer: sanitizer})
+                return;
+            }
+        }  
+    }
+    renderGifts2(filter_cache2)
 }
 
 async function performGiftSearch(query) {
@@ -173,7 +259,7 @@ async function performGiftSearch(query) {
         giftdata = giftdata.gift
         const lookupcard = document.getElementById('giftlookuptemplate').content.cloneNode(true)
         lookupcard.querySelector('h2').setHTML(`Gift by <img src='https://avatars.rotur.dev/${giftdata.creator_id}' alt='${giftdata.creator_id}' width='24' height='24' style="border-radius: 4px;"> ${giftdata.creator_id}`, {sanitizer: sanitizer})
-        lookupcard.querySelector('.giftcardamt').textContent = `Amount: ${giftdata.amount} RC`
+        lookupcard.querySelector('.giftcardamt').textContent = giftdata.tier ? `Tier: ${giftdata.tier}` : (giftdata.cosmetic_name ? `Cosmetic: ${giftdata.cosmetic_name}` : `Amount: ${giftdata.amount} RC`)
         giftdata.note ? lookupcard.querySelector('.giftcardnote').innerText = `Note: ${giftdata.note}` : lookupcard.querySelector('.giftcardnote').remove()
         lookupcard.querySelector('.giftcarddate').textContent = `Expires: ${giftdata.expires_at ? formatDate(giftdata.expires_at) : `Never`}`
         if (giftdata.creator_id == activeacc.name) {
@@ -187,16 +273,18 @@ async function performGiftSearch(query) {
     }
 }
 
-getGifts('all')
+getGifts()
 
-document.addEventListener('change', async function(e) {
-    if (e.target.name == 'giftfilter') {
-        e.preventDefault()
-        filter_cache = e.target.id
-        renderGifts(filter_cache)
-    }
+document.getElementById('giftsortselect').addEventListener('change', async function(e) {
+    e.preventDefault()
+    filter_cache = e.target.value
+    renderGifts(filter_cache)
 })
-
+document.getElementById('claimedsortselect').addEventListener('change', async function(e) {
+    e.preventDefault()
+    filter_cache2 = e.target.value
+    renderGifts2(filter_cache2)
+})
 document.addEventListener('input', async function (e) {
     if (e.target.id == 'giftamount') {
         const amt = parseFloat(e.target.value)
@@ -209,8 +297,16 @@ document.addEventListener('input', async function (e) {
 })
 
 document.addEventListener('click', async function(e) {
+    if (e.target.className == 'tab') {
+        Array.from(document.getElementsByClassName('tab')).forEach(tab => {
+            tab.style = 'border-bottom: none;'
+        })
+        e.target.style = 'border-bottom: 2px solid white;'
+        document.getElementById('mygifts').style.display = (e.target.id == 'mygiftstab') ? 'block' : 'none'
+        document.getElementById('claimedgifts').style.display = (e.target.id == 'claimedgiftstab') ? 'block' : 'none'
+    }
     if (e.target.id == 'creategift') {
-        const accdata = await fetch(`https://api.rotur.dev/profile?name=${activeacc.name}`).then(res => res.json())
+        const accdata = await fetch(`https://api.rotur.dev/profile?name=${activeacc.name}`, {headers: authform}).then(res => res.json())
         const amt = parseFloat(document.getElementById('giftamount').value)
         if (isNaN(amt)) {
             document.getElementById('giftcreatestatusplaceholder').replaceChildren(MiniError('failure', "Please enter a valid amount"))
@@ -234,8 +330,18 @@ document.addEventListener('click', async function(e) {
         target.disabled = true
         target.textContent = '…'
         giftdata_cache = await fetch(`https://api.rotur.dev/gifts/mine`, {headers: authform}).then(res => res.json())
-        giftdata_cache.gifts = giftdata_cache.gifts.reverse()
         renderGifts(filter_cache)
+        target.disabled = false
+        target.textContent = '⟳'
+        return;
+    }
+    if (e.target.id == 'giftreload2') {
+        e.preventDefault()
+        const target = e.target
+        target.disabled = true
+        target.textContent = '…'
+        claimed_cache = await fetch(`https://api.rotur.dev/v2/gifts/received`, {headers: authform}).then(res => res.json())
+        renderGifts2(filter_cache2)
         target.disabled = false
         target.textContent = '⟳'
         return;

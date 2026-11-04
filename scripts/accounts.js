@@ -1,4 +1,4 @@
-import { openErrorPopup, openWarningPopup, CreateEmptyPlaceholder, MiniError } from "../index.js";
+import { openErrorPopup, openWarningPopup, CreateEmptyPlaceholder, MiniError, sanitize } from "../index.js";
 
 const whitelisted_urls = ['https://apps.rotur.dev', 'https://origin.mistium.com', 'https://originchats.mistium.com/app', "https://originchats.com/app", 'https://rotur.dev/me',
                             'https://warptheme.mistium.com', 'https://notes.rotur.dev', 'https://devfund.rotur.dev', 'https://photos.rotur.dev', "https://connect.rotur.dev",
@@ -6,7 +6,8 @@ const whitelisted_urls = ['https://apps.rotur.dev', 'https://origin.mistium.com'
                             "https://runnova.github.io/orion", "https://adthoughtsglobal.github.io/Orla", "https://antiviiris.github.io/originChats",
                             'https://git.rotur.dev', 'https://authenticator.rotur.dev', 'https://gate.rotur.dev', 'https://rotur.dev', "https://pounce.rotur.dev",
                             "https://mail.rotur.dev", "https://beam.rotur.dev", "https://place.rotur.dev", "https://gifs.originchats.com", "https://chat.0stormy.xyz/",
-                            "https://sable.rotur.dev", "https://runnova.github.io/indigo", "https://warp.mistium.com", "http://localhost:5173", "https://music.flufi.uk"]
+                            "https://sable.rotur.dev", "https://runnova.github.io/indigo", "https://warp.mistium.com", "http://localhost:5173", "https://music.flufi.uk",
+                            "https://mistwarp.org"]
                             
 const config = {
     removeElements: ['iframe', 'script', 'style', 'object', 'embed', 'applet', 'meta', 'link', 'base', 'form'],
@@ -78,7 +79,7 @@ const roturemailwarning = await new Promise(resolve =>
 
 // Popup code
 
-function openAuthErrorPopup(uuid) {
+function openAuthErrorPopup(name, uuid) {
     document.getElementById('overlay').style.display = 'flex';
     document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
@@ -88,9 +89,48 @@ function openAuthErrorPopup(uuid) {
         <p id="popupdialogue">An authentication issue has been detected with this account. This account may have either been banned, deleted, or simply had its token reset. Try logging in with this account again or use a different account.</p>
         <div id="popup-choices">
             <button id="cancel" class="closebtn">Dismiss</button>
-            <button id="reauth">Reauth</button>
+            <button id="reauth" data-name='${sanitize(name)}'>Reauth</button>
             <button class="removeacc" data-id='${uuid}'>Remove</button>
         </div>
+    `, {sanitizer: sanitizer})
+}
+
+function openLoginFailedPopup(message) {
+    document.getElementById('overlay').style.display = 'flex';
+    document.getElementsByClassName('popup')[0].setHTML(`
+        <div id="popup-header">
+            <h1>Login Failed</h1>
+            <button id="popup-x" class="closebtn">✕</button>
+        </div>
+        <p id="popupdialogue">${sanitize(message)}</p>
+        <div id="popup-choices">
+            <button id="cancel" class="closebtn">OK</button>
+        </div>
+    `, {sanitizer: sanitizer})
+}
+
+function openPasswordLoginPopup() {
+    document.getElementById('overlay').style.display = 'flex';
+    document.getElementsByClassName('popup')[0].setHTML(`
+        <div id="popup-header">
+            <h1>Login</h1>
+            <button id="popup-x" class="closebtn">✕</button>
+        </div>
+        <p id="popupdialogue">Login using your Rotur credentials here. Your password will not be remembered by Rotur Assistant.</p>
+        <div class="passwordlogincontainer">
+            <input type='text' id='usernameloginbox' placeholder="Username" autocomplete="username">
+            <div class="tokenloginbar">
+                <input type='password' id='passwordloginbox' placeholder="Password" autocomplete="current-password">
+                <button id="passwordloginvisibility"><img src="../images/misc_icons/invisible.png" width="24" height="24"></button>
+            </div>
+        </div>
+        <p>We plan on adding proper OAuth support in the future. <a href="https://rotur.dev/@Dominic/join" target="_blank" rel="noopener noreferrer">Click here to create an account instead</a></p>
+        <div id="passwordloginerror"></div>
+        <div id="popup-choices">
+            <button id="cancel" class="closebtn">Cancel</button>
+            <button class="addaccpassword">Login</button>
+        </div>
+        <button id="tokenloginswitch">Switch to token login</button>
     `, {sanitizer: sanitizer})
 }
 
@@ -125,6 +165,7 @@ function openTokenLoginPopup() {
             <button id="cancel" class="closebtn">Cancel</button>
             <button class="addacctoken">Login</button>
         </div>
+        <button id="credloginswitch">Switch to regular login</button>
     `, {sanitizer: sanitizer})
 }
 
@@ -245,7 +286,11 @@ async function checkSwitcherEligibility(url) {
     if (!allowed_urls) {
         document.getElementById('switchaccbtn').disabled = true
         if (responsedata.includes('rotur') || responsedata.includes('origin') || responsedata.includes('mistium')) {
-            errormsg += `<br>While you are (likely) on a rotur-affiliated site, this feature may not be supported for that particular service yet.`
+            if (responsedata.startsWith('https://roturassistant.com')) {
+                errormsg += `<br>You are on Rotur Assistant's official site! As of now, there's nothing on the website we use Rotur Accounts for.`
+            } else {
+                errormsg += `<br>While you are (likely) on a rotur-affiliated site, this feature may not be supported for that particular service yet.`
+            }
         } else {
             errormsg += `<br>You are not on a rotur-affiliated website. If you own a Rotur-affiliated site and you want me to support your site, let me know on discord @dominic_the_gamer or on OriginChats.`
         }
@@ -409,7 +454,7 @@ async function buildlist(customquery) {
         document.getElementById('switchaccbtn').disabled = flagged.includes(activeacc.uuid)
     }
     const addacc = document.createElement('a')
-    addacc.href = "/pages/auth.html"
+    addacc.href = "#"
     addacc.className = 'addaccbtn'
     addacc.textContent = '+ Add Account'
     addacc.title = "Shift-click to login directly with a Rotur token instead"
@@ -455,12 +500,33 @@ document.addEventListener('click', async function(e) {
         if (document.getElementById('tokenloginbox')) {
             document.getElementById('tokenloginbox').value = ''
         }
+        if (document.getElementById('usernameloginbox')) {
+            document.getElementById('usernameloginbox').value = ''
+        }
+        if (document.getElementById('passwordloginbox')) {
+            document.getElementById('passwordloginbox').value = ''
+        }
+        if (document.getElementById('passwordloginerror')) {
+            document.getElementById('passwordloginerror').replaceChildren()
+        }
         closePopup()
         return;
     }
-    if ((e.target.className == 'addaccbtn') && e.shiftKey) {
+    if (e.target.className == 'addaccbtn') {
         e.preventDefault()
+        if (e.shiftKey) {
+            openTokenLoginPopup()
+        } else {
+            openPasswordLoginPopup()
+        }
+        return;
+    }
+    if (e.target.id == 'tokenloginswitch') {
         openTokenLoginPopup()
+        return;
+    }
+    if (e.target.id == 'credloginswitch') {
+        openPasswordLoginPopup()
         return;
     }
     /* Shelved for now
@@ -473,16 +539,168 @@ document.addEventListener('click', async function(e) {
         return;
     }
     */
-    if (e.target.id == 'tokenloginvisibility') {
-        if (e.target.dataset.visible == 'true') {
-            e.target.dataset.visible = 'false'
-            e.target.setHTML(`<img src="../images/misc_icons/invisible.png" width="24" height="24">`, {sanitizer: sanitizer})
-            document.getElementById('tokenloginbox').type = 'password'
-        } else {
-            e.target.dataset.visible = 'true'
-            e.target.setHTML(`<img src="../images/misc_icons/visible.png" width="24" height="24">`, {sanitizer: sanitizer})
-            document.getElementById('tokenloginbox').type = 'text'
+    if (e.target.id == 'tokenloginvisibility' || e.target.closest('#tokenloginvisibility')) {
+        const toggleBtn = e.target.closest('#tokenloginvisibility') || e.target;
+        const tokenBox = document.getElementById('tokenloginbox');
+        if (tokenBox) {
+            if (toggleBtn.dataset.visible == 'true') {
+                toggleBtn.dataset.visible = 'false';
+                toggleBtn.setHTML(`<img src="../images/misc_icons/invisible.png" width="24" height="24">`, {sanitizer: sanitizer});
+                tokenBox.type = 'password';
+            } else {
+                toggleBtn.dataset.visible = 'true';
+                toggleBtn.setHTML(`<img src="../images/misc_icons/visible.png" width="24" height="24">`, {sanitizer: sanitizer});
+                tokenBox.type = 'text';
+            }
         }
+        return;
+    }
+    if (e.target.id == 'passwordloginvisibility' || e.target.closest('#passwordloginvisibility')) {
+        const toggleBtn = e.target.closest('#passwordloginvisibility') || e.target;
+        const passBox = document.getElementById('passwordloginbox');
+        if (passBox) {
+            if (toggleBtn.dataset.visible == 'true') {
+                toggleBtn.dataset.visible = 'false';
+                toggleBtn.setHTML(`<img src="../images/misc_icons/invisible.png" width="24" height="24">`, {sanitizer: sanitizer});
+                passBox.type = 'password';
+            } else {
+                toggleBtn.dataset.visible = 'true';
+                toggleBtn.setHTML(`<img src="../images/misc_icons/visible.png" width="24" height="24">`, {sanitizer: sanitizer});
+                passBox.type = 'text';
+            }
+        }
+        return;
+    }
+    if (e.target.className == 'addaccpassword') {
+        const username = document.getElementById('usernameloginbox')?.value.trim();
+        const password = document.getElementById('passwordloginbox')?.value;
+        const errorContainer = document.getElementById('passwordloginerror');
+        const submitBtn = e.target;
+
+        if (errorContainer) {
+            errorContainer.replaceChildren();
+        }
+
+        if (!username || !password) {
+            if (errorContainer) {
+                errorContainer.replaceChildren(MiniError('failure', 'Please enter both a username and password.'));
+            } else {
+                openErrorPopup('Please enter both a username and password.');
+            }
+            return;
+        }
+
+        if (submitBtn) {
+            submitBtn.textContent = 'Logging in...';
+            submitBtn.disabled = true;
+        }
+
+        try {
+            const response = await fetch(`https://api.rotur.dev/get_user?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`);
+
+            if (response.status === 403 || response.status === 401) {
+                if (submitBtn) {
+                    submitBtn.textContent = 'Login';
+                    submitBtn.disabled = false;
+                }
+                if (errorContainer) {
+                    errorContainer.replaceChildren(MiniError('failure', 'Username or password incorrect.'));
+                }
+                return;
+            }
+
+            if (response.status === 502) {
+                closePopup();
+                openLoginFailedPopup("Rotur is down right now. Please try again later.");
+                return;
+            }
+
+            if (response.status === 200) {
+                let data;
+                try {
+                    data = await response.json();
+                } catch {
+                    closePopup();
+                    openLoginFailedPopup("Rotur is down right now. Please try again later.");
+                    return;
+                }
+
+                closePopup();
+
+                const token = data.key;
+                if (!token) {
+                    openErrorPopup("Invalid response from server (missing token key).");
+                    return;
+                }
+
+                if (data['sys.banned']) {
+                    openErrorPopup("This account appears to be banned.");
+                    return;
+                }
+
+                let accUsername = data.username || username;
+                let uuid = data['sys.id'] || data.id;
+
+                if (!uuid) {
+                    try {
+                        const userdata2 = await fetch(`https://api.rotur.dev/profile?name=${encodeURIComponent(accUsername)}`).then(res => res.json());
+                        uuid = userdata2.id;
+                    } catch {
+                        uuid = accUsername;
+                    }
+                }
+
+                if (data['sys.tos_accepted'] === false) {
+                    openWarningPopup('While your credentials were valid, the account has not accepted the TOS yet. The account was successfully added, but it may have limited access to some apps until the TOS is accepted.');
+                }
+
+                const exist_index = accounts.findIndex(item => item.uuid == uuid || item.name.toLowerCase() == accUsername.toLowerCase());
+                const accountObj = { name: accUsername, token: token, uuid: uuid };
+
+                if (exist_index > -1) {
+                    accounts[exist_index] = accountObj;
+                } else {
+                    accounts.push(accountObj);
+                    document.querySelector('.selectacctext').textContent = `Select Active Account - ${accounts.length}`;
+                }
+
+                if (flagged.includes(uuid)) {
+                    flagged = flagged.filter(id => id != uuid);
+                    await chrome.storage.local.set({ flagged: flagged });
+                }
+
+                activeacc = accountObj;
+                await chrome.storage.local.set({ userdata: accounts });
+                await chrome.storage.local.set({ activeacc: accountObj });
+                chrome.storage.session.remove('sum_cache');
+                updateHeaderName(accUsername);
+                document.getElementById('accsearchbar').value = '';
+                buildlist();
+
+                if (token.startsWith('rotur_st_')) {
+                    openWarningPopup("You have granted Rotur Assistant a sub-token. Since Rotur Assistant was designed around the main token, some parts of Rotur Assistant may not work correctly with a sub-token.");
+                }
+            } else if (response.status >= 500) {
+                closePopup();
+                openLoginFailedPopup("Rotur is down right now. Please try again later.");
+            } else {
+                if (submitBtn) {
+                    submitBtn.textContent = 'Login';
+                    submitBtn.disabled = false;
+                }
+                if (errorContainer) {
+                    errorContainer.replaceChildren(MiniError('failure', `An unexpected error occurred during login (${response.status}).`));
+                } else {
+                    closePopup();
+                    openErrorPopup(`An unexpected error occurred during login (${response.status}).`);
+                }
+            }
+        } catch (err) {
+            console.error("Login fetch error:", err);
+            closePopup();
+            openLoginFailedPopup("Rotur is down right now. Please try again later.");
+        }
+        return;
     }
     if (e.target.className == 'addacctoken') {
         const token = document.getElementById('tokenloginbox').value
@@ -501,7 +719,7 @@ document.addEventListener('click', async function(e) {
             } else {
                 let uuid = ''
                 if (!potentialuser['sys.tos_accepted']) {
-                    let userdata2 = await fetch(`https://api.rotur.dev/profile?name=${potentialuser.username}`).then(res => res.json()).catch(err => {
+                    let userdata2 = await fetch(`https://api.rotur.dev/profile?name=${potentialuser.username}`, {headers: authform}).then(res => res.json()).catch(err => {
                         openErrorPopup("An unexpected error occurred. Either the token you provided was invalid, or Rotur's authentication servers aren currently down right now.")
                     })
                     uuid = userdata2.id
@@ -539,7 +757,9 @@ document.addEventListener('click', async function(e) {
         return;
     }
     if (e.target.id == 'reauth') {
-        this.location.href = "auth.html"
+        closePopup();
+        openPasswordLoginPopup();
+        document.getElementById("usernameloginbox").value = e.target.dataset.name
         return;
     }
     if (e.target.id == 'exportroster') {
@@ -608,7 +828,7 @@ document.addEventListener('click', async function(e) {
         }
         if ((document.getElementById('account_list').querySelector('form').childElementCount == 0) && (accounts.length > 0) && document.getElementById('accsearchbar').value) {
             const addacc = document.createElement('a')
-            addacc.href = "/pages/auth.html"
+            addacc.href = "#"
             addacc.className = 'addaccbtn'
             addacc.textContent = '+ Add Account'
             addacc.title = "Shift-click to login directly with a Rotur token instead"
@@ -628,7 +848,15 @@ document.addEventListener('click', async function(e) {
     }
     if (e.target.className == 'accwarning') {
         e.preventDefault();
-        openAuthErrorPopup(e.target.dataset.id)
+        if (e.shiftKey) {
+            flagged = flagged.filter(cleared => (cleared != e.target.dataset.id))
+            chrome.storage.local.set({flagged: flagged})
+            e.target.className = 'editprofile'
+            e.target.querySelector('img').src = `../images/misc_icons/edit.png`
+            openWarningPopup('This account is no longer flagged as needing reauthentication. If you believe this account was flagged as needing reauthentication by mistake due to a bug or a suddenly outdated Rotur API, please let the developer of Rotur Assistant know.')
+        } else {
+            openAuthErrorPopup(e.target.dataset.name, e.target.dataset.id)
+        }
         return;
     }
     if (e.target.id == 'switchaccbtn') {
@@ -645,11 +873,13 @@ document.addEventListener('click', async function(e) {
                 await chrome.cookies.remove({url: 'https://authenticator.rotur.dev', name: 'auth_token'})
                 await chrome.cookies.remove({url: 'https://authenticator.rotur.dev', name: 'username'})
             }
-            if (tabs[0].url.includes('https://warp.mistium.com')) {
+            if (tabs[0].url.includes('https://warp.mistium.com') || tabs[0].url.includes('https://mistwarp.org')) {
                 await chrome.cookies.remove({url: 'https://warp.mistium.com', name: 'auth_token'})
                 await chrome.cookies.remove({url: 'https://warp.mistium.com', name: 'cf_clearance'})
+                await chrome.cookies.remove({url: 'https://mistwarp.org', name: 'auth_token'})
+                await chrome.cookies.remove({url: 'https://mistwarp.org', name: 'cf_clearance'})
             }
-            chrome.tabs.sendMessage(tabs[0].id, { action: "switchacc", data: activeacc.token, datauser: activeacc.name });
+            chrome.tabs.sendMessage(tabs[0].id, { action: "switchacc", data: activeacc.token, datauser: activeacc.name, dataid: activeacc.uuid });
         });
         return;
     }
@@ -829,3 +1059,25 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     }
     return true;
 })
+
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('action') === 'login') {
+    window.history.replaceState({}, document.title, window.location.pathname);
+    openPasswordLoginPopup();
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        const passBox = document.getElementById('passwordloginbox');
+        const userBox = document.getElementById('usernameloginbox');
+        if ((document.activeElement === passBox || document.activeElement === userBox) && document.querySelector('.addaccpassword')) {
+            e.preventDefault();
+            document.querySelector('.addaccpassword').click();
+        }
+        const tokenBox = document.getElementById('tokenloginbox');
+        if (document.activeElement === tokenBox && document.querySelector('.addacctoken')) {
+            e.preventDefault();
+            document.querySelector('.addacctoken').click();
+        }
+    }
+});

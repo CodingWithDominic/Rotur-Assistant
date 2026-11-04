@@ -40,6 +40,21 @@ function openSystemPopup(system_name, owner) {
     `, {sanitizer: sanitizer})
 }
 
+function openEmailPopup(email) {
+    document.getElementById('overlay').style.display = 'flex';
+    document.getElementsByClassName('popup')[0].setHTML(`
+        <div id="popup-header">
+            <h1>Confirm new E-mail</h1>
+            <button id="popup-x" class="closebtn">✕</button>
+        </div>
+        <p id="deleteconfirmdialogue">Change your e-mail to ${email}? Do note that once you change your e-mail, you will be locked out of your Rotur account until you verify the new e-mail. If you don't have access to the e-mail, or the e-mail is non-existent, then you may have to contact Mistium for help in regaining access to your Rotur account. Rotur Assistant nor its developer(s) will not be held responsible for you losing access to your account this way.</p>
+        <div id="popup-choices">
+            <button id="cancel" class="closebtn">Cancel</button>
+            <button class="finalemailconfirm" data-keyname='email'>Confirm</button>
+        </div>
+    `, {sanitizer: sanitizer})
+}
+
 function closePopup() {
     document.getElementById('overlay').style.display = 'none';
     if (tosrecentlyaccepted) {
@@ -48,8 +63,8 @@ function closePopup() {
     }
 }
 
-const read_only_keys = ["discord_id", "key", "created", "max_size", "last_login"] // Non-sys keys that are still read-only
-const main_keys = ["bio", "pfp", "system", "pronouns", "private", "email", "username", "phone", "display_name", "banner", "banners", 'theme']
+const read_only_keys = ["discord_id", "key", "created", "max_size", "last_login", "background", "profile_video", "email"] // Non-sys keys that are still read-only
+const main_keys = ["bio", "pfp", "system", "pronouns", "private", "username", "phone", "display_name", "banner", "banners", 'theme']
 const exempt_main_keys = ["theme", "private"] // Main keys that will still be checked for a JSON-friendly value
 
 let key_names = []
@@ -231,23 +246,13 @@ async function renderKeys() {
             <h1>Key Manager (Account)</h1>
             <p>This page is for managing account keys. For the page that manages keys associated with purchases / subscriptions, see <a href="../pages/keymanager_eco.html">Key Manager (Economy)</a></p>
             <hr class="full-size">
-            <div id='toscontainer'>
-                <h4>The Rotur TOS was updated since your last visit. As a result, accounts can't access or perform certain actions until they accept the TOS again. Accept the new terms?</h4>
-                <button id='accepttos'>Accept Terms</button>
-                ${accounts.length > 1 ? `
-                <label id='tosbulkaccept'>
-                    <input type='checkbox' id='bulkacceptoption'>
-                    Accept TOS on all added accounts
-                </label>` : ``}
-                <div id='tosiframeplaceholder'></div>
-                <a href='https://rotur.dev/terms-of-service' target='_blank' rel='noopener noreferrer'>Rotur Terms of Service</a>
-            </div>
+            <h4>The Rotur TOS was updated since your last visit. As a result, accounts can't access or perform certain actions until they accept the TOS again. Log onto <a href='https://rotur.dev/' target='_blank' rel='noopener noreferrer'>rotur.dev</a> using your current account and accept the terms on there.</h4>
         `, {sanitizer: sanitizer})
         return;
     }
 
     key_names = Object.keys(accdata)
-    systemcache = await fetch(`https://api.rotur.dev/systems`).then(res => res.json())
+    systemcache = await fetch(`https://api.rotur.dev/v2/systems`).then(res => res.json())
     document.getElementById('mainkeys').replaceChildren()
     document.getElementById('readonlykeys').replaceChildren()
     document.getElementById('sys_keys').replaceChildren()
@@ -389,6 +394,8 @@ document.addEventListener('click', async function(e) {
             error_element.replaceChildren(MiniError('failure', `Key name can't begin with "sys."`))
         } else if (keyname.toLowerCase() == "banner" || keyname.toLowerCase() == "banners") {
             error_element.replaceChildren(MiniError('failure', `Setting this key would normally cost you 10 credits. Try changing your banner through the account manager's profile editor instead.`))
+        } else if (keyname.toLowerCase() == "email") {
+            error_element.replaceChildren(MiniError('failure', `For security reasons, it is recommended to set or change your e-mail on rotur.dev instead.`))
         } else if (keyname.toLowerCase() == "password") {
             error_element.replaceChildren(MiniError('failure', `To prevent issues with future logins, try changing your password through the profile editor instead.`))
         } else {
@@ -419,8 +426,10 @@ document.addEventListener('click', async function(e) {
     if (e.target.id == "reloadkeys") {
         const target = e.target
         target.textContent = '...'
+        target.disabled = true
         await renderKeys()
         target.textContent = '⟳'
+        target.disabled = false
         return;
     }
     if (["keynamecopy", "keyvaluecopy", "keysave", "keydelete", "finaldelete", "finalsystemconfirm"].includes(e.target.className)) {
@@ -470,16 +479,19 @@ document.addEventListener('click', async function(e) {
             setTimeout(function() { error_element.replaceChildren() }, 10000)
             return;     
         }
-        if (e.target.className == 'keysave' || e.target.className == 'finalsystemconfirm') {
+        if (e.target.className == 'keysave' || e.target.className == 'finalsystemconfirm' || e.target.className == 'finalemailconfirm') {
             if (e.target.className == 'finalsystemconfirm') {
                 closePopup();
             }
             if (keyname == 'system' && e.target.className == 'keysave') {
                 openSystemPopup(keyvalue, systemcache[keyvalue].owner.name)
-            } else if (keyname == 'banner' || keyname == 'banners') {
-                error_element.replaceChildren(MiniError('failure', `Setting this key would normally cost you 10 credits. Try changing your banner through the account manager's profile editor instead.`))
+            } else if (keyname == 'email' && e.target.className == 'keysave') {
+                openEmailPopup(keyvalue)
+            } 
+            else if (keyname == 'banner' || keyname == 'banners') {
+                error_element.replaceChildren(MiniError('failure', `Setting this key would normally cost you 30 credits. Try changing your banner through the account manager's profile editor instead.`))
             } else if (keyname == 'password') {
-                error_element.replaceChildren(MiniError('failure', `o prevent issues with future logins, try changing your password through the profile editor instead.`))
+                error_element.replaceChildren(MiniError('failure', `To prevent issues with future logins, try changing your password through the profile editor instead.`))
             } else {
                 const keyupdate = await fetch(`https://api.rotur.dev/users`,
                     {method: 'PATCH', body: JSON.stringify({auth: activeacc.token, key: keyname, value: keyvalue})}).then(res => res.json())

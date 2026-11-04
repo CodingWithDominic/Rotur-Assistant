@@ -32,24 +32,40 @@
                 <button id="giftsearchbtn" type="submit" title="Search Gift"><img src='../images/app_icons/lookup.png' width="16" height="16"></button>
             </form>
             <div id="giftlookupplaceholder"></div>
-            <h2 id="giftmanagerheader">Manage Existing Gifts</h2>
-            <h3>Filter by</h3>
-            <form class="giftfilter">
-                <label>
-                    <input type="radio" id="all" name="giftfilter" checked>
-                    All
-                </label>
-                <label>
-                    <input type="radio" id="claimed" name="giftfilter">
-                    Claimed
-                </label>
-                <label>
-                    <input type="radio" id="unclaimed" name="giftfilter">
-                    Unclaimed
+            <div class="tabheader">
+                <button id='mygiftstab' class="tab">Gifts I created</button>
+                <button id='claimedgiftstab' class="tab">Gifts I Claimed</button>
+            </div>
+            <div id="mygifts">
+                <h2 id="giftmanagerheader" style="margin: 4px;">Manage Existing Gifts</h2>
+                <label id="giftsortlabel">
+                    Filter by: 
+                    <select id="giftsortselect">
+                        <option value="all" selected>All</option>
+                        <option value="claimed">Claimed</option>
+                        <option value="unclaimed">Unclaimed</option>
+                    </select>
                 </label>
                 <button id="giftreload" title="Refresh Gifts">⟳</button>
-            </form>
-            <div id="giftsplaceholder"></div>
+                <div id="giftsplaceholder" style="margin-top: 5px;"></div>
+            </div>
+            <div id="claimedgifts" style="display: none;">
+                <h2 id="claimedgiftheader" style="margin-bottom: 4px;">Gifts You Claimed</h2>
+                <p id="giftincome" style="margin: 4px;">Total income from gifts: 0 RC</p>
+                <label id="claimedsortlabel">
+                    Sort by: 
+                    <select id="claimedsortselect">
+                        <option value="newest" selected>Claimed - Newest to Oldest</option>
+                        <option value="oldest">Claimed - Oldest to Newest</option>
+                        <option value="creatednewest">Created - Newest to Oldest</option>
+                        <option value="createdoldest">Created - Oldest to Newest</option>
+                        <option value="low">Amount - Lowest to Highest</option>
+                        <option value="high">Amount - Highest to Lowest</option>
+                    </select>
+                </label>
+                <button id="giftreload2" title="Refresh Gifts">⟳</button>
+                <div id="claimedgiftsplaceholder" style="margin-top: 5px;"></div>
+            </div>
         </div>
         <div class="overlay" id="overlay">
             <div class="popup">
@@ -87,6 +103,20 @@
                     <button class="revoke" data-giftid='giftcode' data-giftamt='1'>Revoke Gift</button>
                 </div>
                 <div id='giftrevokestatus_giftcode' class="giftcardrevokestatus"></div>
+            </li>
+        </template>
+        <template id="claimedgiftcardtemplate">
+            <li>
+                <h2 class="gifttitle">Gift created on Date</h2>
+                <p class='creator_user'>Created by: <a class='giftcreatorhreflink' href="lookup.html?user=Creator" style="text-decoration: none;"><img src='https://avatars.rotur.dev/Creator' width="24" height="24"> Creator</a></p>
+                <p class="giftamount">Amount: 1 RC</p>
+                <p class='giftnote'>Note: Optional</p>
+                <p class="giftexpirationdate">Expires: ???</p>
+                <p class="giftcode">Code: 321</p>
+                <p class="giftid">ID: 123</p>
+                <p class="giftfineprint">*The code, not the ID, is what appears in gift URLs, and what the claiming API looks for when it receives a request to claim a gift.</p>
+                <p class='claim_user'>Claimed by: <a class='giftclaimhreflink' href="lookup.html?user=Claimer" style="text-decoration: none;"><img src='https://avatars.rotur.dev/Claimer' width="24" height="24"> Claimer</a></p>
+                <p class="claimdate">Claimed on: May the 5th</p>
             </li>
         </template>
         <template id="giftlookuptemplate">

@@ -67,11 +67,12 @@ export function openErrorPopup(error) {
             <h1>Error</h1>
             <button id="popup-x" class="closebtn">✕</button>
         </div>
-        <p id="popupdialogue">${sanitize(error)}</p>
+        <p id="popupdialogue">An error has occurred</p>
         <div id="popup-choices">
             <button id="cancel" class="closebtn">OK</button>
         </div>
     `, {sanitizer: indexsanitizer})
+    document.getElementById('popupdialogue').innerText = error
 }
 export function openSuccessPopup(msg) {
     document.getElementById('overlay').style.display = 'flex';
@@ -189,11 +190,11 @@ export async function UploadImage(imagedata, cdnoverride, rawdata) {
                 break;
             }
             case ('mistiums3'): {
-                const randkey = `RA_${Date.now()}`
-                const validator = await fetch(`https://api.rotur.dev/generate_validator?key=originChats-${randkey}`, {headers: authform}).then(res => res.json())
+                const randkey = `originChats-https://chats.mistium.com-RA_${Date.now()}`
+                const validator = await fetch(`https://api.rotur.dev/generate_validator?key=${encodeURIComponent(randkey)}`, {headers: authform}).then(res => res.json())
                 const json = {
                     validator: validator.validator,
-                    validator_key: `originChats-${randkey}`,
+                    validator_key: randkey,
                     file: imagedata,
                     name: imagedata.name,
                     mime_type: imagedata.type,

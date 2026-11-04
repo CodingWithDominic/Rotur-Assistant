@@ -13,30 +13,38 @@
     <body>
         <header id="header-placeholder"></header>
         <script src="../header.js"></script>
-        <div class="container">
+        <div class="container" style="max-width: 1200px;">
             <h1>ICN Editor</h1>
             <p>View, edit, and manage ICN files here.</p>
             <hr class="full-size">
-            <div class="tabheader">
-                <button id='icneditortab' class="tab">Editor</button>
-                <button id='icnsettingstab' class="tab">Settings</button>
-                <button id='icndocstab' class="tab">Docs</button>
+            <div style="width: 100%; display: flex; flex-direction: row; justify-content: center;">
+                <div class="tabheader" style="width: 100%; max-width: 600px; display: flex; flex-direction: row;">
+                    <button id='icneditortab' class="tab">Editor</button>
+                    <button id='icnsettingstab' class="tab">Settings</button>
+                    <button id='icndocstab' class="tab">Docs</button>
+                </div>
             </div>
             <div id="icneditor">
-                <div id="icneditorcontrolbar">
-                    <button id="icn_linebyline">Line-by-line</button>
-                    <button id="icn_oneline">One-line</button>
-                    <button id="icn_import">Import</button>
-                    <button id="icn_export">Export</button>
-                    <input type="file" id="icnimportbtn" style="display: none;" accept=".icn, application/icn, .txt, data/txt">
+                <div id="icneditorlayout">
+                    <div id="icnsect1" style="width: 100%; max-width: 640px; align-self: center;">
+                        <div id="icneditorcontrolbar">
+                            <button id="icn_linebyline">Line-by-line</button>
+                            <button id="icn_oneline">One-line</button>
+                            <button id="icn_import">Import</button>
+                            <button id="icn_export">Export</button>
+                            <input type="file" id="icnimportbtn" style="display: none;" accept=".icn, application/icn, .txt, data/txt">
+                        </div>
+                        <textarea id="icn_field" placeholder="ICN goes here..." spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+                        <button id="rendericn">Render</button>
+                    </div>
+                    <hr class="full-size dotted_separator">
+                    <div id="icnsect2">
+                        <canvas id="icn_canvas" width="370" height="370">
+                            If you see this, then unfortunately, the browser you are currently using does not support the HTML Canvas API. Rotur Assistant handles its ICN rendering using the HTML Canvas API.
+                        </canvas>
+                        <button id="resetcamera">Reset Camera</button>
+                    </div>
                 </div>
-                <textarea id="icn_field" placeholder="ICN goes here..." spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
-                <button id="rendericn">Render</button>
-                <hr class="full-size dotted_separator">
-                <canvas id="icn_canvas" width="370" height="370">
-                    If you see this, then unfortunately, the browser you are currently using does not support the HTML Canvas API. Rotur Assistant handles its ICN rendering using the HTML Canvas API.
-                </canvas>
-                <button id="resetcamera">Reset Camera</button>
             </div>
             <div id="icnsettings" style="display: none">
                 <form id="canvasbgsettings">
@@ -69,9 +77,17 @@
                     <span id="gridslidervalue">10</span>
                 </label>
                 <hr>
-                <label>
-                    <input type="checkbox" id="specialcommands" title="Allow rendering of ICN commands that only work within Rotur Assistant.">
+                <label  title="Allow rendering of ICN commands that only work within Rotur Assistant.">
+                    <input type="checkbox" id="specialcommands">
                     Allow exclusive commands
+                </label>
+                <label title="Re-render the canvas every time the text field updates.">
+                    <input type="checkbox" id="realtimerendering">
+                    Render in real time
+                </label>
+                <label title="If you leave the ICN editor and/or close Rotur Assistant, then what you had before will be preserved for the next time you open the ICN editor.">
+                    <input type="checkbox" id="preservesession">
+                    Remember last session
                 </label>
             </div>
             <div id="icndocs" style="display: none">

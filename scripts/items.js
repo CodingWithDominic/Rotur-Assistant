@@ -46,7 +46,7 @@ function openDeletePopup(itemname) {
             <h1>Delete Item</h1>
             <button id="popup-x" class="closebtn">✕</button>
         </div>
-        <p id="deleteconfirmdialogue">Really delete this item?</p>
+        <p id="deleteconfirmdialogue">Really delete this item? Do note that since the item marketplace is closed, it will be impossible to re-create this item if you change your mind.</p>
         <div id="popup-choices">
             <button id="cancel" class="closebtn">No</button>
             <button class="finaldelete" data-itemname='${sanitize(itemname)}'>Yes</button>
@@ -77,8 +77,8 @@ function openConfirmPurchasePopup(senderdata, recipientdata, amt, itemname) {
             <button id="popup-x" class="closebtn">✕</button>
         </div>
         <p>Confirm purchase of the item ${itemname}?</p>
-        <p>Your Balance: ${senderdata.currency} -> ${FixDecimal(senderdata.currency - amt)}</p>
-        <p>${recipientdata.username}'s Balance: ${recipientdata.currency} -> ${FixDecimal(recipientdata.currency + amt)}</p>
+        <p>Your Balance: ${senderdata.currency ?? 0} -> ${FixDecimal((senderdata.currency ?? 0) - amt)}</p>
+        <p>${recipientdata.username}'s Balance: ${(recipientdata.currency ?? 0)} -> ${FixDecimal((recipientdata.currency ?? 0) + amt)}</p>
         <div id="popup-choices">
             <button id="cancel" class="closebtn">Cancel</button>
             <button class="finalitempurchase" data-itemname="${sanitize(itemname)}">Buy</button>
@@ -234,7 +234,7 @@ async function getSellingItems(filter) {
         buybtn.dataset.owner = item.owner
         buybtn.dataset.amt = item.price
         buybtn.textContent = `Buy (${item.price} RC)`
-        buybtn.disabled = ((!item.selling) || item.owner == activeacc.name)
+        buybtn.disabled = true
 
         roturitem.querySelector('.transferhistory').replaceChildren(...formatTransferHistory(item.transfer_history))
         item_html.push(roturitem)
@@ -253,13 +253,13 @@ if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
         createbtn.textContent = "Creating..."
         e.preventDefault()
         if (document.getElementById('createitemname').value == '') {
-            createbtn.disabled = false
+            createbtn.disabled = true
             createbtn.textContent = "Create Item"
             openErrorPopup('Please enter a valid name.')
             return;
         }
         if (document.getElementById('createitemprice').value == '' || isNaN(parseInt(document.getElementById('createitemprice').value))) {
-            createbtn.disabled = false
+            createbtn.disabled = true
             createbtn.textContent = "Create Item"
             openErrorPopup('Please enter a valid price.')
             return;
@@ -269,7 +269,7 @@ if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
             try {
                 jsondata = JSON.parse(document.getElementById('itemjsonmetadata').value)
             } catch {
-                createbtn.disabled = false
+                createbtn.disabled = true
                 createbtn.textContent = "Create Item"
                 openErrorPopup('The JSON in the metadata field is not valid JSON.')
                 return;
@@ -287,7 +287,7 @@ if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
 
         if (itemcreatesuccess.error) {
             openErrorPopup(itemcreatesuccess.error)
-            createbtn.disabled = false
+            createbtn.disabled = true
             createbtn.textContent = "Create Item"
             return;
         } else {
@@ -295,7 +295,7 @@ if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
             getItems(activeacc.name)
         }
         this.reset()
-        createbtn.disabled = false
+        createbtn.disabled = true
         createbtn.textContent = "Create Item"
     })
 
@@ -331,7 +331,7 @@ if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
             buybtn.dataset.owner = itemquery.owner
             buybtn.dataset.amt = itemquery.price
             buybtn.textContent = `Buy (${itemquery.price} RC)`
-            buybtn.disabled = ((!itemquery.selling) || itemquery.owner == activeacc.name)
+            buybtn.disabled = true
 
             roturitem.querySelector('.transferhistory').replaceChildren(...formatTransferHistory(itemquery.transfer_history))
             document.getElementById('itemlookupplaceholder').replaceChildren(roturitem)
@@ -415,10 +415,10 @@ document.addEventListener('click', async function(e) {
     }
     if (e.target.className == 'buyitem') {
         const target = e.target
-        const userdata = await fetch(`https://api.rotur.dev/profile?name=${target.dataset.owner}`).then(res => res.json())
-        const yourdata = await fetch(`https://api.rotur.dev/profile?name=${activeacc.name}`).then(res => res.json())
+        const userdata = await fetch(`https://api.rotur.dev/profile?name=${target.dataset.owner}`, {headers: authform}).then(res => res.json())
+        const yourdata = await fetch(`https://api.rotur.dev/profile?name=${activeacc.name}`, {headers: authform}).then(res => res.json())
         if (yourdata.currency < parseFloat(target.dataset.amt)) {
-            openErrorPopup(`Insufficient Funds (${yourdata.currency} < ${target.dataset.amt})`)
+            openErrorPopup(`Insufficient Funds (${yourdata.currency ?? 0} < ${target.dataset.amt})`)
         } else {
             openConfirmPurchasePopup(yourdata, userdata, parseFloat(target.dataset.amt), target.dataset.itemname)
         }

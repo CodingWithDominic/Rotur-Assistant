@@ -50,9 +50,7 @@
                         Don't show status icons on profiles
                     </label>
                     <hr class="full-size">
-                    <h3>Chat controls</h3>
-                    <p style="margin: 4px; margin-top: -3px;">For people who are frequent users of <a href="https://originchats.com/" target="_blank" rel="noopener noreferrer">OriginChats</a>. These options may require a page reload to fully take effect.</p>
-                    <hr class="full-size dotted_separator">
+                    <h3>Profile controls</h3>
                     <label>
                         <input type="checkbox" id="renderoverlays">
                         Don't render avatar overlays
@@ -61,6 +59,45 @@
                         <input type="checkbox" id="renderoverlaysglobal">
                         Also block overlay rendering outside of Rotur Assistant
                     </label>
+                    <!--
+                    <hr class="full-size dotted_separator">
+                    <h3>Profile Background</h3>
+                    -->
+                    <form class="profilecontrols" id="profilebg" style="display: none;">
+                        <label>
+                            <input type="radio" name="profilepreference1" value="none">
+                            None
+                        </label>
+                        <label>
+                            <input type="radio" name="profilepreference1" value="accent">
+                            Accent Color (if applicable)
+                        </label>
+                        <label>
+                            <input type="radio" name="profilepreference1" value="video">
+                            Video Background (if applicable)
+                        </label>
+                        <label>
+                            <input type="radio" name="profilepreference1" value="videoaccent">
+                            Video Background with Accent Color (if applicable)
+                        </label>
+                    </form>
+                    <div style="display: none;">
+                        <hr class="full-size dotted_separator">
+                        <h3>If no video background...</h3>
+                        <form class="profilecontrols" id="profilebg">
+                            <label>
+                                <input type="radio" name="profilepreference2" value="fallnone">
+                                None
+                            </label>
+                            <label title="Will fall back to no background if the user doesn't have an accent color as well">
+                                <input type="radio" name="profilepreference2" value="fallaccent">
+                                Accent Color (if applicable)
+                            </label>
+                        </form>
+                    </div>
+                    <hr class="full-size">
+                    <h3>Chat controls</h3>
+                    <p style="margin: 4px; margin-top: -3px;">For people who are frequent users of <a href="https://originchats.com/" target="_blank" rel="noopener noreferrer">OriginChats</a>. These options may require a page reload to fully take effect.</p>
                     <label title="Is the chat being chaotic? Enable this option to make things a little more bearable. A page refresh may be required for this setting to fully take effect. This may come with the side effect of making the GIFs service completely unusable.">
                         <input type="checkbox" id="blockgifs">
                         Block GIFs from https://gifs.originchats.com
@@ -74,9 +111,11 @@
                         Preferred CDN:
                         <select id="preferredcdnoptions">
                             <option name='cdnoption' value="roturcdn">RoturCDN</option>
+                            <!--
                             <option name='cdnoption' value="fluficdn">Flufi's CDN*</option>
+                            -->
                             <option name='cdnoption' value="mistiums3">Mistium's S3</option>
-                            <option name='cdnoption' value="ochost">OCHost</option>
+                            <option name='cdnoption' value="ochost">OCHost*</option>
                             <!-- The API for this became a lot more locked down before 1.2 hit production
                             <option name='cdnoption' value="roturphotos">Rotur Photos**</option>
                             -->
@@ -85,6 +124,7 @@
                     <span class="fineprint" id='fluficdnwarning' style="display: none; text-align: left;">*GIFs and transparent images may not work with this CDN (this CDN converts all uploaded images to jpegs).</span>
                     <span class="fineprint" id='roturphotoswarning' style="display: none; text-align: left;">**Unlike all the other CDNs listed, Rotur Photos has a limited capacity of 10 MB across all photos you upload to it. The developer of Rotur Assistant would recommend only using this as a last resort if none of the other listed CDNs aren't working.</span>
                     <span class="fineprint" id='mistiumwarning' style="display: none; text-align: left;">**Attachments sent via this CDN may disappear at random.</span>
+                    <span class="fineprint" id='ochostwarning' style="display: none; text-align: left;">*Attachments sent via this CDN expire after 1 hour. For a permanent alternative, use RoturCDN.</span>
                 </div>
                 <hr class="full-size">
                 <form id="popupsidebaroptions">
