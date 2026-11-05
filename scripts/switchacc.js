@@ -265,20 +265,6 @@ window.onload = async () => {
         }
         return;
     }
-    if (window.location.href.startsWith('https://rotur.dev/auth')) {
-        return;
-        try {
-            const acceptinprogress = await new Promise(resolve =>
-                chrome.storage.session.get('acceptinprogress', data => resolve(data.acceptinprogress || null))
-            ) ?? null;
-            if (acceptinprogress) {
-                chrome.runtime.sendMessage({status: 'accepted'})
-            }
-        } catch {
-            return;
-        }
-        return;
-    }
 }
 
 function updateToken(site, subspace, newToken) {
@@ -316,12 +302,7 @@ const rotursdk_sites = ["https://beam.rotur.dev", "https://place.rotur.dev", "ht
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     const url = window.location.href
     if (message.action === "switchacc") {
-        if (!message.data) {
-            console.error('To prevent risking corrupting login information, this action has been aborted.')
-            sendResponse({ result: "Action aborted" });
-            return;
-        }
-        if (!url) {
+        if (!url || !message.data) {
             console.error('To prevent risking corrupting login information, this action has been aborted.')
             sendResponse({ result: "Action aborted" });
             return;

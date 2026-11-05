@@ -190,7 +190,7 @@ async function getItems(user) {
     itemgroup.replaceChildren(...item_html)
     if (myitems.length == 0) {
         const h2 = document.createElement('h2')
-        h2.textContent = "You don't own any items yet. Try creating or buying one."
+        h2.textContent = "You don't own any items"
         document.getElementById('myitems').replaceChildren(h2)
     } else {
         document.getElementById('myitems').replaceChildren(itemgroup)

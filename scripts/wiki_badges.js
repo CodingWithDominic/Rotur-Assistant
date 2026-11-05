@@ -13,16 +13,19 @@ const flagged = await new Promise(resolve =>
     chrome.storage.local.get('flagged', data => resolve(data.flagged || []))
 ) ?? [];
 
-const maxcheck = await fetch(`https://api.rotur.dev/keys/check/${activeacc.name}?key=553bd50f0c390f09be9330a6b46bd6ae`).then(res => res.json())
-const already_maxed = maxcheck.owned ?? false
+const maxcheck = activeacc.uuid ? await fetch(`https://api.rotur.dev/profile?id=${activeacc.uuid}`, {headers: authform}).then(res => res.json()).catch(err => {return {}}) : {}
+const already_maxed = maxcheck?.badges?.some(badge => ((badge.id == 'keyholder') && (badge.level == 2))) ?? false
 
 if (!activeacc.uuid || flagged.includes(activeacc.uuid) || !navigator.onLine || already_maxed) {
     document.getElementById('freemaxkeyholderbadge').disabled = true
     if (already_maxed) {
         document.getElementById('freemaxkeyholderbadge').textContent = "Badge already maxed"
+    } else {
+        document.getElementById('freemaxkeyholderbadge').textContent = "Max out this badge now!"
     }
 } else {
     document.getElementById('freemaxkeyholderbadge').disabled = false
+    document.getElementById('freemaxkeyholderbadge').textContent = "Max out this badge now!"
 }
 
 document.getElementById('freemaxkeyholderbadge').addEventListener('click', async function(e) {
