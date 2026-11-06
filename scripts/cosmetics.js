@@ -462,7 +462,7 @@ document.addEventListener('click', async function(e) {
                     openErrorPopup('Loading...')
                     document.getElementById('popupdialogue').innerText = `Insufficient funds\nYour balance (${user_balance}) < Cosmetic price (${cosmetic_data.price})\nDifference: ${cosmetic_data.price - user_balance}`
                 } else {
-                    const creator = cosmetic_data.creator.toLowerCase() == 'mist' ? null : await fetch(`https://api.rotur.dev/profile?name=${cosmetic_data.creator}`).then(res => res.json())
+                    const creator = cosmetic_data.creator.toLowerCase() == 'mist' ? null : await fetch(`https://api.rotur.dev/profile?name=${cosmetic_data.creator}`, {headers: authform}).then(res => res.json())
                     const creatorbal = cosmetic_data.creator.toLowerCase() == 'mist' ? mistium_balance : creator.currency
                     OpenConfirmCosmeticPurchasePopup(cosmetic_data.name, cosmetic_data.id, cosmetic_data.price, cosmetic_data.creator_pct, cosmetic_data.creator, creatorbal)
                 }

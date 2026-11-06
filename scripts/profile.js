@@ -676,7 +676,7 @@ function renderClawFeed(feeddata) {
 }
 
 async function refreshClawFeed() {
-    const userdata = await fetch(`https://api.rotur.dev/profile?name=${userdata_cache.username}`).then(res => res.json())
+    const userdata = await fetch(`https://api.rotur.dev/profile?name=${userdata_cache.username}`, {headers: {"Authorization": `Bearer ${activeobject.token}`}}).then(res => res.json())
     document.getElementById('clawpostslist').replaceChildren(...renderClawFeed(userdata.posts))
 }
 
@@ -1165,7 +1165,7 @@ ${badges[i].description}`}`
         profile.querySelector('#discordidcontainer')?.remove()
     }
     if (altdata.owner) {
-        profile.querySelector('.subaccountnote').setHTML(`Sub-account of <a href="lookup.html?user=${altdata.owner}" style="text-decoration: none;"><img src="https://avatars.rotur.dev/${altdata.owner}" width=20 height=20 style="border-radius: 2px;"> ${altdata.owner}</a>`, {sanitizer: sanitizer})
+        profile.querySelector('.subaccountnote').setHTML(`Sub-account of <a href="lookup.html?user=${encodeURIComponent(altdata.owner)}" style="text-decoration: none;"><img src="https://avatars.rotur.dev/${encodeURIComponent(altdata.owner)}" width=20 height=20 style="border-radius: 2px;"> ${sanitize(altdata.owner)}</a>`, {sanitizer: sanitizer})
     } else {
         profile.querySelector('.subaccountnote').remove()
     }

@@ -19,7 +19,7 @@
                 <h1>Badges</h1>
                 <hr class="full-size">
                 <h2>Overview</h2>
-                <p>Badges are icons on your Rotur account that signifies a notable achievement, such as being on a certain system, having 10+ friends, or having 1,000+ credits. Badges are visible on many places that display users' Rotur profiles. While some badges, such as system badges, are automatically given out, there are a handful of badges that are manually given out by Mistium. Below is current list of known badges alongside how to get them. Some badges listed below are currently unobtainable.</p>
+                <p>Badges are icons on your Rotur account that signifies a notable achievement, such as being on a certain system, having 10+ friends, or having 200+ credits. Badges are visible on many places that display users' Rotur profiles. While some badges, such as system badges, are automatically given out, there are a handful of badges that are manually given out by Mistium. Below is current list of known badges alongside how to get them. Some badges listed below are currently unobtainable. For more up-to-date info on the badges, see <a href="https://rotur.dev/badges" target="_blank" rel="noopener noreferrer">https://rotur.dev/badges</a></p>
                 <h2>System Badges</h2>
                 <p>System badges are automatically given out upon being on a given system. Not all systems have badges. Rotur Assistant decided to fill in the blanks of some badgeless systems. The systems that currently come with badges are:</p>
                 <ul class="systembadgelist">
@@ -44,60 +44,91 @@
                     <li>- PassNet (<img src='../../images/badges/PassNet.png' width="16" height="16">)</li>
                 </ul>
                 <h2 class='badgeintitle'>Friendly (<img src='../../images/badges/friendly.png' width="22" height="22">)</h2>
-                <p>This user is automatically given out by to people who have 10 or more friends added on Rotur. This badge is a tiered badge, meaning this badge evolves based on the number of friends you have, with the thresholds being:
+                <p>This user is automatically given out by to people who have 10 or more friends added on Rotur. This badge is a tiered badge, meaning this badge evolves based on the number of friends you have, with the thresholds being:<br>
                     <br>- Tier 1: 10+
                     <br>- Tier 2: 50+
                 </p>
                 <h2 class='badgeintitle'>Rich (<img src='../../images/badges/rich.png' width="22" height="22">)</h2>
-                <p>This badge is automatically given out to people with 200 or more credits. This badge is a tiered badge, meaning this badge evolves based on the number of credits you have, with the thresholds being:
+                <p>This badge is automatically given out to people with 200 or more credits. This badge is a tiered badge, meaning this badge evolves based on the number of credits you have, with the thresholds being:<br>
                     <br>- Tier 1: 200+
                     <br>- Tier 2: 1,000+
                     <br>- Tier 3: 5,000+
                 </p>
                 <h2 class='badgeintitle'>Hoarder (<img src='../../images/badges/hoarder.png' width="22" height="22">)</h2>
-                <p>This badge is automatically given to people who own 5 or more cosmetics. This badge is a tiered badge, meaning this badge evolves based on the number of cosmetics you own, with the thresholds being:
+                <p>This badge is automatically given to people who own 5 or more cosmetics. This badge is a tiered badge, meaning this badge evolves based on the number of cosmetics you own, with the thresholds being:<br>
                     <br>- Tier 1: 5+
                     <br>- Tier 2: 30+
                     <br>- Tier 3: 100+
                     <br><br>It can be impossible to obtain higher tiers, since not that many cosmetics have released yet.
                 </p>
                 <h2 class='badgeintitle'>Keyholder (<img src='../../images/badges/keyholder.png' width="22" height="22">)</h2>
-                <p>This badge is automatically given to people who have purchased at least 1 <a href="../keymanager_eco.html">economy key</a>. This badge is a tiered badge, meaning this badge evolves based on the number of economy keys (each from different creators) you have purchased or are subscribed to, with the thresholds being:
+                <p>This badge is automatically given to people who have purchased at least 1 <a href="../keymanager_eco.html">economy key</a>. This badge is a tiered badge, meaning this badge evolves based on the number of economy keys (each from different creators) you have purchased or are subscribed to, with the thresholds being:<br>
                     <br>- Tier 1: 1+
                     <br>- Tier 2: 5+
                 </p>
                 <button id="freemaxkeyholderbadge" disabled>Loading badge info...</button>
                 <div id="keybadgesuccessplaceholder"></div>
                 <h2 class='badgeintitle'>Community Pillar (<img src='../../images/badges/community-pillar.png' width="22" height="22">)</h2>
-                <p>This badge is automatically given to people who owns a group with 5 or more established* members. This badge is a tiered badge, meaning this badge evolves based on the number of established* members in your group, with the thresholds being:
+                <p>This badge is automatically given to people who owns a group with 5 or more established* members. This badge is a tiered badge, meaning this badge evolves based on the number of established* members in your group, with the thresholds being:<br>
                     <br>- Tier 1: 5+
                     <br>- Tier 2: 25+
                     <br><br><span class="fineprint">*The definition of an "established" member is a member whose account is at least 10 days old and is email verified.</span>
                 </p>
                 <h2 class='badgeintitle'>Pioneer (<img src='../../images/badges/pioneer.png' width="22" height="22">)</h2>
-                <p>This badge is automatically given to people whose account index is &le; 1000. The tiers are:
+                <p>This badge is automatically given to people whose account index is &le; 1000. The tiers are:<br>
                     <br>- Tier 1: &le; 1000
                     <br>- Tier 2: &le; 500
                     <br>- Tier 3: &le; 100
                 </p>
                 <h2 class='badgeintitle'>Anniversary (<img src='../../images/badges/account-age.png' width="22" height="22">)</h2>
-                <p>This badge is automatically given to people whose accounts are at least 1 year old. The badge evolves 1 tier per year, at a maximum of 3 years for the final tier.</p>
+                <p>This badge is automatically given to people whose accounts are at least 1 year old. The badge evolves 1 tier per year, at a maximum of 10 years for the final tier.</p>
                 <h2 class='badgeintitle'>Subscription Badge (<img src='../../images/badges/membership.png' width="22" height="22">)</h2>
-                <p>This badge is automatically given out to people who have any form of Rotur subscription (Lite, Plus, Pro, Max).</p>
+                <p>This badge is automatically given out to people who have any form of Rotur subscription (Lite, Plus, Pro, Max). The tier of the badge is based on your subscription, with higher-tier subscriptions correlating to a higher-tier badge. As a side effect of this, it is impossible to obtain the final tier of this badge under normal conditions, as that requires a Rotur Max subscription, which is exclusive to <a href="../lookup.html?user=Mist">Mistium</a>.</p>
                 <h2 class='badgeintitle'>Subscription Milestone (<img src='../../images/badges/subscriber-tenure.png' width="22" height="22">)</h2>
-                <p>This badge is given to people who has had a paid subscription for a month or longer. Rotur Lite nor Rotur Max will not count for this badge.</p>
+                <p>This badge is given to people who has had a paid subscription for a month or longer. Rotur Lite nor Rotur Max will not count for this badge. This badge is a tiered badge, meaning this badge evolves the longer you have a paid Rotur subscription for. Unlike Discord with its Nitro and Server Boost badges, tier progress does not reset once you give up your Rotur sub. The tiers are:<br>
+                    <br>- Tier 1: 1+ months
+                    <br>- Tier 2: 6+ months
+                    <br>- Tier 3: 12+ months (1 year)
+                </p>
+                <h2 class='badgeintitle'>Inviter (<img src='../../images/badges/inviter.png' width="22" height="22">)</h2>
+                <p>This badge is given to users who successfully invite other users to Rotur using a special invite link, in the form of <code>https://rotur.dev/@yourname/join</code>. Any accounts that are created through an invite link get 1 week of Rotur Plus as a starter bonus. This badge is a tiered badge, meaning this badge evolves based on how many people sign up for Rotur through your link, with the thresholds being:<br>
+                    <br>- Tier 1: 1+
+                    <br>- Tier 2: 5+
+                    <br>- Tier 3: 10+
+                    <br>- Tier 4: 25+
+                    <br><br>Inviting more people will also grant you some exclusive cosmetics.
+                </p>
                 <section id="developersect">
                     <h2 class='badgeintitle'>Developer (<img src='../../images/badges/developer.png' width="22" height="22">)</h2>
-                    <p>This badge is for people who own a Rotur app with 10 or more distinct users. Not to be confused with the <a href="badges.html#devsect">Dev</a> badge, reserved for Rotur team members.</p>
+                    <p>This badge is for people who own a Rotur app with 10 or more distinct users. Not to be confused with the <a href="badges.html#devsect">Dev</a> badge, reserved for Rotur team members. This badge is a tiered badge, meaning this badge evolves based on how many people are users of your (most-used) app, with the thresholds being:<br>
+                        <br>- Tier 1: 10+
+                        <br>- Tier 2: 100+
+                        <br>- Tier 3: 1000+
+                    </p>
                 </section>
                 <h2 class='badgeintitle'>Starred (<img src='../../images/badges/stars.png' width="22" height="22">)</h2>
-                <p>This badge is given to people who own a roturGIT repository with 5 or more stars.</p>
+                <p>This badge is given to people who own a roturGIT repository with 5 or more stars. This badge is a tiered badge, meaning meaning this badge evolves the more stars your single most-starred repo has, with the thresholds being:<br>
+                    <br>- Tier 1: 5+
+                    <br>- Tier 2: 25+
+                    <br>- Tier 3: 100+
+                </p>
                 <h2 class='badgeintitle'>Architext (<img src='../../images/badges/Architext.png' width="22" height="22">)</h2>
-                <p>This badge is given to users who make a pull request on RoturGIT to any official Rotur product, or the API itself, and have it approved and merged. Until recently, this badge was manually given out. Now, this badge is given out based on your PRs to official Rotur projects on <a href="https://git.rotur.dev" target="_blank" rel="noopener noreferrer">RoturGIT</a>.</p>
+                <p>This badge is given to users who make a pull request on RoturGIT to any official Rotur product, or the API itself, and have it approved and merged. Until recently, this badge was manually given out. Now, this badge is given out based on your PRs to official Rotur projects on <a href="https://git.rotur.dev" target="_blank" rel="noopener noreferrer">RoturGIT</a>. This badge is a tiered badge, meaning this badge evolves based on the number of PRs you make, with the thresholds being:<br>
+                    <br>- Tier 1: 1+
+                    <br>- Tier 2: 5+
+                    <br>- Tier 3: 25+
+                </p>
                 <h2 class='badgeintitle'>Bugger (<img src='../../images/badges/Bugger.png' width="22" height="22">)</h2>
-                <p>This badge is given to users who successfully report a bug either related to Origin or Rotur, and have it patched. Since this badge is manually given out, you may have to notify Mistium if you want to claim this badge once you meet this condition. There are people who have met this condition, but don't yet have this badge.</p>
+                <p>This badge is given to users who successfully report a bug either related to Origin or Rotur, and have it patched. Since this badge is manually given out, you may have to notify Mistium if you want to claim this badge once you meet this condition. There are people who have met this condition, but don't yet have this badge. This badge is a tiered badge, meaning this badge evolves based on the number of bugs you successfully report and have fixed, with the thresholds being:<br>
+                    <br>- Tier 1: 1+
+                    <br>- Tier 2: 5+
+                </p>
                 <h2 class='badgeintitle'>Spark (<img src='../../images/badges/Spark.png' width="22" height="22">)</h2>
-                <p>This badge is given out to users who suggest a feature for Origin or Rotur and have it implemented. Since this badge is manually given out, you may have to notify Mistium if you want to claim this badge once you meet this condition. There are people who have met this condition, but don't yet have this badge.</p>
+                <p>This badge is given out to users who suggest a feature for Origin or Rotur and have it implemented. Since this badge is manually given out, you may have to notify Mistium if you want to claim this badge once you meet this condition. There are people who have met this condition, but don't yet have this badge. This badge is a tiered badge, meaning this badge evolves based on the number of features you suggest and have implemented, with the thresholds being:<br>
+                    <br>- Tier 1: 1+
+                    <br>- Tier 2: 5+
+                    <br>- Tier 3: 25+
+                </p>
                 <section id="devsect">
                     <h2 class='badgeintitle'>Dev (<img src='../../images/badges/dev.png' width="22" height="22">)</h2>
                     <p>This badge is given out to people who are part of the Rotur Dev team. The people who have this badge can be found on Rotur Assistant's <a href="rotur.html#roturteamsect">Rotur</a> wiki page (except for <a href='../lookup.html?user=ThatBeaverDev'>ThatBeaverDev</a> and <a href='../lookup.html?id=e87fbed5-934e-4b50-a0a4-083f2aa3a2aa'>Stormy</a>, unfortunately). Not to be confused with the <a href="badges.html#developersect">Developer</a> badge, reserved for owners of somewhat active apps (Apps with at least 10 associated users).</p>

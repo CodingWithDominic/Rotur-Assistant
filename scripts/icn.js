@@ -62,10 +62,6 @@ let isDragging = false;
 let startX = 0, startY = 0;
 let offsetX = 185, offsetY = 185;
 let scale = 5;
-let dragStartX = 0;
-let dragStartY = 0;
-let initialOffsetX = 0;
-let initialOffsetY = 0;
 let scrollLeft = 0, scrollTop = 0;
 
 const base_commands = ['w', 'c', 'scale', 'image', 'rect', 'square', 'dot', 'line', 'tri', 'cutcircle', 'curve', 'cont', 'move', 'ellipse', 'back']
@@ -579,6 +575,10 @@ document.addEventListener('click', async function(e) {
     if (e.target.id == 'preservesession') {
         icn_settings.preserve = e.target.checked
         chrome.storage.local.set({icn_settings: icn_settings})
+        if (icn_settings.preserve) {
+            icn_lastsession = document.getElementById('icn_field').value
+            chrome.storage.local.set({icn_lastsession: icn_lastsession})
+        }
         return;
     }
     if (e.target.id == 'icn_import') {

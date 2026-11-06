@@ -837,8 +837,8 @@ if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
         const user1 = document.getElementById('compareuser1').value || activeacc.name
         const user2 = document.getElementById('compareuser2').value || activeacc.name
 
-        const user1promise = fetch(`https://api.rotur.dev/profile?name=${user1}`).then(res => res.json())
-        const user2promise = (user1.toLowerCase() === user2.toLowerCase()) ? user1promise : fetch(`https://api.rotur.dev/profile?name=${user2}`).then(res => res.json()) // Slight optimization in case user 1 is the same as user 2. Just reuse user 1's data rather than doing the fetch again
+        const user1promise = fetch(`https://api.rotur.dev/profile?name=${user1}`, {headers: authform}).then(res => res.json())
+        const user2promise = (user1.toLowerCase() === user2.toLowerCase()) ? user1promise : fetch(`https://api.rotur.dev/profile?name=${user2}`, {headers: authform}).then(res => res.json()) // Slight optimization in case user 1 is the same as user 2. Just reuse user 1's data rather than doing the fetch again
         const statspromise = fetch('https://api.rotur.dev/v2/stats/economy').then(res => res.json())
 
         const [user1data, user2data, stats] = await Promise.all([user1promise, user2promise, statspromise])

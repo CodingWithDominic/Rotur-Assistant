@@ -124,7 +124,7 @@ function openPasswordLoginPopup() {
                 <button id="passwordloginvisibility"><img src="../images/misc_icons/invisible.png" width="24" height="24"></button>
             </div>
         </div>
-        <p>We plan on adding proper OAuth support in the future. <a href="https://rotur.dev/@Dominic/join" target="_blank" rel="noopener noreferrer">Click here to create an account instead</a></p>
+        <p>We plan on adding proper OAuth support in the future. <a href="https://rotur.dev/auth?signup=1&return_to=https%3A%2F%2Frotur.dev%2F%40Dominic&system=Rotur%20Assistant" target="_blank" rel="noopener noreferrer">Click here to create an account instead</a></p>
         <div id="passwordloginerror"></div>
         <div id="popup-choices">
             <button id="cancel" class="closebtn">Cancel</button>

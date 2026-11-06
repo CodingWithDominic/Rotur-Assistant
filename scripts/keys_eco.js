@@ -339,7 +339,7 @@ if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
         if (keydata.error) {
             document.getElementById('ecokeylookupstatusplaceholder').replaceChildren(MiniError('failure', keydata.error))
         } else {
-            const userinfo = await fetch(`https://api.rotur.dev/profile?name=${activeacc.name}&include_posts=0`).then(res => res.json())
+            const userinfo = await fetch(`https://api.rotur.dev/profile?name=${activeacc.name}&include_posts=0`, {headers: authform}).then(res => res.json())
             const usercurrency = (userinfo.currency ?? 0)
             document.getElementById('ecokeylookupplaceholder').style = 'border: 2px solid white; display: block;'
             const h2 = document.createElement('h2')

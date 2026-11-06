@@ -203,3 +203,39 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 - Made usernames in more places clickable (item owners and authors, economy key users, and cosmetic creators)
 - Changed the pixelated icons on the home page to better fit with the non-pixelated icons
 - And several more micro-optimizations
+
+### 1.2.4
+- Fixed several bugs regarding profiles with their <code>private</code> tag set to true now actually being private in the Rotur API.
+- Fixed a few bugs in the economy key manager, namely the incorrect price being displayed and the "Copy Webhook" option copying the placeholder text: "URL", instead of the actual URL
+- Fixed a layout issue regarding the scrollbar space overlapping the main page in popup mode
+- Rotur Assistant now has a dedicated website, courtesy of MiloDev123. The website can be found at <a href="https://roturassistant.com" target="_blank" rel="noopener noreferrer">https://roturassistant.com</a>
+- Fixed a bug where users with subscriptions in Claw would still see the standard 300-character limit on posts and replies
+- Users with subscriptions now see the discounted price in the cosmetics shop
+- "Equip Random Overlay" will now select from only the overlay cosmetics you own, rather than the entire pool of your owned cosmetics if you bought any non-overlay cosmetics.
+- Made the process of deleting accounts less annoying if you're deleting an account that's less than a day old. This is meant as a Quality-of-life change for those who create temporary test accounts when testing potentially dangerous features on a Rotur service.
+- Made revoked gifts actually show that they were revoked (before, there was no way to tell from the gifts json)
+- Gifts of subscriptions will actually show that they are subscription gifts rather than gifts of 0 RC.
+- Added a section in the gift manager to view gifts from others that you have claimed
+- Images in Rmails are now proxied through wsrv.nl, to get around people abusing [RAIMG] to create possible IP loggers
+- Since currency comparisons were shadow-removed in api.rotur.dev/v2/stats/economy, calculations are now done with each Rotur credit being calculated at fixed values of 4 cents each, or 3 pence each. These values came from what their rounded-off values were before the endpoint was pulled.
+- Replaced the iframe login with a popup, since iframe support was removed in favor of Oauth. I hope to add proper support for Oauth in the future, but it's easier said than done when your Rotur app is an extension, not a website. It has been suggested to move shop to Rotur's official SDK, but that would require a rewrite in too many places, so I'm holding off for now.
+- Fixed switcher support for the official OriginChats client as well as MistWarp.
+- When doing an account switch on Indigo, Rotur Assistant will now remember the previous state of the account you switched from (i.e. server list and indigo version), and restore that state when you switch back
+- Delisted FlufiCDN as a possible CDN option, since FlufiCDN converts everything into webp images, a file format Rotur does not like (tested when I tried uploading to Claw). I'm open to bringing FlufiCDN back once Rotur opens up to allowing webp images.
+- Fixed a bug where switching accounts on a supported OriginChats client would sometimes cause you to join servers your previous account was in
+- Added Discord ID to profiles, if the user is linked to a Discord account
+- Brought badges, alongside their respective wiki, up to speed.
+- Increased the size of badges on profiles by a factor of 1.5&times;
+- Re-added the Discord badge, now exclusive to Rotur Assistant
+- Since the standing history API was quietly removed (or made admin-only), the standing section on profiles has been replaced with the new Aura statistic, based on how many Claw likes and RoturForums upvotes you have.
+- Added an indicator below join dates on profiles on whether the account is a sub-account
+- Improved handling for cancelling access to standard economy keys.
+- In response to Mistium criticizing Rotur Assistant's ICN editor, saying "I shouldn't need to scroll to see the preview", the ICN editor will now change its layout to be a traditional split-screen layout (editor on the left, preview on the right) if the width of the viewport is wide enough.
+- Added an option to have the ICN preview update in real time while typing out ICN
+- Added an option to have the ICN editor remember your last session when you leave the ICN editor app and come back to it
+- (Mostly) deprecated the Item Manager app, since Rotur Items were suddenly phased out by Rotur themselves.
+- Paused the safeguards in the wallet app regarding claiming a daily credit while your balance was too high.
+- Added a counter to the History tab in the Wallet app, since history retention is now time-based, rather than being capped at 20 transactions. This was likely done to allow admins to more easily track where credits went, without someone just doing many back-and-forth transactions between an alt to cover their tracks.
+- Made the process of uploading or changing your banner more inline with the new system (one-time payment of 30 credits instead of 10 credits per change)
+- Disabled the ability to change your E-mail within Rotur Assistant, since the process now requires your Rotur password. Any attempt to do so will tell you to change it on <a href="https://rotur.dev/account" target="_blank" rel="noopener noreferrer">rotur.dev</a> instead.
+- Added an option on the donation page to split the donation with MiloDev123, in honor of him being the biggest external contributor and advocate for Rotur Assistant. He's the main reason I became motivated enough again to find time to pick up Rotur Assistant again and release this update, after setting aside the project for a while due to college and lack of motivation due to many breaking API changes with Rotur itself.

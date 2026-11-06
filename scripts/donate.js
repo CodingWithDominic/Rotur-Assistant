@@ -12,7 +12,6 @@ const config = {
     elements: ['p', 'img', 'div', 'h1', 'h2', 'h3', 'h4', 'button', 'ul', 'li', 'select', 'option', 'hr', 'a'],
     attributes: ['src', 'alt', 'href', 'width', 'height', 'id', 'class', 'data', 'value', 'title', 'disabled', 'style']
 }
-const authform = new FormData()
 const sanitizer = new Sanitizer(config)
 if (!navigator.onLine) {
     document.getElementsByClassName('container')[0].setHTML(`

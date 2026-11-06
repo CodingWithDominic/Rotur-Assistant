@@ -489,7 +489,7 @@ function renderClawFeed(feeddata) {
 }
 
 async function refreshClawFeed() {
-    const userdata = await fetch(`https://api.rotur.dev/profile?name=${userdata_cache.username}`).then(res => res.json())
+    const userdata = await fetch(`https://api.rotur.dev/profile?name=${userdata_cache.username}`, {headers: authform}).then(res => res.json())
     document.getElementById('clawpostslist').replaceChildren(...renderClawFeed(userdata.posts))
 }
 
@@ -904,7 +904,7 @@ ${badges[i].description}`}`
     profile.querySelector('#subinfo').textContent = (userdata.subscription || (is_banned ? "Expired" : "Unknown"))
     profile.querySelector('#accidx').textContent = userdata.index ?? "Unknown"
     profile.querySelector('#groupinfo').setHTML((userdata.group_tag ? `<a href="https://rotur.dev/groups/${sanitize(userdata.group_tag)}" target='_blank' rel='noopener noreferrer'>${sanitize(userdata.group_tag)}</a>` : 'None'), {sanitizer: sanitizer})
-    profile.querySelector('#standinginfo').textContent = userdata.aura ?? "Unknown"
+    profile.querySelector('#standinginfo').textContent = (is_banned ? "-999999999" : (userdata.aura ?? "Unknown"))
     profile.querySelector('#uuidinfo').textContent = id
     if (userdata.discord_id) {
         profile.querySelector('#discordidinfo').textContent = userdata.discord_id
@@ -912,7 +912,7 @@ ${badges[i].description}`}`
         profile.querySelector('#discordidcontainer')?.remove()
     }
     if (userdata.owner) {
-        profile.querySelector('.subaccountnote').setHTML(`Sub-account of <a href="lookup.html?user=${userdata.owner}" style="text-decoration: none;"><img src="https://avatars.rotur.dev/${userdata.owner}" width=20 height=20 style="border-radius: 2px;"> ${userdata.owner}</a>`, {sanitizer: sanitizer})
+        profile.querySelector('.subaccountnote').setHTML(`Sub-account of <a href="lookup.html?user=${encodeURIComponent(userdata.owner)}" style="text-decoration: none;"><img src="https://avatars.rotur.dev/${encodeURIComponent(userdata.owner)}" width=20 height=20 style="border-radius: 2px;"> ${sanitize(userdata.owner)}</a>`, {sanitizer: sanitizer})
     } else {
         profile.querySelector('.subaccountnote')?.remove()
     }
