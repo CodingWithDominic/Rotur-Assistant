@@ -615,8 +615,25 @@ td {
 #stats h2 {
     font-size: 20px;
 }
-#transactionreload, #statsreload {
-    width: 34px;
+#transactioncontrols {
+    position: absolute;
+    right: 0px;
+    top: -10px;
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+}
+#transactionreload, #transactiondelete {
+    width: 32px;
+    aspect-ratio: 1;
+    padding: 0;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+#statsreload {
+    width: 32px;
     aspect-ratio: 1;
     position: absolute;
     padding: 0;
@@ -624,12 +641,6 @@ td {
     display: flex;
     align-items: center;
     justify-content: center;
-}
-#transactionreload {
-    right: 0px;
-    top: -15px;
-}
-#statsreload {
     right: 0px;
     top: 0px;
 }
@@ -1655,7 +1666,7 @@ ul[class='followuserlist'] li a img{
     margin: 0px;
     margin-bottom: 3px;
 }
-#giftsplaceholder ul li:last-child #claimedgiftsplaceholder ul li:last-child {
+#giftsplaceholder ul li:last-child, #claimedgiftsplaceholder ul li:last-child {
     border-bottom: none;
 }
 p[class='claim_user'] {

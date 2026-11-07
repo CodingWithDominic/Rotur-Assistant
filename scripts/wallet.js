@@ -98,7 +98,7 @@ const notooltip = await new Promise(resolve =>
 let bal_cache = 0;
 let suminprogress = false
 
-import { sanitize, formatDate, openSuccessPopup, MiniError, FixDecimal } from "../index.js"
+import { sanitize, formatDate, openSuccessPopup, MiniError, FixDecimal, openErrorPopup } from "../index.js"
 
 // Popup functions
 
@@ -132,6 +132,21 @@ function openDailyClaimPopup() {
         <div id="popup-choices">
             <button id="cancel" class="closebtn">Cancel</button>
             <button id="finaldailyclaim">Claim</button>
+        </div>
+    `, {sanitizer: sanitizer})
+}
+
+function openTransactionDeletePopup() {
+    document.getElementById('overlay').style.display = 'flex';
+    document.getElementsByClassName('popup')[0].setHTML(`
+        <div id="popup-header">
+            <h1>Clear History</h1>
+            <button id="popup-x" class="closebtn">✕</button>
+        </div>
+        <p>Are you sure you want to clear all your transaction history?</p>
+        <div id="popup-choices">
+            <button id="cancel" class="closebtn">Cancel</button>
+            <button id="finaltransactiondelete">Clear</button>
         </div>
     `, {sanitizer: sanitizer})
 }
@@ -226,11 +241,12 @@ async function getTransactionHistory(accdata) {
     if (transactionhtml.length == 0) {
         document.getElementById('transactionlist').setHTML(`<h3 style='font-size: 16px;'>You don't have any transaction history yet.</h3>`, {sanitizer: sanitizer})
         document.getElementById('transactionlist').style = 'border: none;'
-        document.getElementById('averageprofit').style = 'display: none;'
-        document.getElementById('transactionreload').style = 'display: none;'
+        document.getElementById('averageprofit').style = 'visibility: hidden;'
+        document.getElementById('transactiondelete').disabled = true
     } else {
         document.getElementById('transactionlist').style = 'border: 2px solid white;'
-        document.getElementById('transactioncontrols').style.display = 'block'
+        document.getElementById('transactiondelete').disabled = false
+        document.getElementById('averageprofit').style = 'visibility: visible;'
         document.getElementById('transactionlist').replaceChildren(...transactionhtml)
     }
     document.getElementById("historytab").textContent = `History - ${transactionhtml.length}`
@@ -660,6 +676,28 @@ document.addEventListener('click', async function(e) {
             transactionsopen = false
             document.getElementById('transactionreload').textContent = '⟳'
             document.getElementById('transactionreload').disabled = false
+            break;
+        }
+        case ('transactiondelete'): {
+            openTransactionDeletePopup()
+            break;
+        }
+        case ('finaltransactiondelete'): {
+            closePopup()
+            document.getElementById('transactionreload').disabled = true
+            document.getElementById('transactiondelete').disabled = true
+            const deletesuccess = await fetch(`https://api.rotur.dev/v2/me/transactions`, {method: "DELETE", headers: authform}).then(res => res.json()).catch(err => {return {error: "An unknown error occurred"}})
+            document.getElementById('transactionreload').disabled = false
+            if (deletesuccess.error) {
+                openErrorPopup(deletesuccess.error)
+            document.getElementById('transactiondelete').disabled = false
+            } else {
+                openSuccessPopup('Transaction history successfully cleared')
+                document.getElementById('historytab').textContent = "History - 0"
+                document.getElementById('transactionlist').setHTML(`<h3 style='font-size: 16px;'>You don't have any transaction history yet.</h3>`, {sanitizer: sanitizer})
+                document.getElementById('transactionlist').style = 'border: none;'
+                document.getElementById('averageprofit').style = 'visibility: hidden;'
+            }
             break;
         }
         case ('statsreload'): {
