@@ -266,7 +266,7 @@ function renderICN(icn) {
                 recty -= (rect_height / 2)
                 if (!icn_settings.sharp) {
                     ctx.beginPath()
-                    ctx.roundRect(rectx, recty, rect_width, rect_height, ((width/2) * icn_scale))
+                    ctx.roundRect(rectx, recty, rect_width, rect_height, ((width/4) * (icn_scale/2)))
                     ctx.stroke()
                     ctx.closePath()
                 } else {
