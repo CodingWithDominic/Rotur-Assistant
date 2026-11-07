@@ -241,12 +241,12 @@ async function getTransactionHistory(accdata) {
     if (transactionhtml.length == 0) {
         document.getElementById('transactionlist').setHTML(`<h3 style='font-size: 16px;'>You don't have any transaction history yet.</h3>`, {sanitizer: sanitizer})
         document.getElementById('transactionlist').style = 'border: none;'
-        document.getElementById('averageprofit').style = 'visibility: hidden;'
+        document.getElementById('averageprofit').style.display = 'none'
         document.getElementById('transactiondelete').disabled = true
     } else {
         document.getElementById('transactionlist').style = 'border: 2px solid white;'
         document.getElementById('transactiondelete').disabled = false
-        document.getElementById('averageprofit').style = 'visibility: visible;'
+        document.getElementById('averageprofit').style.display = 'block'
         document.getElementById('transactionlist').replaceChildren(...transactionhtml)
     }
     document.getElementById("historytab").textContent = `History - ${transactionhtml.length}`
@@ -696,7 +696,7 @@ document.addEventListener('click', async function(e) {
                 document.getElementById('historytab').textContent = "History - 0"
                 document.getElementById('transactionlist').setHTML(`<h3 style='font-size: 16px;'>You don't have any transaction history yet.</h3>`, {sanitizer: sanitizer})
                 document.getElementById('transactionlist').style = 'border: none;'
-                document.getElementById('averageprofit').style = 'visibility: hidden;'
+                document.getElementById('averageprofit').style.display = 'none'
             }
             break;
         }
