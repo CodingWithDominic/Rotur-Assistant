@@ -21,7 +21,8 @@ const icn_default =
     exclusive: true,
     gridsize: 10,
     realtime: false,
-    preserve: true
+    preserve: true,
+    sharp: true
 }
 
 let icn_settings = await new Promise(resolve =>
@@ -39,6 +40,16 @@ document.getElementById('gridsizeslider').disabled = !document.getElementById('t
 document.getElementById('gridslidervalue').textContent = icn_settings.gridsize ?? "10"
 document.getElementById('realtimerendering').checked = icn_settings.realtime ?? false
 document.getElementById('preservesession').checked = icn_settings.preserve ?? true
+document.getElementById('sharp').checked = icn_settings.sharp ?? true
+if (icn_settings.realtime === undefined) {
+    icn_settings.realtime = false
+}
+if (icn_settings.preserve === undefined) {
+    icn_settings.preserve = true
+}
+if (icn_settings.sharp === undefined) {
+    icn_settings.sharp = true
+}
 
 Array.from(document.getElementsByName('canvasbg')).forEach(bg => {
     if (bg.value == icn_settings.background) {
@@ -62,6 +73,10 @@ let isDragging = false;
 let startX = 0, startY = 0;
 let offsetX = 185, offsetY = 185;
 let scale = 5;
+let dragStartX = 0;
+let dragStartY = 0;
+let initialOffsetX = 0;
+let initialOffsetY = 0;
 let scrollLeft = 0, scrollTop = 0;
 
 const base_commands = ['w', 'c', 'scale', 'image', 'rect', 'square', 'dot', 'line', 'tri', 'cutcircle', 'curve', 'cont', 'move', 'ellipse', 'back']
@@ -183,6 +198,13 @@ function renderICN(icn) {
                 icn_transformY = icn_arguments[1]
                 break
             }
+            case 'scale': {
+                icn_scale = icn_arguments[0]
+                if (icn_scale < 0.1) {
+                    icn_scale = 0.1
+                }
+                break
+            }
             case 'reset':
             case 'back': {
                 if (cmd == 'back' || icn_settings.exclusive) {
@@ -202,6 +224,7 @@ function renderICN(icn) {
                     ctx.stroke()
                     cont_cache_x = icn_arguments[2]
                     cont_cache_y = icn_arguments[3]
+                    ctx.closePath()
                 }
                 break
             }
@@ -216,6 +239,7 @@ function renderICN(icn) {
                     ctx.stroke()
                     cont_cache_x = icn_arguments[0]
                     cont_cache_y = icn_arguments[1]
+                    ctx.closePath()
                 }
                 break                
             }
@@ -228,6 +252,7 @@ function renderICN(icn) {
                 ctx.stroke()
                 cont_cache_x = icn_arguments[2]
                 cont_cache_y = icn_arguments[3]
+                ctx.closePath()
                 break
             }
             case 'square': {
@@ -239,7 +264,14 @@ function renderICN(icn) {
                 let rect_height = icn_arguments[3] * icn_scale * 2
                 rectx -= (rect_width / 2)
                 recty -= (rect_height / 2)
-                ctx.strokeRect(rectx, recty, rect_width, rect_height)
+                if (!icn_settings.sharp) {
+                    ctx.beginPath()
+                    ctx.roundRect(rectx, recty, rect_width, rect_height, ((width/2) * icn_scale))
+                    ctx.stroke()
+                    ctx.closePath()
+                } else {
+                    ctx.strokeRect(rectx, recty, rect_width, rect_height)
+                }
                 break
             }
             case 'rect':
@@ -254,6 +286,13 @@ function renderICN(icn) {
                     rectx -= (rect_width / 2)
                     recty -= (rect_height / 2)
                     ctx.fillRect(rectx, recty, rect_width, rect_height)
+                    if (!icn_settings.sharp) {
+                        ctx.strokeStyle = color;
+                        ctx.beginPath()
+                        ctx.roundRect(rectx, recty, rect_width, rect_height, ((width/4) * (icn_scale/2)))
+                        ctx.stroke()
+                        ctx.closePath()
+                    }
                 }
                 break
             }
@@ -278,6 +317,7 @@ function renderICN(icn) {
                         ctx.arc(cx, cy, radius, start_angle, end_angle)
                         ctx.fill()
                     }
+                    ctx.closePath()
                 }
                 break
             }
@@ -298,9 +338,17 @@ function renderICN(icn) {
                     ctx.beginPath();
                     ctx.moveTo((icn_arguments[0] + icn_transformX) * icn_scale, (icn_arguments[1] + icn_transformY) * icn_scale);
                     ctx.lineTo((icn_arguments[2] + icn_transformX) * icn_scale, (icn_arguments[3] + icn_transformY) * icn_scale); // A lot easier than when I did the vanilla scratch implementation
-                    ctx.lineTo((icn_arguments[4] + icn_transformX) * icn_scale, (icn_arguments[5] + icn_transformY) * icn_scale); 
+                    ctx.lineTo((icn_arguments[4] + icn_transformX) * icn_scale, (icn_arguments[5] + icn_transformY) * icn_scale);
+                    ctx.closePath()
                     ctx.fillStyle = color;
                     ctx.fill();
+                    if (!icn_settings.sharp) {
+                        ctx.lineWidth = width * icn_scale;
+                        ctx.strokeStyle = color;
+                        ctx.lineJoin = "round";
+                        ctx.stroke()
+                    }
+                    ctx.closePath()
                 }
                 break
             }
@@ -317,6 +365,7 @@ function renderICN(icn) {
                         ctx.ellipse((icn_arguments[0] + icn_transformX) * icn_scale, (icn_arguments[1] + icn_transformY) * icn_scale, icn_arguments[2] * icn_scale, icn_arguments[2] * icn_scale * icn_arguments[3], icn_arguments[4] * (π/-180), 0, 2*π)
                         ctx.fill();
                     }
+                    ctx.closePath()
                 }
                 break
             }
@@ -570,6 +619,12 @@ document.addEventListener('click', async function(e) {
     if (e.target.id == 'realtimerendering') {
         icn_settings.realtime = e.target.checked
         chrome.storage.local.set({icn_settings: icn_settings})
+        return;
+    }
+    if (e.target.id == 'sharp') {
+        icn_settings.sharp = e.target.checked
+        chrome.storage.local.set({icn_settings: icn_settings})
+        renderICN(icn_cache)
         return;
     }
     if (e.target.id == 'preservesession') {

@@ -4133,11 +4133,6 @@ body.make-circular #changeavatarbtn {
     flex-direction: column;
 }
 
-#icneditorlayout {
-    display: flex;
-    flex-direction: column;
-}
-
 /* stacked layout */
 #icnsect1 {
     width: 100%;
@@ -4178,7 +4173,9 @@ body.make-circular #changeavatarbtn {
     width: 100%;
     box-sizing: border-box;
 }
-
+#resetcamera {
+    max-width: 630px;
+}
 #freemaxkeyholderbadge {
     margin-bottom: 8px;
 }

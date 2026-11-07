@@ -87,11 +87,17 @@ async function checkanchor() {
     chrome.storage.local.get('settings', data => resolve(data.settings || "00000000"))
     ) ?? "00000000";
     if (settings[2] == '1' && !location.href.includes('/auth.html')) {
-        document.getElementsByClassName('container')[0].style = ('margin-top: 40px;' + (settings[3] == '1' ? ' padding-bottom: 105px;' : ''))
+        document.getElementsByClassName('container')[0].style.marginTop = '40px'
+        if (settings[3] == '1') {
+            document.getElementsByClassName('container')[0].style.paddingBottom = '105px'
+        }
         document.getElementById('header-placeholder').style = 'position: fixed; z-index: 4500'
     }
     if (settings[3] == '1' && !location.href.includes('/auth.html')) {
-        document.getElementsByClassName('container')[0].style = ('padding-bottom: 105px;' + (settings[2] == '1' ? ' margin-top: 40px;' : ''))
+        document.getElementsByClassName('container')[0].style.paddingBottom = '105px'
+        if (settings[2] == '1') {
+            document.getElementsByClassName('container')[0].style.marginTop = '40px'
+        }
         document.getElementById('footer-placeholder').style = 'position: fixed; bottom: 0; z-index: 4400;'
     }
 }
