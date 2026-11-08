@@ -692,7 +692,6 @@ async function renderProfile(userdata, you) {
     const displayname = userdata.display_name == name ? null : userdata.display_name // Don't show the display name if it's equal to the username
     const badges = userdata.badges ?? []
     const theme = userdata.theme ?? {}
-    console.log(theme)
     const promise_followingData = fetch(`https://api.rotur.dev/v2/users/${encodeURIComponent(name)}/following`).then(res => res.json()).catch(err => {console.error(err); return ({})});
     const promise_followersData = fetch(`https://api.rotur.dev/v2/users/${encodeURIComponent(name)}/followers`).then(res => res.json()).catch(err => {console.error(err); return ({})});
     const promise_standingData = fetch(`https://api.rotur.dev/v2/standing?username=${encodeURIComponent(name)}`).then(res => res.json()).catch(err => {console.error(err); return ({})});
@@ -936,7 +935,7 @@ ${badges[i].description}`}`
     following.length ? profile.querySelector('#followinglist').replaceChildren(...renderFollowingFollowers(following)) : ``
     followers.length ? profile.querySelector('#followerslist').replaceChildren(...renderFollowingFollowers(followers)) : ``
     userdata.posts ? profile.querySelector('#clawpostslist').replaceChildren(...renderClawFeed(userdata.posts)) : ``
-    useritems ? profile.querySelector('.roturuseritemlist').replaceChildren(...getItems(useritems)) : ``
+    useritems ? profile.querySelector('.roturuseritemlist').replaceChildren(...getItems(useritems)) : ''
     profile.querySelector('#followingsummary').textContent = `Following - ${following.length}`
     profile.querySelector('#followerssummary').textContent = `Followers - ${followers.length}`
     profile.querySelector('#followingdisclaimer').textContent = `This user actually follows ${userdata.following ?? 0} ${userdata.following == 1 ? "person" : "people"}. The data shown below may be inaccurate.`
@@ -944,7 +943,9 @@ ${badges[i].description}`}`
     profile.querySelector('#clawpostssummary').textContent = `Claw Posts - ${clawposts.length}`
     profile.querySelector('#useritemssummary').textContent = `Items - ${useritems.length}`
     profile.querySelector('#economicplaceholder').replaceChildren(...economy_html)
-
+    if (!useritems || useritems.length == 0) {
+        profile.querySelector('#useritemssect').remove()
+    }
     document.getElementsByClassName('beforeprofile')[0].style.display = 'block'
     document.getElementById('lookupplaceholder').replaceChildren(profile)
     document.getElementById('lookupplaceholder').style = 'border: 2px solid white; display: flex;'

@@ -37,12 +37,12 @@ const type_translator =
     group_entry_fee: "You paid a fee to join a group",
     group_entry_fee_refund: "Refund of a group entry fee",
     credit_purchase: "You purchased credits with real money",
-    sable_credit_purchase: "You bought SC for RC",
+    sable_credit_purchase: "You bought Sable credits with Rotur credits",
     bounty_funded: "You created a bounty",
     bounty_refund: "You revoked a bounty",
     bounty_earning: "Bounty marked as completed",
-    commerce_payment: "You made a purchase or a donation",
-    commerce_earning: "Someone either donated to you or bought one of your products",
+    commerce_payment: "Sent credits (Commerce)",
+    commerce_earning: "Received credits (Commerce)",
     commerce_refund: "Someone requested a refund of a Misc. Purchase",
     commerce_refund_returned: "Return of earnings from Misc. Purchase refund",
     commerce_refund_reversed: "A refund of the refund of a Misc. Purchase",
@@ -221,10 +221,10 @@ async function getTransactionHistory(accdata) {
         const exceptions = ['gift_create', 'gift_refund', 'group_create', 'group_tip', 'group_entry_fee', 'escrow_in', 'escrow_out', 'bounty_funded', 'bounty_refund']
         const userexception = exceptions.includes(transaction_snippet.type)
         transactioncard.querySelector('h1').textContent = type
-        if (type.length > 22) {
+        if (type.length > 20) {
             transactioncard.querySelector('h1').style = 'font-size: 20px;'
         }
-        if (type.length > 26) {
+        if (type.length > 24) {
             transactioncard.querySelector('h1').style = 'font-size: 18px;'
         }
         transactioncard.querySelector('a').href = `../pages/lookup.html?user=${userexception ? accdata.username : user_avatar}`

@@ -314,7 +314,6 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
                         new Promise((resolve, reject) => {
                             const req = indexedDB.deleteDatabase(name);
                             req.onsuccess = () => {
-                                console.log(`Deleted database: ${name}`);
                                 resolve();
                             };
                             req.onerror = () => reject(req.error);
@@ -542,8 +541,6 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
                 if (activeuuid) {
                     indigo_servers[activeuuid] = localStorage.getItem('state') || "{}";
                     indigo_cache[activeuuid] = localStorage.getItem('workspace') || "{}";
-                    console.log(indigo_servers)
-                    console.log(indigo_cache)
                     chrome.storage.local.set({ 
                         indigo_servers: indigo_servers, 
                         indigo_cache: indigo_cache 
@@ -554,9 +551,6 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
                 localStorage.setItem('settings', JSON.stringify({ type: "token", token: message.data }));
                 localStorage.setItem('state', indigo_servers[message.dataid] ?? "{}");
                 localStorage.setItem('workspace', indigo_cache[message.dataid] ?? "{}");
-
-                console.log(activeuuid)
-                console.log(message.dataid)
 
                 // 5. Navigate securely to prevent old session bleed
                 window.location.href = "https://runnova.github.io/indigo";

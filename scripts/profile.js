@@ -1176,7 +1176,7 @@ ${badges[i].description}`}`
     followers.length ? renderFollowingFollowers(followers, false, 'do_nothing', 'followerslist') : ``
     blocked_users.length ? renderFollowingFollowers(blocked_users, true, 'Unblock', 'blockedlist') : ``
     altdata.posts ? profile.querySelector('#clawpostslist').replaceChildren(...renderClawFeed(altdata.posts)) : ``
-    useritems ? profile.querySelector('#profileitemlist').replaceChildren(...getItems(useritems)) : ``
+    useritems ? profile.querySelector('#profileitemlist').replaceChildren(...getItems(useritems)) : ''
     profile.querySelector('#followersdisclaimer').textContent = `This user is actually followed by ${altdata.followers ?? 0} ${altdata.followers == 1 ? "person" : "people"}. The data shown below may be inaccurate.`
 
     profile.querySelector('#overlayssummary').textContent = `Overlays - ${cosmetic_cache?.filter(cosmetic => cosmetic.cosmetic_type == "overlay")?.length ?? 0}`
@@ -1188,7 +1188,9 @@ ${badges[i].description}`}`
     profile.querySelector('#blockedsummary').textContent = `Blocked - ${blocked_users.length}`
     profile.querySelector('#clawpostssummary').textContent = `Claw Posts - ${clawposts.length}`
     profile.querySelector('#useritemssummary').textContent = `Items - ${useritems.length}`
-
+    if (!useritems || useritems.length == 0) {
+        profile.querySelector('#useritemssect').remove()
+    }
     profile.querySelector('#economicplaceholder').replaceChildren(...economy_html)
     profile.querySelector('#profileoverlays').replaceChildren(...cosmeticdata)
     profile.querySelector('.loginstats').textContent = `You have "logged in" a total of ${total_logins} time${total_logins == 1 ? "" : "s"}.`

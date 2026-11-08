@@ -422,7 +422,7 @@ function renderICN(icn) {
                     let cx = (icn_arguments[0] + icn_transformX) * icn_scale
                     let cy = (icn_arguments[1] + icn_transformY) * icn_scale
                     let radius = icn_arguments[2] * icn_scale
-                    let angle = icn_arguments[3]
+                    let angle = icn_arguments[3] * (π/180)
                     let end_angle = icn_arguments[4] * (π/180)
                     let cw = icn_arguments[6]
                     if (cw == 'true') {

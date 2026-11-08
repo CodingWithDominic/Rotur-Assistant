@@ -31,11 +31,11 @@ if (!activeacc.uuid || flagged.includes(activeacc.uuid) || !navigator.onLine || 
 document.getElementById('freemaxkeyholderbadge').addEventListener('click', async function(e) {
     e.target.disabled = true
     e.target.textContent = "Maxing..."
-    const key1_promise = fetch(`https://api.rotur.dev/keys/buy/9765fc5a04be06e80cfb3931fb1c3891`, {headers: authform}).then(res => res.json()).catch(err => {return {}})
-    const key2_promise = fetch(`https://api.rotur.dev/keys/buy/e48fb75ce07f3252d40ae18313bd4f39`, {headers: authform}).then(res => res.json()).catch(err => {return {}})
-    const key3_promise = fetch(`https://api.rotur.dev/keys/buy/083b99828791e58cfa4eb02266ec9c8e`, {headers: authform}).then(res => res.json()).catch(err => {return {}})
-    const key4_promise = fetch(`https://api.rotur.dev/keys/buy/d49f631aee1ea5075fd865c9646f7c99`, {headers: authform}).then(res => res.json()).catch(err => {return {}})
-    const key5_promise = fetch(`https://api.rotur.dev/keys/buy/553bd50f0c390f09be9330a6b46bd6ae`, {headers: authform}).then(res => res.json()).catch(err => {return {}})
+    const key1_promise = fetch(`https://api.rotur.dev/keys/buy/9765fc5a04be06e80cfb3931fb1c3891`, {headers: authform}).then(res => res.json()).catch(err => {return null})
+    const key2_promise = fetch(`https://api.rotur.dev/keys/buy/e48fb75ce07f3252d40ae18313bd4f39`, {headers: authform}).then(res => res.json()).catch(err => {return null})
+    const key3_promise = fetch(`https://api.rotur.dev/keys/buy/083b99828791e58cfa4eb02266ec9c8e`, {headers: authform}).then(res => res.json()).catch(err => {return null})
+    const key4_promise = fetch(`https://api.rotur.dev/keys/buy/d49f631aee1ea5075fd865c9646f7c99`, {headers: authform}).then(res => res.json()).catch(err => {return null})
+    const key5_promise = fetch(`https://api.rotur.dev/keys/buy/553bd50f0c390f09be9330a6b46bd6ae`, {headers: authform}).then(res => res.json()).catch(err => {return null})
 
     const [key1, key2, key3, key4, key5] = await Promise.all([key1_promise, key2_promise, key3_promise, key4_promise, key5_promise])
 

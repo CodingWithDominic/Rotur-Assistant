@@ -13,6 +13,7 @@ const config = {
     attributes: ['src', 'alt', 'href', 'width', 'height', 'id', 'class', 'data', 'value', 'title', 'disabled', 'style']
 }
 const sanitizer = new Sanitizer(config)
+const authform = new FormData()
 if (!navigator.onLine) {
     document.getElementsByClassName('container')[0].setHTML(`
         <h1>Donation page</h1>
@@ -91,7 +92,7 @@ document.addEventListener('click', async function(e) {
         } else if (isNaN(transferamt)) {
             potentialerrormsg = "Enter a valid amount"
         }
-        const activeaccdata = potentialerrormsg ? null : await fetch(`https://api.rotur.dev/profile?name=${activeacc.name}&include_posts=no`, {headers: {"Authorization": `Bearer ${activeacc.token}`}}).then(res => res.json())
+        const activeaccdata = potentialerrormsg ? null : await fetch(`https://api.rotur.dev/profile?name=${activeacc.name}&include_posts=no`, {headers: authform}).then(res => res.json())
         if (!potentialerrormsg) {
             if (transferamt <= 0) {
                 potentialerrormsg = `Minimum amount must be 0.01`
@@ -100,7 +101,7 @@ document.addEventListener('click', async function(e) {
                 potentialerrormsg = `Insufficient funds for transfer (Available funds: ${activeaccdata.currency})`
             }
         }
-        const recipientdata = potentialerrormsg ? null : await fetch(`https://api.rotur.dev/profile?name=Dominic&include_posts=no`, {headers: {"Authorization": `Bearer ${activeacc.token}`}}).then(res => res.json())
+        const recipientdata = potentialerrormsg ? null : await fetch(`https://api.rotur.dev/profile?name=Dominic&include_posts=no`, {headers: authform}).then(res => res.json())
         if (!potentialerrormsg && recipientdata && recipientdata['sys.banned']) {
             potentialerrormsg = 'This user was banned.'
         }
@@ -112,7 +113,7 @@ document.addEventListener('click', async function(e) {
             return;
         } else {
             if (document.getElementById('splitdonation').checked) {
-                const recipientdata2 = potentialerrormsg ? null : await fetch(`https://api.rotur.dev/profile?name=MiloDev123&include_posts=no`, {headers: {"Authorization": `Bearer ${activeacc.token}`}}).then(res => res.json())
+                const recipientdata2 = potentialerrormsg ? null : await fetch(`https://api.rotur.dev/profile?name=MiloDev123&include_posts=no`, {headers: authform}).then(res => res.json())
                 openPopup2(activeaccdata, recipientdata, recipientdata2, transferamt, note);
             } else {
                 openPopup(activeaccdata, recipientdata, transferamt, note);
@@ -129,14 +130,14 @@ document.addEventListener('click', async function(e) {
         const transferresult = await fetch(`https://api.rotur.dev/me/transfer`, {
             method: "POST",
             headers: authform,
-            body: JSON.stringify({to: "Dominic", amount: transfervalue, note: (donatenote ? `${milosplit ? "[R/A]" : "[RA]"} ` + donatenote : "Donation through Rotur Assistant's Donation page")})
+            body: JSON.stringify({to: "Dominic", amount: transfervalue, note: (donatenote ? `${milosplit ? "[R/A]" : "[RA]"} ` + donatenote : (milosplit ? "Split donation on Rotur Assistant's Donation page" : "Donation through Rotur Assistant's Donation page"))})
         }).then(res => res.json())
         let transferresult2 = true
         if (milosplit && !transferresult.error) {
             transferresult2 = await fetch(`https://api.rotur.dev/me/transfer`, {
                 method: "POST",
                 headers: authform,
-                body: JSON.stringify({to: "MiloDev123", amount: transfervalue, note: (donatenote ? '[R/A] ' + donatenote : "Donation through Rotur Assistant's Donation page")})
+                body: JSON.stringify({to: "MiloDev123", amount: transfervalue, note: (donatenote ? '[R/A] ' + donatenote : "Split donation on Rotur Assistant's Donation page")})
             }).then(res => res.json())
         }
         closePopup()
