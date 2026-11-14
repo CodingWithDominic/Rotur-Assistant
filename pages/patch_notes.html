@@ -113,6 +113,7 @@
                         <li>Corrected some bad coding practices, including any issues that came up in devtools (such as label tags that weren't associated with form elements), as well as having the header and footer use their own dedicated HTML tags, rather than being just &lt;div&gt;s. In other words, I cleaned up some of the div-itis throughout Rotur Assistant.</li>
                         <li>Added an option in settings that lets you choose your preferred CDN server. This is a failsafe in case Milo's CDN server stops working.</li>
                         <li>Double-clicking on an account in the account manager will now trigger an account switch if you're on a supported site.</li>
+                        <li>Added the ability to reorder accounts in the account manager.</li>
                         <li>Several wiki corrections, mainly to update any now-outdated information.</li>
                         <li>Any inline images, such as the one in the daily credit notice, now display aligned to the middle, rather than aligned to the bottom.</li>
                         <li>Added an option to show legacy notifications (the notifications found at https://api.rotur.dev/v2/notifications as opposed to https://api.rotur.dev/v2/notify/log), since thanks to orion, I found out that there are 2 notification endpoints, rather than one.</li>
@@ -260,10 +261,11 @@
                         <li>Made the process of deleting accounts less annoying if you're deleting an account that's less than a day old. This is meant as a Quality-of-life change for those who create temporary test accounts when testing potentially dangerous features on a Rotur service.</li>
                         <li>Made revoked gifts actually show that they were revoked (before, there was no way to tell from the gifts json)</li>
                         <li>Gifts of subscriptions will actually show that they are subscription gifts rather than gifts of 0 RC.</li>
+                        <li>Gifts of cosmetics will actually show that they are cosmetic gifts rather than gifts equal to the RC value of the cosmetic.</li>
                         <li>Added a section in the gift manager to view gifts from others that you have claimed</li>
                         <li>Images in Rmails are now proxied through wsrv.nl, to get around people abusing [RAIMG] to create possible IP loggers</li>
-                        <li>Since currency comparisons were shadow-removed in api.rotur.dev/v2/stats/economy, calculations are now done with each Rotur credit being calculated at fixed values of 4 cents each, or 3 pence each. These values came from what their rounded-off values were before the endpoint was pulled.</li>
-                        <li>Replaced the iframe login with a popup, since iframe support was removed in favor of Oauth. I hope to add proper support for Oauth in the future, but it's easier said than done when your Rotur app is an extension, not a website. It has been suggested to move shop to Rotur's official SDK, but that would require a rewrite in too many places, so I'm holding off for now.</li>
+                        <li>Since currency comparisons were shadow-removed in api.rotur.dev/v2/stats/economy, calculations are now done with each Rotur credit being calculated at fixed values of 4 cents each, or 3 pence each. These values came from what their rounded-off values were (to the nearest hundredth dollar or pound) before the endpoint was pulled.</li>
+                        <li>Replaced the iframe login with an in-house login popup, since iframe support was removed in favor of Oauth. I hope to add proper support for Oauth in the future, but it's easier said than done when your Rotur app is an extension, not a website. It has been suggested to move shop to Rotur's official SDK, but that would require a rewrite in too many places, so I'm holding off for now.</li>
                         <li>Fixed switcher support for the official OriginChats client as well as MistWarp.</li>
                         <li>When doing an account switch on Indigo, Rotur Assistant will now remember the previous state of the account you switched from (i.e. server list and indigo version), and restore that state when you switch back</li>
                         <li>Delisted FlufiCDN as a possible CDN option, since FlufiCDN converts everything into webp images, a file format Rotur does not like (tested when I tried uploading to Claw). I'm open to bringing FlufiCDN back once Rotur opens up to allowing webp images.</li>
@@ -288,6 +290,23 @@
                         <li>Made the process of uploading or changing your banner more inline with the new system (one-time payment of 30 credits instead of 10 credits per change)</li>
                         <li>Disabled the ability to change your E-mail within Rotur Assistant, since the process now requires your Rotur password. Any attempt to do so will tell you to change it on <a href="https://rotur.dev/account" target="_blank" rel="noopener noreferrer">rotur.dev</a> instead.</li>
                         <li>Added an option on the donation page to split the donation with <a href="lookup.html?user=MiloDev123">MiloDev123</a>, in honor of him being the biggest external contributor and advocate for Rotur Assistant. He's the main reason I became motivated enough again to find time to pick up Rotur Assistant again and release this update, after setting aside the project for a while due to college and lack of motivation due to many breaking API changes with Rotur itself.</li>
+                    </ul>
+                </section>
+                <hr class="full-size dotted_separator">
+                <section id="RA_1.2.5">
+                    <h2>1.2.5</h2>
+                    <p class="fineprint">November 20, 2026 - Wow 1.2.5 so quickly?</p>
+                    <ul class="patchnotelist">
+                        <li>Fixed a few possible security vulnerabilities with account switching, as pointed out by Opencode.</li>
+                        <li>Added counters for the tabs in the Gift manager</li>
+                        <li>Improved notifications</li>
+                        <li>The Wallet app now has proper handling for sub-accounts trying to claim the daily credit</li>
+                        <li>Several more wiki corrections, along with a new disclaimer saying the info provided may be inaccurate (I do try my best to provide info that's as accurate as possible, but I'm no exception to making mistakes every now and then).</li>
+                        <li>A few corrections in <a href="services.html">services</a> too.</li>
+                        <li>Fixed a minor issue with header.js sometimes throwing an error because its code runs before the DOM finishes loading</li>
+                        <li>When sorting claimed gifts by the amount involved, Rotur Assistant will now value membership gifts at their approximate RC equivalents based on Rotur Assistant now calculating RC at $0.04 or £0.03 each. This means Plus gifts will be valued at 58.25 RC ($2.33 / 0.04), and Pro gifts will be valued at 191.25 RC ($7.65 / 0.04). The value will be multiplied by 8 if the gift is for a yearly membership, rather than a monthly one.</li>
+                        <li>Badges are no longer hardcoded! This means that the odds of seeing a placeholder badge on profiles (<img src="../images/badges/placeholder.png" width="16" height="16">) should be a lot less likely, especially when Mistium adds new badges. This was definitely a long overdue change.</li>
+                        <li>Badges are also now clickable to view additional info, such as tier progress, issuer, etc. They also allow you to even copy their ICN. Shift-clicking on the "Copy ICN" button will instead open the ICN editor with the badge ICN pre-filled. Do note that doing this will overwrite your last ICN session.</li>
                     </ul>
                 </section>
             </div>

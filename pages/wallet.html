@@ -45,6 +45,10 @@
                     <button id="sendcredits" title="Send">→</button>
                 </div>
                 <input type="text" id="transfernote" placeholder="Note (Optional)" maxlength="50">
+                <label class="labelandinput" id="usepaymentapilabel" title="When enabled, credits are sent via the /v2/commerce/payments endpoint instead of /me/transfer. This creates a trackable commerce payment record.">
+                    <input type="checkbox" id="usepaymentapi">
+                    Use the commerce payment API instead
+                </label>
                 <div id="transferstatusplaceholder"></div>
             </div>
             <div id="transactionpanel" style="display: none;">

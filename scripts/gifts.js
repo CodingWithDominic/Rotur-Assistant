@@ -54,7 +54,7 @@ function renderGifts(filter) {
     const giftdata = giftdata_cache
     let giftsArray = [ ...giftdata.gifts]
     const gift_count = giftsArray.length
-    
+    document.getElementById('mygiftstab').textContent = `Gifts I created - ${giftsArray.length}`
     if (filter == 'claimed') {
         giftsArray = giftsArray.filter(gift => gift.claimed_by)
     }
@@ -104,6 +104,7 @@ function renderGifts2(filter) {
     const giftdata = claimed_cache
     let giftincome = 0
     let giftsArray = [ ...giftdata.gifts ]
+    document.getElementById('claimedgiftstab').textContent = `Gifts I claimed - ${giftsArray.length}`
     const gift_count = giftsArray.length
     switch (filter) {
         case ('oldest'): {
@@ -138,6 +139,17 @@ function renderGifts2(filter) {
                 giftincome += gift_snippet.amount
             }
             const giftcard = document.getElementById('claimedgiftcardtemplate').content.cloneNode(true)
+            if (gift_snippet.tier) {
+                const gift_multiplier = (gift_snippet.period == 'year' ? 8 : 1) // Account for any yearly gifts too
+                const gift_rc_equivalent = {
+                    lite: 15,
+                    plus: 58.25,
+                    pro: 191.25,
+                    max: 331.75 // Assuming a Max membership would theoretically cost 10 pounds, or 13.27 USD, based on a rough estimate said by Mistium a long time ago
+                }
+                gift_snippet.amount = gift_rc_equivalent[gift_snippet.tier.toLowerCase()] * gift_multiplier
+                giftcard.querySelector('.giftamount').title = `This gift is being sorted as if this gift is worth ${gift_snippet.amount} RC. This is based on Rotur Assistant's estimated RC equivalent of how much this gift was bought for (USD_price / 0.04), estimating 1 RC to be worth 4 US cents.`
+            }
             giftcard.querySelector('.gifttitle').textContent = `Gift created on ${formatDate(gift_snippet.created_at)}`
             giftcard.querySelector('.giftamount').textContent = (gift_snippet.tier ? `Tier: ${gift_snippet.tier}` : (gift_snippet.cosmetic_name ? `Cosmetic: ${gift_snippet.cosmetic_name}` : `Amount: ${gift_snippet.amount} RC`))
             gift_snippet.note ? (giftcard.querySelector('.giftnote').innerText = `Note: ${gift_snippet.note}`) : giftcard.querySelector('.giftnote').remove()

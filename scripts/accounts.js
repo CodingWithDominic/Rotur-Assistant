@@ -8,6 +8,45 @@ const whitelisted_urls = ['https://apps.rotur.dev', 'https://origin.mistium.com'
                             "https://mail.rotur.dev", "https://beam.rotur.dev", "https://place.rotur.dev", "https://gifs.originchats.com", "https://chat.0stormy.xyz/",
                             "https://sable.rotur.dev", "https://runnova.github.io/indigo", "https://warp.mistium.com", "http://localhost:5173", "https://music.flufi.uk",
                             "https://mistwarp.org"]
+
+function isWhitelistedSite(currentHref) {
+    try {
+        const currentUrl = new URL(currentHref);
+
+        return whitelisted_urls.some(site => {
+            try {
+                const siteUrl = new URL(site);
+
+                // For exact origin matches (e.g., https://rotur.dev)
+                if (currentUrl.origin === siteUrl.origin) {
+                    // If the whitelisted site has a path, ensure current URL starts with it
+                    if (siteUrl.pathname !== '/' && siteUrl.pathname !== '') {
+                        return currentUrl.pathname.startsWith(siteUrl.pathname);
+                    }
+                    return true;
+                }
+
+                // For sites with specific paths (e.g., https://originchats.com/app)
+                // Check if current URL starts with the full site URL
+                if (currentHref.startsWith(site)) {
+                    // Additional safety: ensure it's not a subdomain bypass
+                    const expectedPrefix = site;
+                    const afterPrefix = currentHref.slice(expectedPrefix.length);
+                    // After the prefix, should be end of string, '/', '?', or '#'
+                    return afterPrefix === '' || afterPrefix.startsWith('/') || afterPrefix.startsWith('?') || afterPrefix.startsWith('#');
+                }
+
+                return false;
+            } catch (e) {
+                console.error('[Rotur Assistant] Invalid whitelisted_urls entry:', site, e);
+                return false;
+            }
+        });
+    } catch (e) {
+        console.error('[Rotur Assistant] Error parsing URL:', e);
+        return false;
+    }
+}
                             
 const config = {
     removeElements: ['iframe', 'script', 'style', 'object', 'embed', 'applet', 'meta', 'link', 'base', 'form'],
@@ -279,24 +318,24 @@ function genURLs() {
 async function checkSwitcherEligibility(url) {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-    const responsedata = url ?? tab.url ?? ''
+    const responsedata = url ?? tab.url ?? '';
 
-    const allowed_urls = (whitelisted_urls.some(item => responsedata.startsWith(item)))
-    let errormsg = "If this extension is open while you're on a supported Rotur-affiliated site, then this will automatically log you into the selected Rotur account on that site."
+    const allowed_urls = isWhitelistedSite(responsedata);
+    let errormsg = "If this extension is open while you're on a supported Rotur-affiliated site, then this will automatically log you into the selected Rotur account on that site.";
     if (!allowed_urls) {
-        document.getElementById('switchaccbtn').disabled = true
+        document.getElementById('switchaccbtn').disabled = true;
         if (responsedata.includes('rotur') || responsedata.includes('origin') || responsedata.includes('mistium')) {
             if (responsedata.startsWith('https://roturassistant.com')) {
-                errormsg += `<br>You are on Rotur Assistant's official site! As of now, there's nothing on the website we use Rotur Accounts for.`
+                errormsg += `<br>You are on Rotur Assistant's official site! As of now, there's nothing on the website we use Rotur Accounts for.`;
             } else {
-                errormsg += `<br>While you are (likely) on a rotur-affiliated site, this feature may not be supported for that particular service yet.`
+                errormsg += `<br>While you are (likely) on a rotur-affiliated site, this feature may not be supported for that particular service yet.`;
             }
         } else {
-            errormsg += `<br>You are not on a rotur-affiliated website. If you own a Rotur-affiliated site and you want me to support your site, let me know on discord @dominic_the_gamer or on OriginChats.`
+            errormsg += `<br>You are not on a rotur-affiliated website. If you own a Rotur-affiliated site and you want me to support your site, let me know on discord @dominic_the_gamer or on OriginChats.`;
         }
     } else {
         if (activeacc.uuid && !flagged.includes(activeacc.uuid)) {
-            document.getElementById('switchaccbtn').disabled = false
+            document.getElementById('switchaccbtn').disabled = false;
         }
     }
     document.getElementById('disabledcontext').setHTML(`
@@ -304,7 +343,7 @@ async function checkSwitcherEligibility(url) {
     <p class='switchertext'>As of now, the following supported sites are:</p>
     <ul>
         ${genURLs()}
-    </ul>`, {sanitizer: sanitizer});
+    </ul>`, { sanitizer: sanitizer });
 }
 
 document.getElementById('account_list').addEventListener('dblclick', (event) => {
@@ -1080,4 +1119,13 @@ document.addEventListener('keydown', function(e) {
             document.querySelector('.addacctoken').click();
         }
     }
+    if (e.shiftKey) {
+        document.querySelector('.addaccbtn').textContent = "+ Add Account via token"
+    }
 });
+
+document.addEventListener('keyup', function(e) {
+    if (e.key === 'Shift') {
+        document.querySelector('.addaccbtn').textContent = "+ Add Account"
+    }
+})

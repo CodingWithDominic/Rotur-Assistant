@@ -7,6 +7,7 @@ let cosmetic_cache = ''
 let active_cache = ''
 let formdata_cache = ''
 let young_account = false
+let badgedata_cache = {}
 
 const config = {
     removeElements: ['script', 'style', 'object', 'embed', 'applet', 'meta', 'link', 'base'],
@@ -16,6 +17,7 @@ const config = {
 const sanitizer = new Sanitizer(config)
 
 import { sanitize, formatDate, openErrorPopup, openWarningPopup, openSuccessPopup, MiniError, CreateEmptyPlaceholder, FixDecimal } from "../index.js"
+import { createBadgeElement, resolveBadgeImageName } from "./badges.js"
 
 const accounts = await new Promise(resolve =>
         chrome.storage.local.get('userdata', data => resolve(data.userdata || []))
@@ -270,7 +272,37 @@ function openBannerPopup() {
         </div>
     `, { sanitizer: sanitizer });
 }
-
+function openBadgeInfoPopup(badgedata) {
+    document.getElementById('overlay').style.display = 'flex';
+    document.getElementsByClassName('popup')[0].setHTML(`
+        <div id="popup-header">
+            <h1>Badge Info</h1>
+            <button id="popup-x" class="closebtn">✕</button>
+        </div>
+        <ul class="popupinfolist">
+            <li>Name: ${sanitize(badgedata.name)}
+            <li>ID: ${sanitize(badgedata.id)}
+            <li>Description: ${sanitize(badgedata.description)}
+            ${badgedata.issuer ? `
+                <li>Issued by: ${sanitize(badgedata.issuer)}
+                ` : ""}
+            ${badgedata.evolving ? `
+                <li>Tier: ${badgedata.level}
+                <li>Progress to next tier: ${badgedata.progress} / ${badgedata.next_threshold ? badgedata.next_threshold : "Max"}
+                ` : ""}
+        </ul>
+        ${badgedata.id == 'discord' ? "<p>This badge has been removed from Rotur officially, but for fun, Rotur Assistant brings it back.</p>" : ""}
+        <div id="popup-choices">
+            <button id="copybadgeicn">Copy ICN</button>
+            <button id="openbadgewiki">View on Wiki</button>
+        </div>
+        <button id="cancel" class="closebtn" style="width: 100%; margin-top: 8px;">Dismiss</button>
+    `, {sanitizer: sanitizer})
+    if (!badgedata.icon) {
+        document.getElementById('copybadgeicn').disabled = true
+        document.getElementById('copybadgeicn').textContent = "ICN Unavailable"
+    }
+}
 function openPinPopup(post_id) {
     document.getElementById('overlay').style.display = 'flex';
     document.getElementsByClassName('popup')[0].setHTML(`
@@ -1052,40 +1084,22 @@ async function renderProfile(userdata, altdata) {
     new_values = [...old_values]
 
     if ((userdata.system.toLowerCase() == 'passnet') && !(badges.some(item => item.name.toLowerCase() == 'passnet'))) {
-        badges.push({name: "PassNet", description: "This account was created on PassNet", icon: ''})
+        badges.push({name: "PassNet", description: "This account was created on PassNet", icon: '', issuer: 'rotur'})
     }
     if (userdata.discord_id) {
-        badges.push({name: "discord", id: "discord", description: "This user linked their Discord account to Rotur", icon: ''})
+        badges.push({name: "discord", id: "discord", description: "This user linked their Discord account to Rotur", icon: '', issuer: 'Rotur Assistant'})
     }
     const badgelist = document.getElementById('badges')
     badgelist.replaceChildren()
     for (let i=0; i<badges.length; i++) {
-        let badge_name = (badges[i].id.startsWith('app:') ? badges[i].name : badges[i].id)
-        if (badge_name == 'fluoride') {
-            badge_name = 'Fluoride'
-        }
-        if (!known_badges.includes(badge_name)) {
-            badge_name = 'placeholder'
-        }
-
         const li = document.createElement('li')
-        const img = document.createElement('img')
-        img.src = `../images/badges/${badge_name}.png`
-        img.title = `${badge_name == "placeholder" ? `${badges[i].name}
-        
-The badge shown is a placeholder badge in case Rotur Assistant doesn't recognize that badge yet.
-Original badge description: ${badges[i].description}` : `${badges[i].name}
-        
-${badges[i].description}`}`
-        img.alt = badges[i].name
-        img.width = 24
-        img.height = 24
-        li.appendChild(img)
+        li.appendChild(createBadgeElement(badges[i], resolveBadgeImageName(badges[i], known_badges)))
         badgelist.appendChild(li)
     }
     if (badges.length == 0) {
         document.querySelector('.badgelabel').remove()
     }
+    userdata_cache.badges = badges
     const joindate = formatDate(altdata.created)
     const economy_html = []
     const h2 = document.createElement('h2')
@@ -1436,6 +1450,28 @@ document.addEventListener('click', async function(e) {
                 openErrorPopup(String(err))
                 console.error('Failed to copy: ', err);
             }  
+            return;
+        }
+        case ('copybadgeicn'): {
+            if (e.shiftKey) {
+                window.location.href = `/pages/icn.html?icn=${encodeURIComponent(badgedata_cache.icon)}`
+                return;
+            }
+            target.disabled = true
+            try {
+                await navigator.clipboard.writeText(badgedata_cache.icon);
+                target.textContent = "Copied ICN"
+            } catch (err) {
+                target.textContent = "Failed to copy"
+            }
+            setTimeout(() => {
+                target.disabled = false
+                target.textContent = "Copy ICN"
+            }, 2000)
+            return;
+        }
+        case ('openbadgewiki'): {
+            window.location.href = `/pages/wiki_pages/badges.html#${badgedata_cache.id.startsWith('app:') ? "systembadges" : badgedata_cache.id}sect`
             return;
         }
         case ('profilereloadedit'): {
@@ -1904,6 +1940,15 @@ document.addEventListener('click', async function(e) {
             openDeclinePopup(target.dataset.user);
             return;
         }
+        case 'badgeicon': {
+            const badge_name = target.ariaLabel ?? target.alt ?? 'placeholder'
+            const badgedata = userdata_cache.badges.find(badge => badge.name == badge_name)
+            if (badgedata) {
+                badgedata_cache = badgedata
+                openBadgeInfoPopup(badgedata)
+            }
+            break;
+        }
         case ('finalpasswordchange'): {
             closePopup();
             const oldpass = document.getElementById('oldpass').value;
@@ -2283,5 +2328,17 @@ document.addEventListener('input', async function (e) {
     if (e.target.className == 'replybox') {
         const len = e.target.value.length
         updateReplyCharLimit(e.target.dataset.postid, len)
+    }
+})
+
+document.addEventListener('keydown', function(e) {
+    if (e.shiftKey && document.getElementById('copybadgeicn') && !document.getElementById('copybadgeicn').disabled) {
+        document.getElementById('copybadgeicn').textContent = "Open ICN in Editor"
+    }
+});
+
+document.addEventListener('keyup', function(e) {
+    if (e.key === 'Shift' && document.getElementById('copybadgeicn') && !document.getElementById('copybadgeicn').disabled) {
+        document.getElementById('copybadgeicn').textContent = "Copy ICN"
     }
 })

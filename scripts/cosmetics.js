@@ -151,7 +151,7 @@ function OpenCosmeticInfoPopup(data, delisted) {
             <h1>Cosmetic Info</h1>
             <button id="popup-x" class="closebtn">✕</button>
         </div>
-        <ul id="popupinfolist"></ul>
+        <ul class="popupinfolist"></ul>
         <div id="popup-choices">
             <button id="cancel" class="closebtn">Dismiss</button>
         </div>
@@ -167,8 +167,7 @@ function OpenCosmeticInfoPopup(data, delisted) {
     const li9 = document.createElement('li')
     const li10 = document.createElement('li')
     const li11 = document.createElement('li')
-    document.getElementById('popupinfolist').style.display = 'block'
-    document.getElementById('popupinfolist').replaceChildren(...[li1, li2, li3, li4, li5, li6, li7, li8, li9, li10, li11])
+    document.querySelector('.popupinfolist').replaceChildren(...[li1, li2, li3, li4, li5, li6, li7, li8, li9, li10, li11])
 
     li1.textContent = `Name: ${data.name ?? "Unknown"}`
     li2.textContent = `ID: ${data.id}`

@@ -29,7 +29,7 @@ const type_translator =
     cosmetic_refund: "A cosmetic purchase was refunded",
     cosmetic_gift: "You bought a cosmetic gift",
     banner_unlock: "You unlocked profile banners",
-    gift_refund: "You revoked a gift",
+    gift_refund: "You revoked a gift (or it expired)",
     group_create: "You created a group",
     group_tip: "You tipped a group",
     group_tip_withdrawal: "You withdrew from a group's tip jar",
@@ -46,6 +46,8 @@ const type_translator =
     commerce_refund: "Someone requested a refund of a Misc. Purchase",
     commerce_refund_returned: "Return of earnings from Misc. Purchase refund",
     commerce_refund_reversed: "A refund of the refund of a Misc. Purchase",
+    commerce_payment_reversed: "Commerce refund",
+    commerce_earning_reversed: "Commerce earning reversed (refunded)",
     claw_promotion: "You promoted a Claw post",
     claw_promotion_refund: "Claw promotion refund",
     claw_payout: "Claw Engagement Bonus",
@@ -91,6 +93,19 @@ let sum_cache = await new Promise(resolve =>
     chrome.storage.session.get('sum_cache', data => resolve(data.sum_cache || [0, 0, {}]))
 ) ?? [0, 0, []];
 
+let use_commerce_payment_api = await new Promise(resolve =>
+    chrome.storage.local.get('use_commerce_payment_api', data => resolve(data.use_commerce_payment_api || false))
+) ?? false;
+
+// Restore commerce payment API preference
+document.getElementById('usepaymentapi').checked = use_commerce_payment_api;
+
+// Persist commerce payment API preference when toggled
+document.getElementById('usepaymentapi').addEventListener('change', function(e) {
+    use_commerce_payment_api = e.target.checked;
+    chrome.storage.local.set({use_commerce_payment_api: use_commerce_payment_api});
+});
+
 const notooltip = await new Promise(resolve =>
     chrome.storage.local.get('wallet_notooltip', data => resolve(data.wallet_notooltip || false))
 ) ?? false;
@@ -102,8 +117,12 @@ import { sanitize, formatDate, openSuccessPopup, MiniError, FixDecimal, openErro
 
 // Popup functions
 
-function openPopup(senderbal, recipientdata, amt, note) {
+function openPopup(senderbal, recipientdata, amt, note, useCommerceAPI) {
     document.getElementById('overlay').style.display = 'flex';
+    const recipientBalance = recipientdata.username == 'rotur'
+        ? `${FixDecimal(recipientdata.currency ?? 0)} -> ${FixDecimal(recipientdata.currency ?? 0)}`
+        : `${FixDecimal(recipientdata.currency ?? 0)} -> ${FixDecimal((recipientdata.currency ?? 0) + amt)}`;
+
     document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Confirm Transfer</h1>
@@ -111,14 +130,26 @@ function openPopup(senderbal, recipientdata, amt, note) {
         </div>
         <h2>Transferring ${amt} credit${amt != 1 ? 's' : ''} to: ${recipientdata.username}</h2>
         <p>Your Balance: ${FixDecimal(senderbal)} -> ${FixDecimal(senderbal - amt)}</p>
-        <p>${recipientdata.username}'s Balance: ${recipientdata.username == 'rotur' ? `${FixDecimal(recipientdata.currency ?? 0)} -> ${FixDecimal(recipientdata.currency ?? 0)}` : `${FixDecimal(recipientdata.currency ?? 0)} -> ${FixDecimal((recipientdata.currency ?? 0) + amt)}`}</p>
+        <p>${recipientdata.username}'s Balance: ${recipientBalance}</p>
         ${(note != "" ? `<p class='transactionnote'>With note: ${sanitize(note.substring(0, 50))}</p>` : "")}
         ${recipientdata.username == 'rotur' ? `<p class='specialtransfercase'>Note: The "rotur" Rotur account has a special property where its balance remains fixed no matter what transaction it's involved in. This means that any credits sent to it are effectively voided.` : ``}
+        ${useCommerceAPI ? `<p class='transactionnote'>Via: Commerce Payment API</p>` : ``}
         <div id="popup-choices">
             <button id="cancel" class="closebtn">Cancel</button>
             <button id="finaltransfer">Confirm & Send</button>
         </div>
     `, {sanitizer: sanitizer})
+}
+
+/**
+ * Generates a unique idempotency key for commerce payment API calls.
+ * Prevents duplicate payments if the user double-clicks or retries.
+ * @returns {string} Unique idempotency key (at least 16 chars)
+ */
+function generateIdempotencyKey() {
+    const timestamp = Date.now().toString(36);
+    const randomPart = Math.random().toString(36).substring(2, 10);
+    return `ra-${timestamp}-${randomPart}`;
 }
 
 function openDailyClaimPopup() {
@@ -215,7 +246,7 @@ async function getTransactionHistory(accdata) {
         const finaldate = formatDate(transaction_snippet.time)
         const newtotal = transaction_snippet.new_total ?? 0
         const user_avatar = (transaction_snippet.user?.length > 28 && transaction_snippet.user?.includes('-')) ? `Spectator` : (transaction_snippet.user || "Rotur")
-        const user_name = ((transaction_snippet.user.length > 28 && transaction_snippet.user.includes('-')) ? `Unknown User` : transaction_snippet.user) || "Rotur"
+        const user_name = ((transaction_snippet.user.length > 28 && transaction_snippet.user?.includes('-')) ? `Unknown User` : transaction_snippet.user) || "Rotur"
         const type = (type_translator[transaction_snippet.type] ?? `Misc. Transaction (${transaction_snippet.type})`)
         const transactioncard = document.getElementById('transactiontemplate').content.cloneNode(true)
         const exceptions = ['gift_create', 'gift_refund', 'group_create', 'group_tip', 'group_entry_fee', 'escrow_in', 'escrow_out', 'bounty_funded', 'bounty_refund']
@@ -273,7 +304,7 @@ async function getEconomicData(currentaccdata) {
 
     document.getElementById('statslist').setHTML(`
         <h2>General Stats</h2>
-        <p title="currency_comparison was quietly removed from /stats/economy. Because of this, Rotur Assistant now uses flat rates of 4 cents and 3 pence per credit in its calculations. These values are based on what they were being rounded off to right before the quiet removal.">Each credit is worth about $${(cents / 100).toFixed(2)} or £${(pence / 100).toFixed(2)}.</p>
+        <p title="currency_comparison was quietly removed from /stats/economy. Because of this, Rotur Assistant now uses fixed rates of 4 cents and 3 pence per credit in its calculations. These values are based on what they were being rounded off to right before the quiet removal.">Each credit is worth about $${(cents / 100).toFixed(2)} or £${(pence / 100).toFixed(2)}.</p>
         <p>The average user has around ${stats.average.toFixed(2)} credits, which means that they have around $${(stats.average * (cents / 100)).toFixed(2)} or £${(stats.average * (pence / 100)).toFixed(2)} worth of credits.</p>
         <p>There are a total of ${stats.total.toFixed(2)} credits in circulation. This means the entire rotur economy is worth a grand total of $${(stats.total * (cents / 100)).toFixed(2)} or £${(stats.total * (pence / 100)).toFixed(2)}.</p>
         <p>The recent economical variance is ${stats.variance.toFixed(2)}.</p>
@@ -554,7 +585,17 @@ async function walletpage() {
     }
     getEconomicData(activeaccdata)
     getTransactionHistory(activeaccdata)
-    getWaitTime()
+    if (activeaccdata['sys.owner']) {
+        document.getElementById('dailyclaim').textContent = 'Daily credit unavailable'
+        if (!document.getElementById('claimcountdown')) {
+            const div = document.createElement('div')
+            div.id = 'claimcountdown'
+            document.getElementById('dailyclaim').insertAdjacentElement('afterend', div)
+        }
+        document.getElementById('claimcountdown').setHTML(`<p id='claimcountdowntext'>Sub-accounts can't claim the daily credit. Contact the owner of this account, <a href='../pages/lookup.html?user=${activeaccdata['sys.owner_username']}' style="text-decoration: none;"><img src='https://avatars.rotur.dev/${activeaccdata['sys.owner_username']}' alt='${activeaccdata['sys.owner_username']}' width=20, height=20> ${activeaccdata['sys.owner_username']}</a>, for assistance.</p>`, {sanitizer: sanitizer})
+    } else {
+        getWaitTime()
+    }
 }
 
 walletpage()
@@ -819,17 +860,43 @@ document.addEventListener('click', async function(e) {
                 }, 10000)
                 return;
             }
-            openPopup(bal_cache, recipientdata, transferamt, note);
+            openPopup(bal_cache, recipientdata, transferamt, note, document.getElementById('usepaymentapi').checked);
             break;
         }
         case ('finaltransfer'): {
             const transferuser = document.getElementById('transferuser').value
             const transfervalue = parseFloat(document.getElementById('amount').value);
-            const transferresult = await fetch(`https://api.rotur.dev/me/transfer`, {
-                method: "POST",
-                headers: authform,
-                body: JSON.stringify({to: transferuser, amount: transfervalue, note: document.getElementById('transfernote').value})
-            }).then(res => res.json())
+            const useCommerceAPI = document.getElementById('usepaymentapi').checked;
+            const note = document.getElementById('transfernote').value;
+
+            let transferresult;
+            if (useCommerceAPI) {
+                // Use the Commerce Payment API endpoint
+                const idempotencyKey = generateIdempotencyKey();
+                transferresult = await fetch(`https://api.rotur.dev/v2/commerce/payments`, {
+                    method: "POST",
+                    headers: authform,
+                    body: JSON.stringify({
+                        to: transferuser,
+                        amount: transfervalue,
+                        source: "rotur-assistant",
+                        kind: "transfer",
+                        resource_type: "",
+                        resource_id: "",
+                        note: note,
+                        idempotency_key: idempotencyKey,
+                        splits: []
+                    })
+                }).then(res => res.json());
+            } else {
+                // Use the regular transfer endpoint
+                transferresult = await fetch(`https://api.rotur.dev/me/transfer`, {
+                    method: "POST",
+                    headers: authform,
+                    body: JSON.stringify({to: transferuser, amount: transfervalue, note: note})
+                }).then(res => res.json());
+            }
+
             closePopup()
             if (transferresult.error) {
                 document.getElementById('transferstatusplaceholder').replaceChildren(MiniError('failure', transferresult.error))
@@ -840,7 +907,8 @@ document.addEventListener('click', async function(e) {
                     chrome.storage.session.set({sum_cache: sum_cache})
                 }
                 refreshCounters()
-                document.getElementById('transferstatusplaceholder').replaceChildren(MiniError('success', `Transfer of ${transfervalue} credit${transfervalue != 1 ? 's' : ''} to ${document.getElementById('transferuser').value} was successful!`))
+                const apiName = useCommerceAPI ? "Commerce Payment API" : "transfer";
+                document.getElementById('transferstatusplaceholder').replaceChildren(MiniError('success', `Transfer of ${transfervalue} credit${transfervalue != 1 ? 's' : ''} to ${document.getElementById('transferuser').value} was successful! (via ${apiName})`))
                 document.getElementById('transferuser').value = ''
                 document.getElementById('amount').value = ''
                 document.getElementById('transfernote').value = ''

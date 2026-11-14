@@ -102,8 +102,6 @@ async function checkanchor() {
     }
 }
 
-checkanchor()
-
 async function appendaccounts() {
     const list = document.getElementById('accountflyoutlist')
     const accounts = await new Promise(resolve =>
@@ -192,3 +190,7 @@ async function updatePFPs() {
 }
 
 updatePFPs()
+
+document.addEventListener('DOMContentLoaded', () => {
+    checkanchor() // Get around possible console errors when this runs before the DOM finishes loading
+})

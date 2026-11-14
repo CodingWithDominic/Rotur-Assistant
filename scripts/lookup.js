@@ -6,6 +6,7 @@ let userdata_cache = ''
 let you_cache = ''
 let outgoing_cache = ''
 let my_following_cache = ''
+let badgedata_cache = {}
 
 let user_cache = 'MRBELLY'
 
@@ -17,6 +18,7 @@ const config = {
 const sanitizer = new Sanitizer(config)
 
 import { sanitize, formatDate, openErrorPopup, openWarningPopup, openSuccessPopup, CreateEmptyPlaceholder, MiniError, FixDecimal } from "../index.js"
+import { createBadgeElement, resolveBadgeImageName } from "./badges.js"
 
 function desanitize(string) {
     return string.replaceAll('&sol;','/').replaceAll('&lt;', '<').replaceAll('&gt;', '>').replaceAll('&lpar;', '(').replaceAll('&rpar;', ')').replaceAll("&equals;", "=").replaceAll(`&quot;`, `"`).replaceAll(`&#39;`, `'`).replaceAll('&amp;', '&') // Used for handling items since Rotur decided to use the direct item names as the IDs instead.
@@ -291,7 +293,39 @@ function openUninPopup(post_id) {
     `, {sanitizer: sanitizer})
 }
 
-//End of popup code. Now begins re-used claw.js code
+function openBadgeInfoPopup(badgedata) {
+    document.getElementById('overlay').style.display = 'flex';
+    document.getElementsByClassName('popup')[0].setHTML(`
+        <div id="popup-header">
+            <h1>Badge Info</h1>
+            <button id="popup-x" class="closebtn">✕</button>
+        </div>
+        <ul class="popupinfolist">
+            <li>Name: ${sanitize(badgedata.name)}
+            <li>ID: ${sanitize(badgedata.id)}
+            <li>Description: ${sanitize(badgedata.description)}
+            ${badgedata.issuer ? `
+                <li>Issued by: ${sanitize(badgedata.issuer)}
+                ` : ""}
+            ${badgedata.evolving ? `
+                <li>Tier: ${badgedata.level}
+                <li>Progress to next tier: ${badgedata.progress} / ${badgedata.next_threshold ? badgedata.next_threshold : "Max"}
+                ` : ""}
+        </ul>
+        ${badgedata.id == 'discord' ? "<p>This badge has been removed from Rotur officially, but for fun, Rotur Assistant brings it back.</p>" : ""}
+        <div id="popup-choices">
+            <button id="copybadgeicn">Copy ICN</button>
+            <button id="openbadgewiki">View on Wiki</button>
+        </div>
+        <button id="cancel" class="closebtn" style="width: 100%; margin-top: 8px;">Dismiss</button>
+    `, {sanitizer: sanitizer})
+    if (!badgedata.icon) {
+        document.getElementById('copybadgeicn').disabled = true
+        document.getElementById('copybadgeicn').textContent = "ICN Unavailable"
+    }
+}
+
+// End of popup code. Now begins re-used claw.js code
 
 function updateReplyCharLimit(postid, num) {
     const replycharlimit = document.getElementById(`limit-${postid}`)
@@ -724,40 +758,22 @@ async function renderProfile(userdata, you) {
     const joindate = formatDate(userdata.created)
 
     if ((userdata.system?.toLowerCase() == 'passnet') && !(badges.some(item => item.name.toLowerCase() == 'passnet'))) {
-        badges.push({name: "PassNet", description: "This account was created on PassNet", icon: ''})
+        badges.push({name: "PassNet", description: "This account was created on PassNet", icon: '', issuer: 'rotur'})
     }
     if (userdata.discord_id) {
-        badges.push({name: "discord", id: "discord", description: "This user linked their Discord account to Rotur", icon: ''})
+        badges.push({name: "discord", id: "discord", description: "This user linked their Discord account to Rotur", icon: '', issuer: 'Rotur Assistant'})
     }
     const badgelist = profile.querySelector('#badges')
     badgelist.replaceChildren()
     for (let i=0; i<badges.length; i++) {
-        let badge_name = (badges[i].id.startsWith('app:') ? badges[i].name : badges[i].id)
-        if (badge_name == 'fluoride') {
-            badge_name = 'Fluoride'
-        }
-        if (!known_badges.includes(badge_name)) {
-            badge_name = 'placeholder'
-        }
         const li = document.createElement('li')
-        const img = document.createElement('img')
-        img.src = `../images/badges/${badge_name}.png`
-        img.title = `${badge_name == "placeholder" ? `${badges[i].name}
-        
-The badge shown is a placeholder badge in case Rotur Assistant doesn't recognize that badge yet.
-Original badge description: ${badges[i].description}` : `${badges[i].name}
-        
-${badges[i].description}`}`
-        img.alt = badges[i].name
-        img.width = 24
-        img.height = 24
-        li.appendChild(img)
+        li.appendChild(createBadgeElement(badges[i], resolveBadgeImageName(badges[i], known_badges)))
         badgelist.appendChild(li)
     }
     if (badges.length == 0) {
         document.querySelector('#badges')?.remove()
     }
-
+    userdata_cache.badges = badges
     const economy_html = []
     const h2 = document.createElement('h2')
     h2.textContent = "General Statistics"
@@ -1118,6 +1134,28 @@ document.addEventListener('click', async function(e) {
             }  
             return;
         }
+        case ('copybadgeicn'): {
+            if (e.shiftKey) {
+                window.location.href = `/pages/icn.html?icn=${encodeURIComponent(badgedata_cache.icon)}`
+                return;
+            }
+            target.disabled = true
+            try {
+                await navigator.clipboard.writeText(badgedata_cache.icon);
+                target.textContent = "Copied ICN"
+            } catch (err) {
+                target.textContent = "Failed to copy"
+            }
+            setTimeout(() => {
+                target.disabled = false
+                target.textContent = "Copy ICN"
+            }, 2000)
+            return;
+        }
+        case ('openbadgewiki'): {
+            window.location.href = `/pages/wiki_pages/badges.html#${badgedata_cache.id.startsWith('app:') ? "systembadges" : badgedata_cache.id}sect`
+            return;
+        }
         case 'viewanyway':
             closePopup();
             renderProfile(userdata_cache, you_cache);
@@ -1361,7 +1399,15 @@ document.addEventListener('click', async function(e) {
             setNotes(notes);
             break;
         }
-
+        case 'badgeicon': {
+            const badge_name = target.ariaLabel ?? target.alt ?? 'placeholder'
+            const badgedata = userdata_cache.badges.find(badge => badge.name == badge_name)
+            if (badgedata) {
+                badgedata_cache = badgedata
+                openBadgeInfoPopup(badgedata)
+            }
+            break;
+        }
         case 'buyitem': {
             const amt = parseFloat(target.dataset.amt);
             if (you_cache['sys.currency'] < amt) {
@@ -1600,5 +1646,17 @@ document.addEventListener('input', async function (e) {
         document.getElementById('ranotecharlimit').textContent = `${e.target.value.length}/300`
         document.getElementById('ranotecharlimit').style = `color: ${e.target.value.length > 300 ? 'red' : 'white'};`
         return;
+    }
+})
+
+document.addEventListener('keydown', function(e) {
+    if (e.shiftKey && document.getElementById('copybadgeicn') && !document.getElementById('copybadgeicn').disabled) {
+        document.getElementById('copybadgeicn').textContent = "Open ICN in Editor"
+    }
+});
+
+document.addEventListener('keyup', function(e) {
+    if (e.key === 'Shift' && document.getElementById('copybadgeicn') && !document.getElementById('copybadgeicn').disabled) {
+        document.getElementById('copybadgeicn').textContent = "Copy ICN"
     }
 })

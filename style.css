@@ -708,6 +708,10 @@ p[class='partialsuccess'] {
     margin-top: 0px;
     margin-bottom: 0px;
 }
+#usepaymentapilabel {
+    width: 100%;
+    justify-content: center;
+}
 #claimfineprint p, #claimfineprint p a {
     font-size: 10px;
     margin-top: 3px;
@@ -1369,6 +1373,15 @@ h3#pronouns {
     flex-direction: horizontal;
     flex-wrap: wrap;
     align-items: center;
+}
+canvas.badgeicon, img.badgeicon {
+    display: block;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+}
+canvas.badgeicon {
+    transform: scaleY(-1);
 }
 .userinfo2, .userinfoedit2 {
     display: flex;
@@ -3898,7 +3911,10 @@ button[class='viewoverlayinfo'] {
 .cosmeticitem h3, .cosmeticitem p {
     margin: 2px;
 }
-#popupinfolist li {
+.popupinfolist {
+    display: block;
+}
+.popupinfolist li {
     text-align: left;
 }
 #cosmeticviewoptions {

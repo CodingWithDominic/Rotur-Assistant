@@ -60,7 +60,9 @@ const mw_type_lookup = {
     comment: "Project Comment",
     profile_comment: "Profile Comment",
     reply: "New Reply",
-    moderation: "Moderation Notice"
+    moderation: "Moderation Notice",
+    follower_milestone: "Follower Milestone",
+    project_review: "Project Review"
 }
 if (!activeacc.uuid) {
     document.getElementsByClassName('container')[0].setHTML(
@@ -310,39 +312,46 @@ function LoadInbox(inbox) {
                 break;
             }
             case ('mistwarp'): {
+                console.log(notifs)
                 notifs.forEach(notif => {
                     const user = notif.actor ?? "Unknown User"
                     const type = mw_type_lookup[notif.type] ?? `Misc. (${notif.type})`
-                    const imgurl = `https://avatars.rotur.dev/${notif.actor ?? "Spectator"}`
+                    const imgurl = `https://avatars.rotur.dev/${notif.actor || "Spectator"}`
                     const notiftext = (() => {
                         switch (notif.type) {
                             case ('news'): {
-                                return `A new announcement was made: <a href="https://mistwarp.org/news" target="_blank" rel="noopener noreferrer">${sanitize(notif.title ?? "Unknown Title")}</a>`
+                                return `A new announcement was made: <a href="https://mistwarp.org/news" target="_blank" rel="noopener noreferrer">${sanitize(notif.title ?? notif.platform_data.title ?? "Unknown Title")}</a>`
                             }
                             case ('purchase'): {
-                                return `<a href="lookup.html?user=${sanitize(notif.actor ?? "Spectator")}">${sanitize(user)}</a> bought your project: <a href="https://mistwarp.org/project/${encodeURIComponent(notif.projectId)}" target="_blank" rel="noopener noreferrer">${sanitize(notif.projectTitle)}</a> for ${notif.amount ?? 0} ${(notif.amount == 1) ? 'credit' : 'credits'}.`
+                                return `<a href="lookup.html?user=${sanitize(notif.actor || "Spectator")}">${sanitize(user)}</a> bought your project: <a href="https://mistwarp.org/project/${encodeURIComponent(notif.projectId ?? notif.platform_data.projectId)}" target="_blank" rel="noopener noreferrer">${sanitize(notif.projectTitle ?? notif.platform_data.projectTitle)}</a> for ${notif.amount ?? 0} ${(notif.amount == 1) ? 'credit' : 'credits'}.`
                             }
                             case ('remix'): {
-                                return `<a href="lookup.html?user=${sanitize(notif.actor ?? "Spectator")}">${sanitize(user)}</a> remixed one of your projects: <a href="https://mistwarp.org/project/${encodeURIComponent(notif.projectId)}" target="_blank" rel="noopener noreferrer">${sanitize(notif.projectTitle)}</a>.`
+                                return `<a href="lookup.html?user=${sanitize(notif.actor || "Spectator")}">${sanitize(user)}</a> remixed one of your projects: <a href="https://mistwarp.org/project/${encodeURIComponent(notif.projectId ?? notif.platform_data.projectId)}" target="_blank" rel="noopener noreferrer">${sanitize(notif.projectTitle ?? notif.platform_data.projectTitle)}</a>.`
                             }
                             case ('love'): {
-                                return `<a href="lookup.html?user=${sanitize(notif.actor ?? "Spectator")}">${sanitize(user)}</a> loved your project <a href="https://mistwarp.org/project/${encodeURIComponent(notif.projectId)}" target="_blank" rel="noopener noreferrer">${sanitize(notif.projectTitle)}</a>.`
+                                return `<a href="lookup.html?user=${sanitize(notif.actor || "Spectator")}">${sanitize(user)}</a> loved your project <a href="https://mistwarp.org/project/${encodeURIComponent(notif.projectId ?? notif.platform_data.projectId)}" target="_blank" rel="noopener noreferrer">${sanitize(notif.projectTitle ?? notif.platform_data.projectTitle)}</a>.`
                             }
                             case ('comment'): {
-                                return `<a href="lookup.html?user=${sanitize(notif.actor ?? "Spectator")}">${sanitize(user)}</a> commented on your project <a href="https://mistwarp.org/project/${encodeURIComponent(notif.projectId)}#comment-id-${encodeURIComponent(notif.commentId)}" target="_blank" rel="noopener noreferrer">${sanitize(notif.projectTitle)}</a>.`
+                                return `<a href="lookup.html?user=${sanitize(notif.actor || "Spectator")}">${sanitize(user)}</a> commented on your project <a href="https://mistwarp.org/project/${encodeURIComponent(notif.projectId ?? notif.platform_data.projectId)}#comment-id-${encodeURIComponent(notif.commentId ?? notif.platform_data?.commentId)}" target="_blank" rel="noopener noreferrer">${sanitize(notif.projectTitle ?? notif.platform_data.projectTitle)}</a>.`
                             }
                             case ('profile_comment'): {
-                                return `<a href="lookup.html?user=${sanitize(notif.actor ?? "Spectator")}">${sanitize(user)}</a> commented on <a href="https://mistwarp.org/users/${encodeURIComponent(activeacc.name)}" target="_blank" rel="noopener noreferrer">your profile</a>.`
+                                return `<a href="lookup.html?user=${sanitize(notif.actor || "Spectator")}">${sanitize(user)}</a> commented on <a href="https://mistwarp.org/users/${encodeURIComponent(activeacc.name)}" target="_blank" rel="noopener noreferrer">your profile</a>.`
+                            }
+                            case ('follower_milestone'): {
+                                return (notif.platform_data?.body)
+                            }
+                            case ('project_review'): {
+                                return `<a href="lookup.html?user=${sanitize(notif.actor || "Spectator")}">${sanitize(user)}</a> left a review on your project <a href="https://mistwarp.org/project/${encodeURIComponent(notif.projectId ?? notif.platform_data.projectId)}" target="_blank" rel="noopener noreferrer">${sanitize(notif.projectTitle ?? notif.platform_data.projectTitle)}</a>, giving it a rating of ${sanitize(notif.platform_data?.rating ?? "Unknown")} out of 5.`
                             }
                             case ('reply'): {
-                                if (notif.projectId) {
-                                    return `<a href="lookup.html?user=${sanitize(notif.actor ?? "Spectator")}">${sanitize(user)}</a> replied to your comment on <a href="https://mistwarp.org/project/${encodeURIComponent(notif.projectId)}#comment-id-${encodeURIComponent(notif.commentId)}" target="_blank" rel="noopener noreferrer">${sanitize(notif.projectTitle)}</a>.`
+                                if (notif.projectId ?? notif.platform_data.projectId) {
+                                    return `<a href="lookup.html?user=${sanitize(notif.actor || "Spectator")}">${sanitize(user)}</a> replied to your comment on <a href="https://mistwarp.org/project/${encodeURIComponent(notif.projectId ?? notif.platform_data.projectId)}#comment-id-${encodeURIComponent(notif.commentId ?? notif.platform_data?.commentId)}" target="_blank" rel="noopener noreferrer">${sanitize(notif.projectTitle ?? notif.platform_data.projectTitle)}</a>.`
                                 } else {
-                                    return `<a href="lookup.html?user=${sanitize(notif.actor ?? "Spectator")}">${sanitize(user)}</a> replied to your comment on <a href="https://mistwarp.org/users/${encodeURIComponent(notif.profile)}#comment-id-${encodeURIComponent(notif.commentId)}" target="_blank" rel="noopener noreferrer">${sanitize(notif.profile)}'s profile</a>.`
+                                    return `<a href="lookup.html?user=${sanitize(notif.actor || "Spectator")}">${sanitize(user)}</a> replied to your comment on <a href="https://mistwarp.org/users/${encodeURIComponent(notif.profile)}#comment-id-${encodeURIComponent(notif.commentId ?? notif.platform_data?.commentId)}" target="_blank" rel="noopener noreferrer">${sanitize(notif.profile)}'s profile</a>.`
                                 }
                             }
                             default: {
-                                return notif.message ?? `Rotur Assistant does not recognize this notification type yet. In the meantime, check out the notification <a href="https://mistwarp.org/notifications" target="_blank" rel="noopener noreferrer">here</a>.`
+                                return notif.message ?? notif.platform_data.message ?? `Rotur Assistant does not recognize this notification type yet. In the meantime, check out the notification <a href="https://mistwarp.org/notifications" target="_blank" rel="noopener noreferrer">here</a>.`
                             }
                         }
                     })()

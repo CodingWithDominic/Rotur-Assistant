@@ -3,10 +3,12 @@ For those who need a pure JS implementation of ICN, that's not dependent on Scra
 Rotur Assistant, alongside this code, was created by Dominic. Feel free to use this, as long as you give credit (leaving this comment alone will count as credit) */
 
 import { openErrorPopup } from "../index.js";
+import { parseICN, renderICN as renderICNCore, base_commands, special_commands } from "./icn_core.js";
 
 const queryString = window.location.search;
 const urlParams = new URLSearchParams(queryString);
 const tab = urlParams.get('tab')
+const url_icn = urlParams.get('icn')
 if (tab && tab == 'docs') {
     document.getElementsByClassName('tab')[0].style = 'border-bottom: none;'
     document.getElementsByClassName('tab')[2].style = 'border-bottom: 2px solid white;'
@@ -59,12 +61,6 @@ Array.from(document.getElementsByName('canvasbg')).forEach(bg => {
 
 document.getElementById('icn_canvas').style.background = icn_settings.background == 'white' ? 'white' : icn_settings.background == 'black' ? 'black' : icn_settings.background == 'transparent' ? 'none' : '#0000006c'
 
-function parseHex(str) {
-    if (typeof str === 'string' && str.startsWith('#')) {
-        return parseInt(str.slice(1), 16);
-    }
-    return NaN;
-};
 
 const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
 
@@ -79,369 +75,23 @@ let initialOffsetX = 0;
 let initialOffsetY = 0;
 let scrollLeft = 0, scrollTop = 0;
 
-const base_commands = ['w', 'c', 'scale', 'image', 'rect', 'square', 'dot', 'line', 'tri', 'cutcircle', 'curve', 'cont', 'move', 'ellipse', 'back']
-const whitelisted_arguments = ['filled', 'true']
-const special_commands = ['weight', 'size', 'color', 'colour', 'rectangle', 'triangle', 'arc', 'continue', 'arc2', 'circle', 'cutcircle2'] // Commands that only work within Rotur Assistant
-const π = Math.PI
-
-function parseICN(data) {
-    const rawicndata = data.split(/\s+/).filter(item => item != '');
-    let icndata = [] // [ {"command":[1, 2, 3, 4]} , {"command":[1, 2, 3, 4]} ]
-    rawicndata.forEach(item => {
-        if (isNaN(parseFloat(item)) && isNaN(parseHex(item)) && !whitelisted_arguments.includes(item) && !(item.startsWith('https://') || item.startsWith('http://'))) {
-            icndata.push({ [item]: [] });
-        } else {
-            const lastObject = icndata[icndata.length - 1];
-            if (lastObject) {
-                const lastKey = Object.keys(lastObject)[0];
-                lastObject[lastKey].push(whitelisted_arguments.includes(item) || (item.startsWith('#') || item.startsWith('https://') || item.startsWith('http://')) ? item : parseFloat(item));
-            }
-        }
-    })
-    return icndata
-}
 
 const canvas = document.getElementById('icn_canvas')
 const ctx = canvas.getContext('2d')
 
-function drawGrid(gridSize) {
-    ctx.save();
-
-    const matrix = ctx.getTransform();
-    const imatrix = matrix.invertSelf();
-
-    const left = imatrix.a * 0 + imatrix.c * 0 + imatrix.e;
-    const right = imatrix.a * canvas.width + imatrix.c * canvas.height + imatrix.e;
-    const top = imatrix.b * 0 + imatrix.d * 0 + imatrix.f;
-    const bottom = imatrix.b * canvas.width + imatrix.d * canvas.height + imatrix.f;
-
-    const isDarkBg = (icn_settings.background != 'white');
-    ctx.strokeStyle = isDarkBg ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)';
-    ctx.lineWidth = 0.5 / scale; // Keep grid lines visually consistently thin regardless of scale
-
-    ctx.beginPath();
-
-    const startX = Math.floor(left / gridSize) * gridSize;
-    for (let x = startX; x <= right; x += gridSize) {
-        ctx.moveTo(x, top);
-        ctx.lineTo(x, bottom);
-    }
-
-    const startY = Math.floor(top / gridSize) * gridSize;
-    for (let y = startY; y <= bottom; y += gridSize) {
-        ctx.moveTo(left, y);
-        ctx.lineTo(right, y);
-        9
-    }
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.strokeStyle = isDarkBg ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)';
-    ctx.lineWidth = 1.2 / scale;
-
-    ctx.moveTo(left, 0);
-    ctx.lineTo(right, 0);
-
-    ctx.moveTo(0, top);
-    ctx.lineTo(0, bottom);
-    ctx.stroke();
-
-    ctx.restore();
-}
-
 function renderICN(icn) {
-    ctx.reset()
-    ctx.lineCap = "round";
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.setTransform(scale, 0, 0, scale, offsetX, offsetY);
-
-    if (icn_settings.grid) {
-        drawGrid(icn_settings.gridsize)
-    }
-
-    let color = 0
-    let width = 1
-    let icn_scale = 1
-    let cont_cache_x = 0
-    let cont_cache_y = 0
-    let icn_transformX = 0
-    let icn_transformY = 0
-    icn.forEach(cmdobj => {
-        if (width < 0.1) {
-            width = 0.1
-        }
-        const cmd = Object.keys(cmdobj)[0]
-        const icn_arguments = cmdobj[cmd]
-        while (icn_arguments.length < 10) {
-            icn_arguments.push(0) // Failsafe in case a command has insufficient arguments
-        }
-        switch (cmd) {
-            case 'w':
-            case 'width':
-            case 'weight': {
-                if (cmd == 'w' || icn_settings.exclusive) {
-                    width = icn_arguments[0]
-                }
-                break
-            }
-            case 'c':
-            case 'color': // Exclusive Alias
-            case 'colour': { // Exclusive Alias
-                if (cmd == 'c' || icn_settings.exclusive) {
-                    color = icn_arguments[0]
-                }
-                break
-            }
-            case 'move': {
-                icn_transformX = icn_arguments[0]
-                icn_transformY = icn_arguments[1]
-                break
-            }
-            case 'scale': {
-                icn_scale = icn_arguments[0]
-                if (icn_scale < 0.1) {
-                    icn_scale = 0.1
-                }
-                break
-            }
-            case 'reset':
-            case 'back': {
-                if (cmd == 'back' || icn_settings.exclusive) {
-                    icn_transformX = 0
-                    icn_transformY = 0
-                }
-                break
-            }
-            case 'l': // Milo's AI gave me the idea to add this alias
-            case 'line': {
-                if (cmd == 'line' || icn_settings.exclusive) {
-                    ctx.beginPath()
-                    ctx.lineWidth = width * icn_scale
-                    ctx.strokeStyle = color;
-                    ctx.moveTo((icn_arguments[0] + icn_transformX) * icn_scale, (icn_arguments[1] + icn_transformY) * icn_scale)
-                    ctx.lineTo((icn_arguments[2] + icn_transformX) * icn_scale, (icn_arguments[3] + icn_transformY) * icn_scale)
-                    ctx.stroke()
-                    cont_cache_x = icn_arguments[2]
-                    cont_cache_y = icn_arguments[3]
-                    ctx.closePath()
-                }
-                break
-            }
-            case 'continue':
-            case 'cont': {
-                if (cmd == 'cont' || icn_settings.exclusive) {
-                    ctx.beginPath()
-                    ctx.lineWidth = width * icn_scale
-                    ctx.strokeStyle = color;
-                    ctx.moveTo((cont_cache_x + icn_transformX) * icn_scale, (cont_cache_y + icn_transformY) * icn_scale)
-                    ctx.lineTo((icn_arguments[0] + icn_transformX) * icn_scale, (icn_arguments[1] + icn_transformY) * icn_scale)
-                    ctx.stroke()
-                    cont_cache_x = icn_arguments[0]
-                    cont_cache_y = icn_arguments[1]
-                    ctx.closePath()
-                }
-                break                
-            }
-            case 'curve': {
-                ctx.beginPath()
-                ctx.lineWidth = width * icn_scale
-                ctx.strokeStyle = color;
-                ctx.moveTo((icn_arguments[0] + icn_transformX) * icn_scale, (icn_arguments[1] + icn_transformY) * icn_scale)
-                ctx.quadraticCurveTo((icn_arguments[4] + icn_transformX) * icn_scale, (icn_arguments[5] + icn_transformY) * icn_scale, (icn_arguments[2] + icn_transformX) * icn_scale, (icn_arguments[3] + icn_transformY) * icn_scale)
-                ctx.stroke()
-                cont_cache_x = icn_arguments[2]
-                cont_cache_y = icn_arguments[3]
-                ctx.closePath()
-                break
-            }
-            case 'square': {
-                ctx.lineWidth = width * icn_scale
-                ctx.strokeStyle = color;
-                let rectx = (icn_arguments[0] + icn_transformX) * icn_scale
-                let recty = (icn_arguments[1] + icn_transformY) * icn_scale
-                let rect_width = icn_arguments[2] * icn_scale * 2
-                let rect_height = icn_arguments[3] * icn_scale * 2
-                rectx -= (rect_width / 2)
-                recty -= (rect_height / 2)
-                if (!icn_settings.sharp) {
-                    ctx.beginPath()
-                    ctx.roundRect(rectx, recty, rect_width, rect_height, ((width/4) * (icn_scale/2)))
-                    ctx.stroke()
-                    ctx.closePath()
-                } else {
-                    ctx.strokeRect(rectx, recty, rect_width, rect_height)
-                }
-                break
-            }
-            case 'rect':
-            case 'rectangle': { // Exclusive Alias
-                if (cmd == 'rect' || icn_settings.exclusive) {
-                    ctx.lineWidth = width * icn_scale
-                    ctx.fillStyle = color;
-                    let rectx = (icn_arguments[0] + icn_transformX) * icn_scale
-                    let recty = (icn_arguments[1] + icn_transformY) * icn_scale
-                    let rect_width = icn_arguments[2] * icn_scale * 2
-                    let rect_height = icn_arguments[3] * icn_scale * 2
-                    rectx -= (rect_width / 2)
-                    recty -= (rect_height / 2)
-                    ctx.fillRect(rectx, recty, rect_width, rect_height)
-                    if (!icn_settings.sharp) {
-                        ctx.strokeStyle = color;
-                        ctx.beginPath()
-                        ctx.roundRect(rectx, recty, rect_width, rect_height, ((width/4) * (icn_scale/2)))
-                        ctx.stroke()
-                        ctx.closePath()
-                    }
-                }
-                break
-            }
-            case 'cutcircle':
-            case 'arc': { // Exclusive Alias
-                if (cmd == 'cutcircle' || icn_settings.exclusive) {
-                    ctx.lineWidth = width * icn_scale
-                    let cx = (icn_arguments[0] + icn_transformX) * icn_scale
-                    let cy = (icn_arguments[1] + icn_transformY) * icn_scale
-                    let radius = icn_arguments[2] * icn_scale
-                    let angle = (icn_arguments[3] * -5) + 45
-                    let sweep_angle = icn_arguments[4]
-                    let start_angle = (angle - (sweep_angle / 2)) * (π/90)
-                    let end_angle = (angle + (sweep_angle / 2)) * (π/90)
-                    ctx.strokeStyle = color;
-                    ctx.beginPath()
-                    ctx.arc(cx, cy, radius, start_angle, end_angle)
-                    ctx.stroke()
-                    if (icn_settings.exclusive && (icn_arguments[5] == 1 || icn_arguments[5] == 'filled' || icn_arguments[5] == 'true')) {
-                        ctx.fillStyle = color;
-                        ctx.beginPath()
-                        ctx.arc(cx, cy, radius, start_angle, end_angle)
-                        ctx.fill()
-                    }
-                    ctx.closePath()
-                }
-                break
-            }
-            case 'dot': {
-                ctx.fillStyle = color;
-                let cx = (icn_arguments[0] + icn_transformX) * icn_scale
-                let cy = (icn_arguments[1] + icn_transformY) * icn_scale
-                ctx.beginPath()
-                ctx.arc(cx, cy, (width * icn_scale)/2, 0, 2*π)
-                ctx.fill()
-                cont_cache_x = icn_arguments[0]
-                cont_cache_y = icn_arguments[1]
-                break
-            }
-            case 'tri':
-            case 'triangle': { // Exclusive Alias
-                if (cmd == 'tri' || icn_settings.exclusive) {
-                    ctx.beginPath();
-                    ctx.moveTo((icn_arguments[0] + icn_transformX) * icn_scale, (icn_arguments[1] + icn_transformY) * icn_scale);
-                    ctx.lineTo((icn_arguments[2] + icn_transformX) * icn_scale, (icn_arguments[3] + icn_transformY) * icn_scale); // A lot easier than when I did the vanilla scratch implementation
-                    ctx.lineTo((icn_arguments[4] + icn_transformX) * icn_scale, (icn_arguments[5] + icn_transformY) * icn_scale);
-                    ctx.closePath()
-                    ctx.fillStyle = color;
-                    ctx.fill();
-                    if (!icn_settings.sharp) {
-                        ctx.lineWidth = width * icn_scale;
-                        ctx.strokeStyle = color;
-                        ctx.lineJoin = "round";
-                        ctx.stroke()
-                    }
-                    ctx.closePath()
-                }
-                break
-            }
-            case 'ellipse':
-            case 'oval': { // Exclusive Alias
-                if (cmd == 'ellipse' || icn_settings.exclusive) {
-                    ctx.beginPath();
-                    ctx.strokeStyle = color;
-                    ctx.lineWidth = width * icn_scale
-                    ctx.ellipse((icn_arguments[0] + icn_transformX) * icn_scale, (icn_arguments[1] + icn_transformY) * icn_scale, icn_arguments[2] * icn_scale, icn_arguments[2] * icn_scale * icn_arguments[3], icn_arguments[4] * (π/-180), 0, 2*π)
-                    ctx.stroke();
-                    if (icn_settings.exclusive && (icn_arguments[5] == 1 || icn_arguments[5] == 'filled' || icn_arguments[5] == 'true')) {
-                        ctx.fillStyle = color;
-                        ctx.ellipse((icn_arguments[0] + icn_transformX) * icn_scale, (icn_arguments[1] + icn_transformY) * icn_scale, icn_arguments[2] * icn_scale, icn_arguments[2] * icn_scale * icn_arguments[3], icn_arguments[4] * (π/-180), 0, 2*π)
-                        ctx.fill();
-                    }
-                    ctx.closePath()
-                }
-                break
-            }
-            case 'image': {
-                const img = new Image();
-                img.onload = function() {
-                    ctx.save()
-                    ctx.scale(1, -1)
-                    const newheight = icn_arguments[1]
-                    const imgwidth = img.width
-                    const imgheight = img.height
-                    const aspectratio = imgwidth / imgheight
-                    const newwidth = newheight * aspectratio
-                    ctx.drawImage(img, -10 - (newwidth / 2), 10 - (newheight / 2), newwidth, newheight);
-                    ctx.restore()
-                };
-                img.src = icn_arguments[0]
-                break
-            }
-            // ICN Commands that only work within Rotur Assistant
-            case 'ellipse2':
-            case 'oval2': {
-                if (icn_settings.exclusive) {
-                    ctx.beginPath();
-                    ctx.strokeStyle = color;
-                    ctx.lineWidth = width * icn_scale
-                    ctx.ellipse((icn_arguments[0] + icn_transformX) * icn_scale, (icn_arguments[1] + icn_transformY) * icn_scale, icn_arguments[2] * icn_scale, icn_arguments[3] * icn_scale, icn_arguments[4] * (π/-180), 0, 2*π)
-                    ctx.stroke();
-                    if (icn_arguments[5] == 1 || icn_arguments[5] == 'filled' || icn_arguments[5] == 'true') {
-                        ctx.fillStyle = color;
-                        ctx.ellipse((icn_arguments[0] + icn_transformX) * icn_scale, (icn_arguments[1] + icn_transformY) * icn_scale, icn_arguments[2] * icn_scale, icn_arguments[3] * icn_scale, icn_arguments[4] * (π/-180), 0, 2*π)
-                        ctx.fill();
-                    }
-                }
-                break
-            }
-            case 'circle':
-            case 'cir': {
-                if (icn_settings.exclusive) {
-                    ctx.fillStyle = color;
-                    let cx = (icn_arguments[0] + icn_transformX) * icn_scale
-                    let cy = (icn_arguments[1] + icn_transformY) * icn_scale
-                    let radius = icn_arguments[2] * icn_scale
-                    ctx.beginPath()
-                    ctx.arc(cx, cy, radius, 0, 2*π)
-                    ctx.fill()
-                }
-                break
-            }
-            case 'cutcircle2':
-            case 'arc2': {
-                if (icn_settings.exclusive) {
-                    ctx.lineWidth = width * icn_scale
-                    let cx = (icn_arguments[0] + icn_transformX) * icn_scale
-                    let cy = (icn_arguments[1] + icn_transformY) * icn_scale
-                    let radius = icn_arguments[2] * icn_scale
-                    let angle = icn_arguments[3] * (π/180)
-                    let end_angle = icn_arguments[4] * (π/180)
-                    let cw = icn_arguments[6]
-                    if (cw == 'true') {
-                        cw = 1;
-                    }
-                    ctx.strokeStyle = color;
-                    ctx.beginPath()
-                    ctx.arc(cx, cy, radius, angle, end_angle, cw)
-                    ctx.stroke()
-                    if (icn_arguments[5] == 1 || icn_arguments[5] == 'filled' || icn_arguments[5] == 'true') {
-                        ctx.fillStyle = color;
-                        ctx.beginPath()
-                        ctx.arc(cx, cy, radius, angle, end_angle, cw)
-                        ctx.fill()
-                    }
-                }
-                break
-            }
-        }
+    renderICNCore(ctx, icn, {
+        width: canvas.width,
+        height: canvas.height,
+        scale,
+        offsetX,
+        offsetY,
+        background: icn_settings.background,
+        grid: icn_settings.grid,
+        gridsize: icn_settings.gridsize,
+        exclusive: icn_settings.exclusive,
+        sharp: icn_settings.sharp,
+        colordefault: 0
     })
 }
 
@@ -505,7 +155,7 @@ function openNameICNFile() {
     document.getElementsByClassName('popup')[0].setHTML(`
         <div id="popup-header">
             <h1>Name ICN File</h1>
-            <button id="popup-x" class="closebtn">✕</button>
+            <button id="popup-x" class="closebtn">âœ•</button>
         </div>
         <p id="deleteconfirmdialogue">Name of ICN file:</p>
         <input type='text' id='icnfilename'>
@@ -791,7 +441,12 @@ document.getElementById('icn_field').addEventListener('input', function(e) {
 AdjustLayout()
 AdjustLayout()
 
-if (icn_settings.preserve ?? true) {
+if (url_icn) {
+    document.getElementById('icn_field').value = url_icn
+    icn_cache = url_icn
+    icn_cache = parseICN(icn_cache)
+    renderICN(icn_cache)
+} else if (icn_settings.preserve ?? true) {
     document.getElementById('icn_field').value = icn_lastsession
     icn_cache = icn_lastsession
     icn_cache = parseICN(icn_cache)
