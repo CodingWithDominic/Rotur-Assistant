@@ -239,3 +239,21 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 - Made the process of uploading or changing your banner more inline with the new system (one-time payment of 30 credits instead of 10 credits per change)
 - Disabled the ability to change your E-mail within Rotur Assistant, since the process now requires your Rotur password. Any attempt to do so will tell you to change it on <a href="https://rotur.dev/account" target="_blank" rel="noopener noreferrer">rotur.dev</a> instead.
 - Added an option on the donation page to split the donation with MiloDev123, in honor of him being the biggest external contributor and advocate for Rotur Assistant. He's the main reason I became motivated enough again to find time to pick up Rotur Assistant again and release this update, after setting aside the project for a while due to college and lack of motivation due to many breaking API changes with Rotur itself.
+
+### 1.2.5
+
+- Fixed a few possible security vulnerabilities with account switching, as pointed out by Opencode.
+- Added counters for the tabs in the Gift manager
+- Improved MistWarp notifications
+- The Wallet app now has proper handling for sub-accounts trying to claim the daily credit
+- Several more wiki corrections, along with a new disclaimer saying the info provided may be inaccurate (I do try my best to provide info that's as accurate as possible, but I'm no exception to making mistakes every now and then).
+- A few corrections in services too.
+- Fixed a minor issue with header.js sometimes throwing an error because its code runs before the DOM finishes loading
+- When sorting claimed gifts by the amount involved, Rotur Assistant will now value membership gifts at their approximate RC equivalents based on Rotur Assistant now calculating RC at $0.04 or £0.03 each. This means Plus gifts will be valued at 58.25 RC ($2.33 / 0.04), and Pro gifts will be valued at 191.25 RC ($7.65 / 0.04). The value will be multiplied by 8 if the gift is for a yearly membership, rather than a monthly one.
+- Badges are no longer hardcoded! This means that the odds of seeing a placeholder badge on profiles should be a lot less likely, especially when Mistium adds new badges. This was definitely a long overdue change.
+- Badges are also now clickable to view additional info, such as tier progress, issuer, etc. They also allow you to even copy their ICN. Shift-clicking on the "Copy ICN" button will instead open the ICN editor with the badge ICN pre-filled. Do note that doing this will overwrite your last ICN session.
+- Added <code>encryption:keys</code> to the oauth scope when switching accounts on the main OriginChats client. A side effect of switching now is that you need to re-enter your encryption passphrase each time.
+- New CDN option: "Rotur (Pounce)" This option uploads your images to the same CDN Pounce uses for its attachments. This is not to be confused with Milo's RoturCDN. 
+- Added an option to override chess pieces on RoturGames, including pieces from piece packs. Unlike the official piece packs, only you see your custom pieces.
+- Small changes to Economy keys, namely removing the users section under bought keys (keys you bought used to show the other users who also bought the key, but not anymore)
+- Removed the "Revoke Key" button, since its associated endpoint did nothing.
