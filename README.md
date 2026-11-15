@@ -13,7 +13,7 @@ A versatile Chrome extension for the Rotur ecosystem that allows you to interact
 
 ## Build Instructions
 - Chrome: Download the repo, go to chrome://extensions, click "Load Unpacked", and then select the folder you got by downloading this repo. Make sure you have "Developer Mode" enabled in the top-right corner.
-- Firefox: First, download the repo. Then, click the extension icon in the top-right corner. Click on "Discover Extensions" if necessary. Then click on the settings icon right under where the search bar is. Then click on "Debug Add-ons". From there, click "Load Temporary Add-on", and then click on the zip file you got by downloading this repo. Do not unzip the folder first.
+- Firefox: First, download the repo. Then, click the extension icon in the top-right corner. Click on "Discover Extensions" if necessary. Then click on the settings icon right under where the search bar is. Then click on "Debug Add-ons". From there, click "Load Temporary Add-on", and then click on the zip file you got by downloading this repo. Do not unzip the folder first. You may need to change a few things around in the code to get the extension to work on Firefox, since this repo provides the code present in the Chrome version.
 
 ## Miscellaneous links
 - RoturGit counterpart of this repo: https://git.rotur.dev/Dominic/Rotur-Assistant
