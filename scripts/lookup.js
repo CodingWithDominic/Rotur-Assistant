@@ -309,7 +309,7 @@ function openBadgeInfoPopup(badgedata) {
                 ` : ""}
             ${badgedata.evolving ? `
                 <li>Tier: ${badgedata.level}
-                <li>Progress to next tier: ${badgedata.progress} / ${badgedata.next_threshold ? badgedata.next_threshold : "Max"}
+                <li>Progress to next tier: ${badgedata.next_threshold ? `${badgedata.progress} / ${badgedata.next_threshold}` : `Max (${badgedata.progress})`}
                 ` : ""}
         </ul>
         ${badgedata.id == 'discord' ? "<p>This badge has been removed from Rotur officially, but for fun, Rotur Assistant brings it back.</p>" : ""}

@@ -4197,3 +4197,31 @@ body.make-circular #changeavatarbtn {
 #freemaxkeyholderbadge {
     margin-bottom: 8px;
 }
+.pieceuploadmanager {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding-left: 3px;
+    padding-right: 3px;
+}
+.pieceuploadmanager label {
+    width: 100%;
+    text-wrap: nowrap;
+}
+.pieceuploadmanager div {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+.pieceuploadmanager div button {
+    width: 25%;
+    padding: 3px;
+    padding-left: 8px;
+    padding-right: 8px;
+    margin: 0;
+    margin-left: auto;
+}
+.piecelabel {
+    max-width: 120px;
+}

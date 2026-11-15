@@ -215,6 +215,27 @@ export async function UploadImage(imagedata, cdnoverride, rawdata) {
                 }                     
                 break;
             }
+            case ('rotur'): {
+                const json = {
+                    file: imagedata,
+                    name: imagedata.name,
+                    mime_type: imagedata.type,
+                };
+                const formData = new FormData();
+
+                for (const key in json) {
+                    formData.append(key, json[key]);
+                }
+                const image = await fetch(`https://api.rotur.dev/v2/attachments`, {method: 'POST', body: formData, headers: authform}).then(res => res.json()).catch((err) => {
+                    return;
+                });
+                if (!image || image.error) {
+                    return;                    
+                } else {
+                    potentialattachment = rawdata ? image : image.url
+                }                     
+                break;
+            }
             case ('ochost'): {
                 const validator = await fetch(`https://api.rotur.dev/generate_validator?key=RoturAssistantImage`, {headers: authform}).then(res => res.json())
                 const json = {

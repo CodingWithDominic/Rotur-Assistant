@@ -73,7 +73,7 @@ export function createBadgeElement(badge, badge_name, size = 24) {
     const icn = getBadgeICN(badge)
 
     if (icn) {
-        const canvas = createICNCanvas(icn, size, '#FFFFFF')
+        const canvas = createICNCanvas(icn, size, '#FFFFFF', false)
         canvas.className = 'badgeicon'
         canvas.title = badgeTooltip(badge, false)
         canvas.setAttribute('role', 'img')

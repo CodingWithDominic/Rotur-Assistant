@@ -96,7 +96,7 @@
                         </form>
                     </div>
                     <hr class="full-size">
-                    <h3>Chat controls</h3>
+                    <h3>Overrides</h3>
                     <p style="margin: 4px; margin-top: -3px;">For people who are frequent users of <a href="https://originchats.com/" target="_blank" rel="noopener noreferrer">OriginChats</a>. These options may require a page reload to fully take effect.</p>
                     <label title="Is the chat being chaotic? Enable this option to make things a little more bearable. A page refresh may be required for this setting to fully take effect. This may come with the side effect of making the GIFs service completely unusable.">
                         <input type="checkbox" id="blockgifs">
@@ -106,25 +106,183 @@
                         <input type="checkbox" id="overridegeneral">
                         Override #general channel nicknames on OriginChats
                     </label>
+                    <label>
+                        <input type="checkbox" id="chesscompieces">
+                        Show custom pieces on RoturGames
+                    </label>
+                    <details>
+                        <summary>Customize pieces</summary>
+                        <table id="chesspiecemanager">
+                            <tbody>
+                                <tr>
+                                    <td class="piecelabel">White Pawn</td>
+                                    <td class="pieceuploadmanager">
+                                        <label>
+                                            Image URL:
+                                            <input type="text" id="whitepawnfield">
+                                        </label>
+                                        <div>
+                                            <input type="file" id="whitepawnupload">
+                                            <button id="savewhitepawn" class="chesssave">Save</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="piecelabel">White Knight</td>
+                                    <td class="pieceuploadmanager">
+                                        <label>
+                                            Image URL:
+                                            <input type="text" id="whiteknightfield">
+                                        </label>
+                                        <div>
+                                            <input type="file" id="whiteknightupload">
+                                            <button id="savewhiteknight" class="chesssave">Save</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="piecelabel">White Bishop</td>
+                                    <td class="pieceuploadmanager">
+                                        <label>
+                                            Image URL:
+                                            <input type="text" id="whitebishopfield">
+                                        </label>
+                                        <div>
+                                            <input type="file" id="whitebishopupload">
+                                            <button id="savewhitebishop" class="chesssave">Save</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="piecelabel">White Rook</td>
+                                    <td class="pieceuploadmanager">
+                                        <label>
+                                            Image URL:
+                                            <input type="text" id="whiterookfield">
+                                        </label>
+                                        <div>
+                                            <input type="file" id="whiterookupload">
+                                            <button id="savewhiterook" class="chesssave">Save</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="piecelabel">White Queen</td>
+                                    <td class="pieceuploadmanager">
+                                        <label>
+                                            Image URL:
+                                            <input type="text" id="whitequeenfield">
+                                        </label>
+                                        <div>
+                                            <input type="file" id="whitequeenupload">
+                                            <button id="savewhitequeen" class="chesssave">Save</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="piecelabel">White King</td>
+                                    <td class="pieceuploadmanager">
+                                        <label>
+                                            Image URL:
+                                            <input type="text" id="whitekingfield">
+                                        </label>
+                                        <div>
+                                            <input type="file" id="whitekingupload">
+                                            <button id="savewhiteking" class="chesssave">Save</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="piecelabel">Black Pawn</td>
+                                    <td class="pieceuploadmanager">
+                                        <label>
+                                            Image URL:
+                                            <input type="text" id="blackpawnfield">
+                                        </label>
+                                        <div>
+                                            <input type="file" id="blackpawnupload">
+                                            <button id="saveblackpawn" class="chesssave">Save</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="piecelabel">Black Knight</td>
+                                    <td class="pieceuploadmanager">
+                                        <label>
+                                            Image URL:
+                                            <input type="text" id="blackknightfield">
+                                        </label>
+                                        <div>
+                                            <input type="file" id="blackknightupload">
+                                            <button id="saveblackknight" class="chesssave">Save</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="piecelabel">Black Bishop</td>
+                                    <td class="pieceuploadmanager">
+                                        <label>
+                                            Image URL:
+                                            <input type="text" id="blackbishopfield">
+                                        </label>
+                                        <div>
+                                            <input type="file" id="blackbishopupload">
+                                            <button id="saveblackbishop" class="chesssave">Save</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="piecelabel">Black Rook</td>
+                                    <td class="pieceuploadmanager">
+                                        <label>
+                                            Image URL:
+                                            <input type="text" id="blackrookfield">
+                                        </label>
+                                        <div>
+                                            <input type="file" id="blackrookupload">
+                                            <button id="saveblackrook" class="chesssave">Save</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="piecelabel">Black Queen</td>
+                                    <td class="pieceuploadmanager">
+                                        <label>
+                                            Image URL:
+                                            <input type="text" id="blackqueenfield">
+                                        </label>
+                                        <div>
+                                            <input type="file" id="blackqueenupload">
+                                            <button id="saveblackqueen" class="chesssave">Save</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="piecelabel">Black King</td>
+                                    <td class="pieceuploadmanager">
+                                        <label>
+                                            Image URL:
+                                            <input type="text" id="blackkingfield">
+                                        </label>
+                                        <div>
+                                            <input type="file" id="blackkingupload">
+                                            <button id="saveblackking" class="chesssave">Save</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </details>
                     <hr class="full-size">
                     <label id="preferredcdnlabel" title="The CDN Rotur Assistant will upload photos to when doing something such as creating a Claw post">
                         Preferred CDN:
                         <select id="preferredcdnoptions">
                             <option name='cdnoption' value="roturcdn">RoturCDN</option>
-                            <!--
-                            <option name='cdnoption' value="fluficdn">Flufi's CDN*</option>
-                            -->
                             <option name='cdnoption' value="mistiums3">Mistium's S3</option>
-                            <option name='cdnoption' value="mistiums3">Rotur</option>
+                            <option name='cdnoption' value="rotur">Rotur</option>
                             <option name='cdnoption' value="ochost">OCHost*</option>
-                            <!-- The API for this became a lot more locked down before 1.2 hit production
-                            <option name='cdnoption' value="roturphotos">Rotur Photos**</option>
-                            -->
                         </select>
                     </label>
-                    <span class="fineprint" id='fluficdnwarning' style="display: none; text-align: left;">*GIFs and transparent images may not work with this CDN (this CDN converts all uploaded images to jpegs).</span>
-                    <span class="fineprint" id='roturphotoswarning' style="display: none; text-align: left;">**Unlike all the other CDNs listed, Rotur Photos has a limited capacity of 10 MB across all photos you upload to it. The developer of Rotur Assistant would recommend only using this as a last resort if none of the other listed CDNs aren't working.</span>
-                    <span class="fineprint" id='mistiumwarning' style="display: none; text-align: left;">**Attachments sent via this CDN may disappear at random.</span>
                     <span class="fineprint" id='ochostwarning' style="display: none; text-align: left;">*Attachments sent via this CDN expire after 1 hour. For a permanent alternative, use RoturCDN.</span>
                 </div>
                 <hr class="full-size">

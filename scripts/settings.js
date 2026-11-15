@@ -128,7 +128,6 @@ let app_settings = await new Promise(resolve =>
     delete app_settings.rows
 
 document.getElementById('ochostwarning').style.display = (preferredcdn == 'ochost') ? 'block' : 'none'
-document.getElementById('fluficdnwarning').style.display = (preferredcdn == 'fluficdn') ? 'block' : 'none'
 
 document.getElementsByName('cdnoption').forEach(option => {
     if (option.value == preferredcdn) {
@@ -142,7 +141,7 @@ document.getElementById('showmisc').checked = app_settings.misc
 document.getElementById('appsizeinput').value = app_settings.size
 document.getElementById('appsizelabel').textContent = `${50 + ((app_settings.size ?? 2) * 25)}%`
 
-const setting_ids = ['renderoverlays', 'renderoverlaysglobal', 'anchorheader', 'anchorfooter', '24h', 'circular', 'showstatusicons', 'noborders', 'blockgifs', 'overridegeneral']
+const setting_ids = ['renderoverlays', 'renderoverlaysglobal', 'anchorheader', 'anchorfooter', '24h', 'circular', 'showstatusicons', 'noborders', 'blockgifs', 'overridegeneral', 'chesscompieces']
 for (let i=0; i<setting_ids.length; i++) {
     const setting = setting_ids[i]
     document.getElementById(setting).checked = (settings[i] == "1")
@@ -375,6 +374,10 @@ document.getElementById('gensettings').addEventListener('click', async function(
         chrome.storage.local.set({settings: settings})
         return;
     }
+    if (e.target.id == 'chesscompieces') {
+        settings = replaceCharAtIdx(settings, 10, (e.target.checked ? '1' : '0'))
+        chrome.storage.local.set({settings: settings})
+    }
     if (e.target.id == 'showutils') {
         app_settings.utils = e.target.checked
         chrome.storage.local.set({app_settings: app_settings})
@@ -574,7 +577,6 @@ document.getElementById('preferredcdnoptions').addEventListener('change', (e) =>
     preferredcdn = e.target.value
     chrome.storage.local.set({ preferredcdn: preferredcdn });
     document.getElementById('ochostwarning').style.display = (preferredcdn == 'ochost') ? 'block' : 'none'
-    document.getElementById('fluficdnwarning').style.display = (preferredcdn == 'fluficdn') ? 'block' : 'none'
 });
 
 document.getElementById('appsizeinput').addEventListener('input', function(e) {

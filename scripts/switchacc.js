@@ -5,7 +5,7 @@ const valid_sites = ['https://apps.rotur.dev', 'https://origin.mistium.com', 'ht
                             'https://git.rotur.dev', 'https://authenticator.rotur.dev', 'https://gate.rotur.dev', 'https://rotur.dev', "https://pounce.rotur.dev",
                             "https://mail.rotur.dev", "https://beam.rotur.dev", "https://place.rotur.dev", "https://gifs.originchats.com", "https://chat.0stormy.xyz/",
                             "https://sable.rotur.dev", "https://runnova.github.io/indigo", "https://warp.mistium.com", "http://localhost:5173", "https://music.flufi.uk",
-                            "https://mistwarp.org"]
+                            "https://mistwarp.org", "https://games.rotur.dev"]
 
 function isValidSite(currentHref) {
     try {
@@ -199,6 +199,96 @@ async function Switcher() {
         observePageForGeneral()
     }
 
+    function OverrideChessPieces(pieces) {
+        const PIECE_PATTERN = /(white|black)\s+(pawn|knight|bishop|rook|queen|king)/i
+        const OVERLAY_CLASS = 'ra-chess-piece'
+        const STYLE_ID = 'ra-chess-piece-style'
+
+        if (!pieces || typeof pieces !== 'object') return
+
+        // Preload the replacement art so board updates don't flash the old pieces
+        Object.values(pieces).forEach(url => {
+            if (typeof url === 'string' && url.length > 0) {
+                const preload = new Image()
+                preload.src = url
+            }
+        })
+
+        // RoturGames draws each piece as an inline <svg class="piece"> inside its
+        // square button. Hide those and overlay the replacement image instead.
+        // `:has()` keeps the original visible until our overlay actually exists,
+        // so a framework re-render never leaves an empty square.
+        if (!document.getElementById(STYLE_ID)) {
+            const style = document.createElement('style')
+            style.id = STYLE_ID
+            style.textContent = `
+                .square { position: relative; }
+                .square:has(> .${OVERLAY_CLASS}) > svg.piece { visibility: hidden !important; }
+                .${OVERLAY_CLASS} {
+                    position: absolute;
+                    inset: 0;
+                    background-position: center;
+                    background-repeat: no-repeat;
+                    background-size: contain;
+                    pointer-events: none;
+                }
+            `
+            document.head.appendChild(style)
+        }
+
+        function getPieceKey(square) {
+            const label = square.getAttribute('aria-label') ?? ''
+            const match = label.match(PIECE_PATTERN)
+            return match ? `${match[1].toLowerCase()}_${match[2].toLowerCase()}` : null
+        }
+
+        function applyToSquare(square) {
+            const key = getPieceKey(square)
+            let overlay = square.querySelector(`.${OVERLAY_CLASS}`)
+
+            if (!key || !pieces[key]) {
+                overlay?.remove()
+                return
+            }
+
+            if (!overlay) {
+                overlay = document.createElement('span')
+                overlay.className = OVERLAY_CLASS
+                overlay.setAttribute('aria-hidden', 'true')
+                square.appendChild(overlay)
+            }
+
+            if (overlay.dataset.raPiece !== key) {
+                overlay.dataset.raPiece = key
+                overlay.style.backgroundImage = `url("${pieces[key]}")`
+            }
+        }
+
+        function apply() {
+            document.querySelectorAll('.square').forEach(applyToSquare)
+        }
+
+        apply()
+
+        // The board re-renders on every move, so keep the overlays in sync
+        let queued = false
+        const observer = new MutationObserver(() => {
+            if (queued) return
+            queued = true
+            requestAnimationFrame(() => {
+                queued = false
+                apply()
+            })
+        })
+
+        observer.observe(document.documentElement, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['aria-label']
+        })
+    }
+
     window.onload = async () => {
         const settings = await new Promise(resolve =>
             chrome.storage.local.get('settings', data => resolve(data.settings?.padEnd(16, "0") || "0000000000000000"))
@@ -302,6 +392,28 @@ async function Switcher() {
                 // Graphite doesn't give enough information in its DOM to allow for support
             }
 
+        }
+        if (settings[10] == '1') {
+            if (window.location.href.startsWith('https://games.rotur.dev')) {
+                const chess_default = {
+                    white_pawn: "https://camo.githubusercontent.com/fdfe0400615e98875bb7e0b5bc9d9f3d3ac597ee177c7080a2eea9b96dcd4a02/68747470733a2f2f696d616765732e6368657373636f6d66696c65732e636f6d2f63686573732d7468656d65732f7069656365732f6e656f2f3235362f77702e706e67",
+                    white_knight: "https://camo.githubusercontent.com/17914d6af4a67c395f290612ea0f972e7c7d31bb7343c1913b76b0246af7a9b2/68747470733a2f2f696d616765732e6368657373636f6d66696c65732e636f6d2f63686573732d7468656d65732f7069656365732f6e656f2f3235362f776e2e706e67",
+                    white_bishop: "https://camo.githubusercontent.com/79c4588a5402e4e91dfdee709b77678ec4d8cd008e3343491c9e3f78e55d6726/68747470733a2f2f696d616765732e6368657373636f6d66696c65732e636f6d2f63686573732d7468656d65732f7069656365732f6e656f2f3235362f77622e706e67",
+                    white_rook: "https://camo.githubusercontent.com/c0a4ace16e2d39ddd37f2df36c26e214230934dc91b8368b638faa960027746e/68747470733a2f2f696d616765732e6368657373636f6d66696c65732e636f6d2f63686573732d7468656d65732f7069656365732f6e656f2f3235362f77722e706e67",
+                    white_queen: "https://camo.githubusercontent.com/bf94bde880a22487fad0ad86042c8600a9b5c94c1f22ff8108c07d3d42f85b3e/68747470733a2f2f696d616765732e6368657373636f6d66696c65732e636f6d2f63686573732d7468656d65732f7069656365732f6e656f2f3235362f77712e706e67",
+                    white_king: "https://camo.githubusercontent.com/75645317a879cfa273711a9baf282a124b9c072fe0af612636812d77eaeb0b3b/68747470733a2f2f696d616765732e6368657373636f6d66696c65732e636f6d2f63686573732d7468656d65732f7069656365732f6e656f2f3235362f776b2e706e67",
+                    black_pawn: "https://camo.githubusercontent.com/98ddec90f46595b452d810d2e623b4e66d111fdaf49cdbd79a5ca11eb3ca3b6d/68747470733a2f2f696d616765732e6368657373636f6d66696c65732e636f6d2f63686573732d7468656d65732f7069656365732f6e656f2f3235362f62702e706e67",
+                    black_knight: "https://camo.githubusercontent.com/3f276fe6db5c7d7aa4df69d79ea977e618635a1de80cf2e6265ba74ce81cdfb3/68747470733a2f2f696d616765732e6368657373636f6d66696c65732e636f6d2f63686573732d7468656d65732f7069656365732f6e656f2f3235362f626e2e706e67",
+                    black_bishop: "https://camo.githubusercontent.com/2bd873c85e92ff0f7fe0c1f5685a79606b2efde0256a56d1d3f1fa7cf4325b35/68747470733a2f2f696d616765732e6368657373636f6d66696c65732e636f6d2f63686573732d7468656d65732f7069656365732f6e656f2f3235362f62622e706e67",
+                    black_rook: "https://camo.githubusercontent.com/2cb94b5ef00becb48508292936ae4cea08765896e3d2c24dc7294c7911046229/68747470733a2f2f696d616765732e6368657373636f6d66696c65732e636f6d2f63686573732d7468656d65732f7069656365732f6e656f2f3235362f62722e706e67",
+                    black_queen: "https://camo.githubusercontent.com/2fe29e1c4301031f0c8e86e7d017f4cc8d0b5b1c1f4e4503de4e6d67f492bb08/68747470733a2f2f696d616765732e6368657373636f6d66696c65732e636f6d2f63686573732d7468656d65732f7069656365732f6e656f2f3235362f62712e706e67",
+                    black_king: "https://camo.githubusercontent.com/2a3543115921c86d7bbe460e198fba4c74b3a69524933e18bc42617961429c68/68747470733a2f2f696d616765732e6368657373636f6d66696c65732e636f6d2f63686573732d7468656d65732f7069656365732f6e656f2f3235362f626b2e706e67"
+                }
+                const chess_override = await new Promise(resolve =>
+                    chrome.storage.local.get('chess_override', data => resolve(data.chess_override || chess_default))
+                ) ?? chess_default;
+                OverrideChessPieces(chess_override)
+            }
         }
         chrome.runtime.sendMessage({ type: "Newsite", url: window.location.href });
         if (window.location.href.startsWith('https://rotur.dev/terms-of-service')) {

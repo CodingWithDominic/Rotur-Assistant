@@ -430,7 +430,7 @@ export function renderICN(ctx, icn, options = {}) {
  * @param {number} [size=24] - Display size in CSS pixels
  * @returns {HTMLCanvasElement}
  */
-export function createICNCanvas(icnString, size = 24, colordefault) {
+export function createICNCanvas(icnString, size = 24, colordefault, sharp) {
     const canvas = document.createElement('canvas')
     const pixelRatio = Math.min(window.devicePixelRatio || 1, 3)
     const resolution = Math.round(size * pixelRatio)
@@ -448,7 +448,7 @@ export function createICNCanvas(icnString, size = 24, colordefault) {
         background: 'transparent',
         grid: false,
         exclusive: true,
-        sharp: true,
+        sharp: sharp,
         colordefault: colordefault
     })
 
