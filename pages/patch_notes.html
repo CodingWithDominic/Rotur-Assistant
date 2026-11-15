@@ -295,11 +295,11 @@
                 <hr class="full-size dotted_separator">
                 <section id="RA_1.2.5">
                     <h2>1.2.5</h2>
-                    <p class="fineprint">November 20, 2026 - Wow 1.2.5 so quickly?</p>
+                    <p class="fineprint">November 15, 2026 - Wow 1.2.5 so quickly?</p>
                     <ul class="patchnotelist">
                         <li>Fixed a few possible security vulnerabilities with account switching, as pointed out by Opencode.</li>
                         <li>Added counters for the tabs in the Gift manager</li>
-                        <li>Improved notifications</li>
+                        <li>Improved MistWarp notifications</li>
                         <li>The Wallet app now has proper handling for sub-accounts trying to claim the daily credit</li>
                         <li>Several more wiki corrections, along with a new disclaimer saying the info provided may be inaccurate (I do try my best to provide info that's as accurate as possible, but I'm no exception to making mistakes every now and then).</li>
                         <li>A few corrections in <a href="services.html">services</a> too.</li>
@@ -307,9 +307,11 @@
                         <li>When sorting claimed gifts by the amount involved, Rotur Assistant will now value membership gifts at their approximate RC equivalents based on Rotur Assistant now calculating RC at $0.04 or £0.03 each. This means Plus gifts will be valued at 58.25 RC ($2.33 / 0.04), and Pro gifts will be valued at 191.25 RC ($7.65 / 0.04). The value will be multiplied by 8 if the gift is for a yearly membership, rather than a monthly one.</li>
                         <li>Badges are no longer hardcoded! This means that the odds of seeing a placeholder badge on profiles (<img src="../images/badges/placeholder.png" width="16" height="16">) should be a lot less likely, especially when Mistium adds new badges. This was definitely a long overdue change.</li>
                         <li>Badges are also now clickable to view additional info, such as tier progress, issuer, etc. They also allow you to even copy their ICN. Shift-clicking on the "Copy ICN" button will instead open the ICN editor with the badge ICN pre-filled. Do note that doing this will overwrite your last ICN session.</li>
-                        <li>Added <code>encryption:keys</code> to the oauth scope when switching accounts on the main OriginChats client</li>
-                        <li>New CDN option: "Rotur" (Not to be confused with Milo's RoturCDN). This option uploads your images to the same CDN Pounce uses for its attachments.</li>
-                        <li>Added an option to override pieces on RoturGames. For now, it just replaces the pieces you see with their chess.com counterparts. Unlike piece packs, only you see the chess.com pieces.</li>
+                        <li>Added <code>encryption:keys</code> to the oauth scope when switching accounts on the main OriginChats client. A side effect of switching now is that you need to re-enter your encryption passphrase each time.</li>
+                        <li>New CDN option: "Rotur (Pounce)" This option uploads your images to the same CDN Pounce uses for its attachments. This is not to be confused with Milo's RoturCDN. </li>
+                        <li>Added an option to override chess pieces on RoturGames. Unlike piece packs, only you see your custom pieces.</li>
+                        <li>Small changes to Economy keys, namely removing the users section under bought keys (keys you bought used to show the other users who also bought the key, but not anymore)</li>
+                        <li>Removed the "Revoke Key" button, since it did nothing.</li>
                     </ul>
                 </section>
             </div>

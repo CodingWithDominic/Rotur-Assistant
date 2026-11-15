@@ -9,12 +9,6 @@ import { createICNCanvas } from "./icn_core.js"
 
 export const PLACEHOLDER_BADGE_NOTICE = "The badge shown is a placeholder badge in case Rotur Assistant doesn't recognize that badge yet."
 
-/**
- * Returns a badge's raw ICN string.
- * The Rotur API calls this field "icon", but "icn" is supported defensively.
- * @param {Object} badge
- * @returns {string}
- */
 export function getBadgeICN(badge) {
     const icon = badge?.icon
     if (typeof icon === 'string' && icon.trim() !== '') {
@@ -23,13 +17,6 @@ export function getBadgeICN(badge) {
     return ''
 }
 
-/**
- * Resolves which bundled image a badge should use when it has no ICN data.
- * Unknown badges (and badges without an id) resolve to placeholder.png.
- * @param {Object} badge
- * @param {string[]} knownBadges
- * @returns {string}
- */
 export function resolveBadgeImageName(badge, knownBadges) {
     const id = badge?.id
     let badge_name = (typeof id === 'string' && id.startsWith('app:')) ? badge.name : (id ?? badge?.name)
@@ -42,12 +29,6 @@ export function resolveBadgeImageName(badge, knownBadges) {
     return badge_name
 }
 
-/**
- * Builds the hover tooltip for a badge.
- * @param {Object} badge
- * @param {boolean} isPlaceholder
- * @returns {string}
- */
 export function badgeTooltip(badge, isPlaceholder) {
     const name = badge?.name ?? ''
     const description = badge?.description ?? ''
@@ -62,13 +43,6 @@ Original badge description: ${description}`
 ${description}`
 }
 
-/**
- * Creates the DOM element representing a badge.
- * @param {Object} badge - Badge data from the Rotur API
- * @param {string} badge_name - Resolved bundled image name (see resolveBadgeImageName)
- * @param {number} [size=24] - Badge size in CSS pixels
- * @returns {HTMLCanvasElement|HTMLImageElement}
- */
 export function createBadgeElement(badge, badge_name, size = 24) {
     const icn = getBadgeICN(badge)
 

@@ -15,23 +15,17 @@ function isValidSite(currentHref) {
             try {
                 const siteUrl = new URL(site);
                 
-                // For exact origin matches (e.g., https://rotur.dev)
                 if (currentUrl.origin === siteUrl.origin) {
-                    // If the valid site has a path, ensure current URL starts with it
                     if (siteUrl.pathname !== '/' && siteUrl.pathname !== '') {
                         return currentUrl.pathname.startsWith(siteUrl.pathname);
                     }
                     return true;
                 }
                 
-                // For sites with specific paths (e.g., https://originchats.com/app)
-                // Check if current URL starts with the full site URL
                 if (currentHref.startsWith(site)) {
-                    // Additional safety: ensure it's not a subdomain bypass
-                    // e.g., https://evil.com/https://originchats.com/app
+
                     const expectedPrefix = site;
                     const afterPrefix = currentHref.slice(expectedPrefix.length);
-                    // After the prefix, should be end of string, '/', '?', or '#'
                     return afterPrefix === '' || afterPrefix.startsWith('/') || afterPrefix.startsWith('?') || afterPrefix.startsWith('#');
                 }
                 
@@ -214,10 +208,6 @@ async function Switcher() {
             }
         })
 
-        // RoturGames draws each piece as an inline <svg class="piece"> inside its
-        // square button. Hide those and overlay the replacement image instead.
-        // `:has()` keeps the original visible until our overlay actually exists,
-        // so a framework re-render never leaves an empty square.
         if (!document.getElementById(STYLE_ID)) {
             const style = document.createElement('style')
             style.id = STYLE_ID
@@ -465,11 +455,9 @@ async function Switcher() {
     const rotursdk_sites = ["https://beam.rotur.dev", "https://place.rotur.dev", "https://devfund.rotur.dev", "https://photos.rotur.dev", "https://mail.rotur.dev",
                         "https://rotur.dev", "https://pounce.rotur.dev", "https://gifs.originchats.com", "https://sable.rotur.dev", "http://localhost:5173"] // All these sites share the exact same method of storing your token, so to optimize code, I put them in an array
 
-    // Extension ID for validation (will be set at runtime)
     const EXTENSION_ID = chrome.runtime.id;
 
     chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-        // SECURITY: Validate message origin - only accept messages from our own extension
         if (!sender || sender.id !== EXTENSION_ID) {
             console.warn('[Rotur Assistant] Ignoring message from untrusted source:', sender?.id);
             sendResponse({ result: "error", error: "Untrusted message source" });
@@ -478,7 +466,6 @@ async function Switcher() {
 
         const url = window.location.href;
         
-        // SECURITY: Re-validate the current site before processing any switchacc action
         if (message.action === "switchacc") {
             if (!isValidSite(url)) {
                 console.error('[Rotur Assistant] switchacc requested on invalid site:', url);
@@ -755,7 +742,7 @@ async function Switcher() {
             }
         }
         
-        return false; // No handler for this message
+        return false;
     });
 }
 

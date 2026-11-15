@@ -110,9 +110,9 @@
                         <input type="checkbox" id="chesscompieces">
                         Show custom pieces on RoturGames
                     </label>
-                    <details>
+                    <details id="chessoverridesettings">
                         <summary>Customize pieces</summary>
-                        <span style="font-size: 12px;">Will default to the Neo pieces from chess.com if the URL is left blank</span>
+                        <span style="font-size: 12px;">This will override any chess pieces, including those from all piece packs, with the pieces you upload here. Will default to the Neo pieces from chess.com if the URL is left blank</span>
                         <table id="chesspiecemanager">
                             <tbody>
                                 <tr>
@@ -352,7 +352,7 @@
                         <select id="preferredcdnoptions">
                             <option name='cdnoption' value="roturcdn">RoturCDN</option>
                             <option name='cdnoption' value="mistiums3">Mistium's S3</option>
-                            <option name='cdnoption' value="rotur">Rotur</option>
+                            <option name='cdnoption' value="rotur">Rotur (Pounce)</option>
                             <option name='cdnoption' value="ochost">OCHost*</option>
                         </select>
                     </label>

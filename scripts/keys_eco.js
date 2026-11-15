@@ -281,8 +281,12 @@ async function RenderKeys() {
             } else {
                 boughtkey.querySelector('.ecokeywebhookdisplay').remove()
             }
-            boughtkey.querySelector('.ecokeyuserlistcount').textContent = `Users - ${Object.keys(key.users).length}`
-            boughtkey.querySelector('.ecokeyuserlist').replaceChildren(...renderUsers(key.users, key.type, key.creator, key.key, key.price))
+            boughtkey.querySelector('.purchasedate').textContent = `Purchased: ${formatDate(key.users[activeacc.name].time * 1000)}`
+            if (key.type == 'subscription') {
+                boughtkey.querySelector('.nextbillingdate').textContent = `${key.users[activeacc.name].cancel_at ? `Pending Cancellation:` : `Next Billing:`} ${formatDate(key.users[activeacc.name].next_billing)}`
+            } else {
+                boughtkey.querySelector('.nextbillingdate').remove()
+            }
             boughtkey.querySelector('.ecokeysubcancel').id = `cancel-${key.key}`
             boughtkey.querySelector('.ecokeysubcancel').dataset.owner = key.creator
             if (key.users[activeacc.name] && key.users[activeacc.name].cancel_at) {

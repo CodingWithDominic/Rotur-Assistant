@@ -177,6 +177,8 @@ for (let i=0; i<setting_ids.length; i++) {
     document.getElementById(setting).checked = (settings[i] == "1")
 }
 
+document.getElementById('chessoverridesettings').style.display = (settings[10] == "1" ? 'block' : 'none')
+
 async function updateTheme() {
     const theme = await new Promise(resolve =>
         chrome.storage.local.get('theme', data => resolve(data.theme || "oceanblue"))
@@ -407,6 +409,7 @@ document.getElementById('gensettings').addEventListener('click', async function(
     if (e.target.id == 'chesscompieces') {
         settings = replaceCharAtIdx(settings, 10, (e.target.checked ? '1' : '0'))
         chrome.storage.local.set({settings: settings})
+        document.getElementById('chessoverridesettings').style.display = (e.target.checked ? 'block' : 'none')
     }
     if (e.target.id == 'showutils') {
         app_settings.utils = e.target.checked
@@ -638,6 +641,8 @@ document.addEventListener('change', async function(e) {
         const piece_image = await UploadImage(e.target.files[0])
         if (piece_image) {
             e.target.closest('tr').querySelector('input[type="text"]').value = piece_image
+            chess_override[e.target.closest('tr').querySelector('input[type="text"]').dataset.chesspiece] = e.target.closest('tr').querySelector('input[type="text"]').value
+            chrome.storage.local.set({chess_override: chess_override})
         } else {
             openErrorPopup("Image failed to upload")
         }

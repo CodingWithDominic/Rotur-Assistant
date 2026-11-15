@@ -140,8 +140,6 @@ window.addEventListener('mouseup', () => {
     isDragging = false;
 });
 
-// Everything past this point is code that just makes Rotur Assistant's menus function. This will likely not be necessary for your ICN-incorporated program.
-
 renderICN(parseICN(''))
 
 const config = {

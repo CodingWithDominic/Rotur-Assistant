@@ -2336,6 +2336,15 @@ select {
 .ecokeydetails {
     padding: 5px;
 }
+button.ecokeydelete {
+    width: 50%;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
 .ecokeycontrolpanel {
     display: flex;
     flex-direction: row;
@@ -2343,10 +2352,7 @@ select {
     margin: 5px;
     margin-top: 10px;
     margin-bottom: 0;
-}
-.ecokeycontrolpanel button {
-    padding-left: 0;
-    padding-right: 0;
+    justify-content: center;
 }
 .ecokeyownerlabel {
     display: flex;
@@ -4216,9 +4222,9 @@ body.make-circular #changeavatarbtn {
 }
 .pieceuploadmanager div button {
     width: 25%;
-    padding: 3px;
-    padding-left: 8px;
-    padding-right: 8px;
+    padding: 5px;
+    padding-left: 10px;
+    padding-right: 10px;
     margin: 0;
     margin-left: auto;
 }

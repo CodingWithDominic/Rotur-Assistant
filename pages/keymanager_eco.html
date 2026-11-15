@@ -87,8 +87,8 @@
                         <label>Webhook: <input type='text' name='ecokeywebhookfield' placeholder='Webhook URL' class='ecokeywebhook' value="keywebhook"> <button type="button" class="ecokeysave" title="Save Webhook" id="savehook-keyid" data-keyid='keyid'><image src='../images/misc_icons/save.png' width=24 height=24 alt='Save'></button></label>
                     </form>
                     <div class='ecokeycontrolpanel'>
-                        <button type="button" class="ecokeyrevoke" id="revoke-keyid" data-keyid='keyid'>Revoke Key</button>
-                        <button type="button" class="ecokeydelete" id="delete-keyid" data-keyid='keyid'>Delete Key</button>
+                        <button type="button" class="ecokeyrevoke" id="revoke-keyid" data-keyid='keyid' style="display: none;">Revoke Key</button>
+                        <button type="button" class="ecokeydelete" id="delete-keyid" data-keyid='keyid'><img src="../images/misc_icons/delete.png" width="24" height="24">Delete Key</button>
                     </div>
                     <div class='ecokeystatus'></div>
                 </div>
@@ -113,6 +113,8 @@
                     <p class="keytypelabel">Type: Subscription</p>
                     <p class="keypricelabel">Price: 1 RC</p>
                     <p class="keybillinglabel">Bills every: 1 Month</p>
+                    <p class="purchasedate">Purchased 5 BCE</p>
+                    <p class="nextbillingdate">Next Billing: Idk bro</p>
                     <div class='ecokeywebhookdisplay'>
                         <span class='ecokeywebhookurl'>Webhook URL: URL</span>
                         <button type="button" title="Copy Webhook URL" class="ecokeycopy" id="copyhook-keyid" data-keyid='keyid' data-webhook='URL'><image src='../images/misc_icons/copy.png' width=24 height=24 alt='Copy'></button>
@@ -121,13 +123,7 @@
                         <button class="ecokeysubcancel" id="cancel-keyid" data-keyid='keyid' data-owner='Creator'>Cancel Subscription</button>
                     </div>
                     <div class='ecokeystatus'></div>
-
                 </div>
-                <hr class="dotted_separator">
-                <details class="ecokeyusersowner">
-                    <summary class='ecokeyuserlistcount'>Users (1)</summary>
-                    <ul class=ecokeyuserlist></ul>
-                </details>
             </li>
         </template>
         <template id="keyusertemplate">

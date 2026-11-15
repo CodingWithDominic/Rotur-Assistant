@@ -88,24 +88,6 @@ export function drawGrid(ctx, settings, width, height, scale) {
     ctx.restore();
 }
 
-/**
- * Renders parsed ICN data onto a 2D canvas context.
- *
- * @param {CanvasRenderingContext2D} ctx - Context to draw into
- * @param {Array} icn - Output of parseICN()
- * @param {Object} [options]
- * @param {number} [options.width] - Canvas width in device pixels (defaults to ctx.canvas.width)
- * @param {number} [options.height] - Canvas height in device pixels (defaults to ctx.canvas.height)
- * @param {number} [options.scale=5] - Pixels per ICN unit
- * @param {number} [options.offsetX] - X position of ICN origin in pixels (defaults to horizontal centre)
- * @param {number} [options.offsetY] - Y position of ICN origin in pixels (defaults to vertical centre)
- * @param {string} [options.background='transparent'] - Background name used for grid contrast
- * @param {boolean} [options.grid=false] - Draw the editor grid
- * @param {number} [options.gridsize=10] - Grid spacing in ICN units
- * @param {boolean} [options.exclusive=true] - Enable Rotur Assistant's extra commands/aliases
- * @param {boolean} [options.sharp=true] - Draw rectangles/triangles with sharp corners
- * @param {CanvasLineCap} [options.lineCap='round'] - Canvas line cap
- */
 export function renderICN(ctx, icn, options = {}) {
     const canvas = ctx.canvas
     const width = options.width ?? canvas?.width ?? 0
@@ -419,17 +401,6 @@ export function renderICN(ctx, icn, options = {}) {
     })
 }
 
-/**
- * Renders an ICN string into a square canvas suitable for display as an icon.
- *
- * ICN badge art is drawn within roughly ±10 units of the origin (a 20×20 unit
- * viewbox), so the requested size is mapped to 20 ICN units. This makes ICN
- * badges fill the same 24×24 box as the bundled PNG badges.
- *
- * @param {string} icnString - Raw ICN data
- * @param {number} [size=24] - Display size in CSS pixels
- * @returns {HTMLCanvasElement}
- */
 export function createICNCanvas(icnString, size = 24, colordefault, sharp) {
     const canvas = document.createElement('canvas')
     const pixelRatio = Math.min(window.devicePixelRatio || 1, 3)
@@ -442,7 +413,7 @@ export function createICNCanvas(icnString, size = 24, colordefault, sharp) {
     renderICN(canvas.getContext('2d'), parseICN(icnString), {
         width: resolution,
         height: resolution,
-        scale: resolution / 20, // 20 ICN units across the icon (badge art spans ~±10 units)
+        scale: resolution / 20,
         offsetX: resolution / 2,
         offsetY: resolution / 2,
         background: 'transparent',
