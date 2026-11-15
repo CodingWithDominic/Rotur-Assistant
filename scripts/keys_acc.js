@@ -393,7 +393,7 @@ document.addEventListener('click', async function(e) {
         } else if (keyname.toLowerCase().startsWith('sys.')) {
             error_element.replaceChildren(MiniError('failure', `Key name can't begin with "sys."`))
         } else if (keyname.toLowerCase() == "banner" || keyname.toLowerCase() == "banners") {
-            error_element.replaceChildren(MiniError('failure', `Setting this key would normally cost you 10 credits. Try changing your banner through the account manager's profile editor instead.`))
+            error_element.replaceChildren(MiniError('failure', `Setting this key would normally cost you 30 credits. Try changing your banner through the account manager's profile editor instead.`))
         } else if (keyname.toLowerCase() == "email") {
             error_element.replaceChildren(MiniError('failure', `For security reasons, it is recommended to set or change your e-mail on rotur.dev instead.`))
         } else if (keyname.toLowerCase() == "password") {

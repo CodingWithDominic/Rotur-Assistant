@@ -1,4 +1,4 @@
-import { sanitize, openSuccessPopup, openErrorPopup, MiniError, CreateEmptyPlaceholder, openWarningPopup } from "../index.js";
+import { sanitize, openSuccessPopup, openErrorPopup, MiniError, CreateEmptyPlaceholder, openWarningPopup, UploadImage } from "../index.js";
 
 const themedata = {
     oceanblue: ["#0F0052", "#004DB1", "#00002B", "#0012B4", "#4F46E5", "#4338CA", "#03009C"],
@@ -17,6 +17,36 @@ const config = {
     removeAttributes: ['onload', 'onclick', 'onerror', 'onmouseover', 'onfocus', 'onblur', 'onkeydown', 'onchange', 'onsubmit', 'srcdoc', 'formaction']
 }
 const sanitizer = new Sanitizer(config)
+
+const chess_default = {
+    white_pawn: {enabled: true, url: "https://camo.githubusercontent.com/fdfe0400615e98875bb7e0b5bc9d9f3d3ac597ee177c7080a2eea9b96dcd4a02/68747470733a2f2f696d616765732e6368657373636f6d66696c65732e636f6d2f63686573732d7468656d65732f7069656365732f6e656f2f3235362f77702e706e67"},
+    white_knight: {enabled: true, url: "https://camo.githubusercontent.com/17914d6af4a67c395f290612ea0f972e7c7d31bb7343c1913b76b0246af7a9b2/68747470733a2f2f696d616765732e6368657373636f6d66696c65732e636f6d2f63686573732d7468656d65732f7069656365732f6e656f2f3235362f776e2e706e67"},
+    white_bishop: {enabled: true, url: "https://camo.githubusercontent.com/79c4588a5402e4e91dfdee709b77678ec4d8cd008e3343491c9e3f78e55d6726/68747470733a2f2f696d616765732e6368657373636f6d66696c65732e636f6d2f63686573732d7468656d65732f7069656365732f6e656f2f3235362f77622e706e67"},
+    white_rook: {enabled: true, url: "https://camo.githubusercontent.com/c0a4ace16e2d39ddd37f2df36c26e214230934dc91b8368b638faa960027746e/68747470733a2f2f696d616765732e6368657373636f6d66696c65732e636f6d2f63686573732d7468656d65732f7069656365732f6e656f2f3235362f77722e706e67"},
+    white_queen: {enabled: true, url: "https://camo.githubusercontent.com/bf94bde880a22487fad0ad86042c8600a9b5c94c1f22ff8108c07d3d42f85b3e/68747470733a2f2f696d616765732e6368657373636f6d66696c65732e636f6d2f63686573732d7468656d65732f7069656365732f6e656f2f3235362f77712e706e67"},
+    white_king: {enabled: true, url: "https://camo.githubusercontent.com/75645317a879cfa273711a9baf282a124b9c072fe0af612636812d77eaeb0b3b/68747470733a2f2f696d616765732e6368657373636f6d66696c65732e636f6d2f63686573732d7468656d65732f7069656365732f6e656f2f3235362f776b2e706e67"},
+    black_pawn: {enabled: true, url: "https://camo.githubusercontent.com/98ddec90f46595b452d810d2e623b4e66d111fdaf49cdbd79a5ca11eb3ca3b6d/68747470733a2f2f696d616765732e6368657373636f6d66696c65732e636f6d2f63686573732d7468656d65732f7069656365732f6e656f2f3235362f62702e706e67"},
+    black_knight: {enabled: true, url: "https://camo.githubusercontent.com/3f276fe6db5c7d7aa4df69d79ea977e618635a1de80cf2e6265ba74ce81cdfb3/68747470733a2f2f696d616765732e6368657373636f6d66696c65732e636f6d2f63686573732d7468656d65732f7069656365732f6e656f2f3235362f626e2e706e67"},
+    black_bishop: {enabled: true, url: "https://camo.githubusercontent.com/2bd873c85e92ff0f7fe0c1f5685a79606b2efde0256a56d1d3f1fa7cf4325b35/68747470733a2f2f696d616765732e6368657373636f6d66696c65732e636f6d2f63686573732d7468656d65732f7069656365732f6e656f2f3235362f62622e706e67"},
+    black_rook: {enabled: true, url: "https://camo.githubusercontent.com/2cb94b5ef00becb48508292936ae4cea08765896e3d2c24dc7294c7911046229/68747470733a2f2f696d616765732e6368657373636f6d66696c65732e636f6d2f63686573732d7468656d65732f7069656365732f6e656f2f3235362f62722e706e67"},
+    black_queen: {enabled: true, url: "https://camo.githubusercontent.com/2fe29e1c4301031f0c8e86e7d017f4cc8d0b5b1c1f4e4503de4e6d67f492bb08/68747470733a2f2f696d616765732e6368657373636f6d66696c65732e636f6d2f63686573732d7468656d65732f7069656365732f6e656f2f3235362f62712e706e67"},
+    black_king: {enabled: true, url: "https://camo.githubusercontent.com/2a3543115921c86d7bbe460e198fba4c74b3a69524933e18bc42617961429c68/68747470733a2f2f696d616765732e6368657373636f6d66696c65732e636f6d2f63686573732d7468656d65732f7069656365732f6e656f2f3235362f626b2e706e67"}
+}
+
+const chess_override = await new Promise(resolve =>
+    chrome.storage.local.get('chess_override', data => resolve(data.chess_override || chess_default))
+) ?? chess_default;
+
+document.querySelectorAll(`input[type="checkbox"][data-chesspiece]`).forEach(enabledoption => {
+    enabledoption.checked = chess_override[enabledoption.dataset.chesspiece].enabled
+})
+
+document.querySelectorAll(`input[placeholder="Piece Image URL"]`).forEach(textfield => {
+    textfield.value = chess_override[textfield.dataset.chesspiece].url
+    if (chess_override[textfield.dataset.chesspiece].url == chess_default[textfield.dataset.chesspiece].url) {
+        textfield.value = ''
+    }
+})
 
 let customtheme = await new Promise(resolve =>
     chrome.storage.local.get('customtheme', data => resolve(data.customtheme || ["#000000", "#000000", "#000000", "#000000", "#000000", "#000000", "#000000", "#FFFFFF"]))
@@ -547,6 +577,21 @@ document.addEventListener('click', async function(e) {
             document.querySelector('input[value="custom"]').click()
         }
     }
+    if (e.target.className == "chesssave") {
+        const target = e.target
+        chess_override[target.dataset.chesspiece].url = (target.closest('tr').querySelector('input[type="text"]').value.trim() || chess_default[target.dataset.chesspiece].url)
+        chrome.storage.local.set({chess_override: chess_override})
+        target.disabled = true
+        target.style.background = "green"
+        setTimeout(() => {
+            target.disabled = false
+            target.style = ''            
+        }, 1500)
+    }
+    if (e.target.className == "chesspieceenabled") {
+        chess_override[e.target.dataset.chesspiece].enabled = e.target.checked
+        chrome.storage.local.set({chess_override: chess_override})
+    }
 })
 
 document.getElementById('usernotelist').addEventListener('input', function(e) {
@@ -586,4 +631,16 @@ document.getElementById('appsizeinput').addEventListener('input', function(e) {
 document.getElementById('appsizeinput').addEventListener('change', function(e) {
     app_settings.size = Number(e.target.value)
     chrome.storage.local.set({app_settings: app_settings})
+})
+
+document.addEventListener('change', async function(e) {
+    if (e.target.closest('tr') && e.target.files) {
+        const piece_image = await UploadImage(e.target.files[0])
+        if (piece_image) {
+            e.target.closest('tr').querySelector('input[type="text"]').value = piece_image
+        } else {
+            openErrorPopup("Image failed to upload")
+        }
+        e.target.value = ''
+    }
 })

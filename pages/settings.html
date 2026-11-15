@@ -112,161 +112,234 @@
                     </label>
                     <details>
                         <summary>Customize pieces</summary>
+                        <span style="font-size: 12px;">Will default to the Neo pieces from chess.com if the URL is left blank</span>
                         <table id="chesspiecemanager">
                             <tbody>
                                 <tr>
-                                    <td class="piecelabel">White Pawn</td>
+                                    <td class="piecelabel">
+                                        <p>White Pawn</p>
+                                        <label class="labelandinput">
+                                            <input type="checkbox" class="chesspieceenabled" data-chesspiece="white_pawn">
+                                            Enabled
+                                        </label>
+                                    </td>
                                     <td class="pieceuploadmanager">
                                         <label>
                                             Image URL:
-                                            <input type="text" id="whitepawnfield">
+                                            <input type="text" id="whitepawnfield" placeholder="Piece Image URL" data-chesspiece="white_pawn">
                                         </label>
                                         <div>
-                                            <input type="file" id="whitepawnupload">
-                                            <button id="savewhitepawn" class="chesssave">Save</button>
+                                            <input type="file" id="whitepawnupload" accept="image/*">
+                                            <button id="savewhitepawn" class="chesssave" data-chesspiece="white_pawn">Save</button>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td class="piecelabel">White Knight</td>
+                                    <td class="piecelabel">
+                                        <p>White Knight</p>
+                                        <label class="labelandinput">
+                                            <input type="checkbox" class="chesspieceenabled" data-chesspiece="white_knight">
+                                            Enabled
+                                        </label>
+                                    </td>
                                     <td class="pieceuploadmanager">
                                         <label>
                                             Image URL:
-                                            <input type="text" id="whiteknightfield">
+                                            <input type="text" id="whiteknightfield" placeholder="Piece Image URL" data-chesspiece="white_knight">
                                         </label>
                                         <div>
-                                            <input type="file" id="whiteknightupload">
-                                            <button id="savewhiteknight" class="chesssave">Save</button>
+                                            <input type="file" id="whiteknightupload" accept="image/*">
+                                            <button id="savewhiteknight" class="chesssave" data-chesspiece="white_knight">Save</button>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td class="piecelabel">White Bishop</td>
+                                    <td class="piecelabel">
+                                        <p>White Bishop</p>
+                                        <label class="labelandinput">
+                                            <input type="checkbox" class="chesspieceenabled" data-chesspiece="white_bishop">
+                                            Enabled
+                                        </label>
+                                    </td>
                                     <td class="pieceuploadmanager">
                                         <label>
                                             Image URL:
-                                            <input type="text" id="whitebishopfield">
+                                            <input type="text" id="whitebishopfield" placeholder="Piece Image URL" data-chesspiece="white_bishop">
                                         </label>
                                         <div>
-                                            <input type="file" id="whitebishopupload">
-                                            <button id="savewhitebishop" class="chesssave">Save</button>
+                                            <input type="file" id="whitebishopupload" accept="image/*">
+                                            <button id="savewhitebishop" class="chesssave" data-chesspiece="white_bishop">Save</button>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td class="piecelabel">White Rook</td>
+                                    <td class="piecelabel">
+                                        <p>White Rook</p>
+                                        <label class="labelandinput">
+                                            <input type="checkbox" class="chesspieceenabled" data-chesspiece="white_rook">
+                                            Enabled
+                                        </label>
+                                    </td>
                                     <td class="pieceuploadmanager">
                                         <label>
                                             Image URL:
-                                            <input type="text" id="whiterookfield">
+                                            <input type="text" id="whiterookfield" placeholder="Piece Image URL" data-chesspiece="white_rook">
                                         </label>
                                         <div>
-                                            <input type="file" id="whiterookupload">
-                                            <button id="savewhiterook" class="chesssave">Save</button>
+                                            <input type="file" id="whiterookupload" accept="image/*">
+                                            <button id="savewhiterook" class="chesssave" data-chesspiece="white_rook">Save</button>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td class="piecelabel">White Queen</td>
+                                    <td class="piecelabel">
+                                        <p>White Queen</p>
+                                        <label class="labelandinput">
+                                            <input type="checkbox" class="chesspieceenabled" data-chesspiece="white_queen">
+                                            Enabled
+                                        </label>
+                                    </td>
                                     <td class="pieceuploadmanager">
                                         <label>
                                             Image URL:
-                                            <input type="text" id="whitequeenfield">
+                                            <input type="text" id="whitequeenfield" placeholder="Piece Image URL" data-chesspiece="white_queen">
                                         </label>
                                         <div>
-                                            <input type="file" id="whitequeenupload">
-                                            <button id="savewhitequeen" class="chesssave">Save</button>
+                                            <input type="file" id="whitequeenupload" accept="image/*">
+                                            <button id="savewhitequeen" class="chesssave" data-chesspiece="white_queen">Save</button>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td class="piecelabel">White King</td>
+                                    <td class="piecelabel">
+                                        <p>White King</p>
+                                        <label class="labelandinput">
+                                            <input type="checkbox" class="chesspieceenabled" data-chesspiece="white_king">
+                                            Enabled
+                                        </label>
+                                    </td>
                                     <td class="pieceuploadmanager">
                                         <label>
                                             Image URL:
-                                            <input type="text" id="whitekingfield">
+                                            <input type="text" id="whitekingfield" placeholder="Piece Image URL "data-chesspiece="white_king">
                                         </label>
                                         <div>
-                                            <input type="file" id="whitekingupload">
-                                            <button id="savewhiteking" class="chesssave">Save</button>
+                                            <input type="file" id="whitekingupload" accept="image/*">
+                                            <button id="savewhiteking" class="chesssave" data-chesspiece="white_king">Save</button>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td class="piecelabel">Black Pawn</td>
+                                    <td class="piecelabel">
+                                        <p>Black Pawn</p>
+                                        <label class="labelandinput">
+                                            <input type="checkbox" class="chesspieceenabled" data-chesspiece="black_pawn">
+                                            Enabled
+                                        </label>
+                                    </td>
                                     <td class="pieceuploadmanager">
                                         <label>
                                             Image URL:
-                                            <input type="text" id="blackpawnfield">
+                                            <input type="text" id="blackpawnfield" placeholder="Piece Image URL" data-chesspiece="black_pawn">
                                         </label>
                                         <div>
-                                            <input type="file" id="blackpawnupload">
-                                            <button id="saveblackpawn" class="chesssave">Save</button>
+                                            <input type="file" id="blackpawnupload" accept="image/*">
+                                            <button id="saveblackpawn" class="chesssave" data-chesspiece="black_pawn">Save</button>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td class="piecelabel">Black Knight</td>
+                                    <td class="piecelabel">
+                                        <p>Black Knight</p>
+                                        <label class="labelandinput">
+                                            <input type="checkbox" class="chesspieceenabled" data-chesspiece="black_knight">
+                                            Enabled
+                                        </label>
+                                    </td>
                                     <td class="pieceuploadmanager">
                                         <label>
                                             Image URL:
-                                            <input type="text" id="blackknightfield">
+                                            <input type="text" id="blackknightfield" placeholder="Piece Image URL" data-chesspiece="black_knight">
                                         </label>
                                         <div>
-                                            <input type="file" id="blackknightupload">
-                                            <button id="saveblackknight" class="chesssave">Save</button>
+                                            <input type="file" id="blackknightupload" accept="image/*">
+                                            <button id="saveblackknight" class="chesssave" data-chesspiece="black_knight">Save</button>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td class="piecelabel">Black Bishop</td>
+                                    <td class="piecelabel">
+                                        <p>Black Bishop</p>
+                                        <label class="labelandinput">
+                                            <input type="checkbox" class="chesspieceenabled" data-chesspiece="black_bishop">
+                                            Enabled
+                                        </label>
+                                    </td>
                                     <td class="pieceuploadmanager">
                                         <label>
                                             Image URL:
-                                            <input type="text" id="blackbishopfield">
+                                            <input type="text" id="blackbishopfield" placeholder="Piece Image URL" data-chesspiece="black_bishop">
                                         </label>
                                         <div>
-                                            <input type="file" id="blackbishopupload">
-                                            <button id="saveblackbishop" class="chesssave">Save</button>
+                                            <input type="file" id="blackbishopupload" accept="image/*">
+                                            <button id="saveblackbishop" class="chesssave" data-chesspiece="black_bishop">Save</button>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td class="piecelabel">Black Rook</td>
+                                    <td class="piecelabel">
+                                        <p>Black Rook</p>
+                                        <label class="labelandinput">
+                                            <input type="checkbox" class="chesspieceenabled" data-chesspiece="black_rook">
+                                            Enabled
+                                        </label>
+                                    </td>
                                     <td class="pieceuploadmanager">
                                         <label>
                                             Image URL:
-                                            <input type="text" id="blackrookfield">
+                                            <input type="text" id="blackrookfield" placeholder="Piece Image URL" data-chesspiece="black_rook">
                                         </label>
                                         <div>
-                                            <input type="file" id="blackrookupload">
-                                            <button id="saveblackrook" class="chesssave">Save</button>
+                                            <input type="file" id="blackrookupload" accept="image/*">
+                                            <button id="saveblackrook" class="chesssave" data-chesspiece="black_rook">Save</button>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td class="piecelabel">Black Queen</td>
+                                    <td class="piecelabel">
+                                        <p>Black Queen</p>
+                                        <label class="labelandinput">
+                                            <input type="checkbox" class="chesspieceenabled" data-chesspiece="black_queen">
+                                            Enabled
+                                        </label>
+                                    </td>
                                     <td class="pieceuploadmanager">
                                         <label>
                                             Image URL:
-                                            <input type="text" id="blackqueenfield">
+                                            <input type="text" id="blackqueenfield" placeholder="Piece Image URL" data-chesspiece="black_queen">
                                         </label>
                                         <div>
-                                            <input type="file" id="blackqueenupload">
-                                            <button id="saveblackqueen" class="chesssave">Save</button>
+                                            <input type="file" id="blackqueenupload" accept="image/*">
+                                            <button id="saveblackqueen" class="chesssave" data-chesspiece="black_queen">Save</button>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td class="piecelabel">Black King</td>
+                                    <td class="piecelabel">
+                                        <p>Black King</p>
+                                        <label class="labelandinput">
+                                            <input type="checkbox" class="chesspieceenabled" data-chesspiece="black_king">
+                                            Enabled
+                                        </label>
+                                    </td>
                                     <td class="pieceuploadmanager">
                                         <label>
                                             Image URL:
-                                            <input type="text" id="blackkingfield">
+                                            <input type="text" id="blackkingfield" placeholder="Piece Image URL" data-chesspiece="black_king">
                                         </label>
                                         <div>
-                                            <input type="file" id="blackkingupload">
-                                            <button id="saveblackking" class="chesssave">Save</button>
+                                            <input type="file" id="blackkingupload" accept="image/*">
+                                            <button id="saveblackking" class="chesssave" data-chesspiece="black_king">Save</button>
                                         </div>
                                     </td>
                                 </tr>

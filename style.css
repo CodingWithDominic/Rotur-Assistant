@@ -4223,5 +4223,11 @@ body.make-circular #changeavatarbtn {
     margin-left: auto;
 }
 .piecelabel {
+    padding: 3px;
     max-width: 120px;
+    display: flex;
+    flex-direction: column;
+}
+.piecelabel p {
+    font-size: 16px;
 }
